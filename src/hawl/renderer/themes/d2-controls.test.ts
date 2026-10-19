@@ -56,14 +56,28 @@ describe('d2-controls theme', () => {
     const src = readFileSync(join(uiDir, 'button.tsx'), 'utf8')
     for (const variant of ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link']) {
       expect(src).toContain(variant)
-      expect(css).toContain(`[data-slot='button'][data-variant='${variant}']`)
+      expect(css).toContain(`[data-variant='${variant}']`)
     }
   })
 
   it('defines the focus, pressed and disabled states for lit buttons', () => {
-    expect(css).toContain("[data-slot='button']:focus-visible")
-    expect(css).toContain("[data-slot='button'][data-variant='default']:active")
-    expect(css).toContain("[data-slot='button']:disabled")
+    // Radix triggers (asChild) replace data-slot but keep data-variant and data-size: the theme must match both
+    expect(css).toContain("button[data-variant][data-size]")
+    expect(css).toMatch(/:is\(\[data-slot='button'\], [^\n]*\):focus-visible/)
+    expect(css).toMatch(/:active:not\(:disabled\)/)
+    expect(css).toMatch(/:is\(\[data-slot='button'\], [^\n]*\):disabled/)
+  })
+
+  it('covers hand-built controls that do not use the shared components', () => {
+    expect(css).toContain("button:not([data-slot])[class~='border']")
+    expect(css).toContain("input[type='checkbox']:not([data-slot])")
+    expect(css).toContain("[role='radio']")
+    expect(css).toContain('kbd')
+  })
+
+  it('never writes the translate property on controls (Tailwind uses it for -translate-y-1/2 and the switch thumb)', () => {
+    const decls = css.split('\n').filter((l) => /^\s*translate:/.test(l))
+    expect(decls).toEqual([])
   })
 
   it('has a dark counterpart for the surfaces it paints', () => {
