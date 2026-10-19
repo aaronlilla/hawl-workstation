@@ -8,7 +8,10 @@ import { generateWorkerKey, handshakeInput, jcs, signEd25519 } from './core'
 
 const root = process.env.HAWL_PLATFORM_DIR ?? 'E:/hawl-platform'
 const proto = `${root}/packages/protocol/src`
-const have = existsSync(`${proto}/jcs.ts`) && existsSync(`${proto}/sign.ts`) && existsSync(`${proto}/envelope.ts`)
+const have =
+  existsSync(`${proto}/jcs.ts`) &&
+  existsSync(`${proto}/sign.ts`) &&
+  existsSync(`${proto}/envelope.ts`)
 
 describe.skipIf(!have)('matches @hawl/protocol', () => {
   const load = async (f: string) => import(/* @vite-ignore */ pathToFileURL(`${proto}/${f}`).href)
@@ -18,18 +21,29 @@ describe.skipIf(!have)('matches @hawl/protocol', () => {
     const samples: unknown[] = [
       { b: 1, a: 2 },
       { z: [3, { y: 'é', x: '\u2028"\\' }], a: null, m: true, n: -0.5, big: 12345678901 },
-      { v: 1, to: { kind: 'channel', channel_id: 'chn_X', mentions: ['res_B', 'res_A'] }, parts: [{ kind: 'text', text: 'hi\n\t☃' }] },
+      {
+        v: 1,
+        to: { kind: 'channel', channel_id: 'chn_X', mentions: ['res_B', 'res_A'] },
+        parts: [{ kind: 'text', text: 'hi\n\t☃' }]
+      },
       [],
       {},
       'plain',
-      { 'ключ': 1, 'a b': 2, '10': 3, '9': 4 }
+      { ключ: 1, 'a b': 2, '10': 3, '9': 4 }
     ]
-    for (const s of samples) expect(jcs(s)).toBe(real(s))
+    for (const s of samples) {
+      expect(jcs(s)).toBe(real(s))
+    }
   })
 
   it('the WS handshake and ready inputs are the same bytes', async () => {
     const { handshakeSignInput } = await load('sign.ts')
-    const p = { nonce: 'n', clientNonce: 'c', residentId: 'res_1', serverTime: '2026-10-19T00:00:00.000Z' }
+    const p = {
+      nonce: 'n',
+      clientNonce: 'c',
+      residentId: 'res_1',
+      serverTime: '2026-10-19T00:00:00.000Z'
+    }
     expect(handshakeInput(p).equals(handshakeSignInput(p))).toBe(true)
   })
 
@@ -48,7 +62,15 @@ describe.skipIf(!have)('matches @hawl/protocol', () => {
       to: { kind: 'worker', resident_id: 'res_B' },
       intent: 'request_action',
       requested_capabilities: [],
-      content: { parts: [{ kind: 'text', text: 'do it' }, { kind: 'data', data: { handoff: { title: 't', criteria: [{ id: 'c1', text: 'x', check: 'manual' }] } } }] },
+      content: {
+        parts: [
+          { kind: 'text', text: 'do it' },
+          {
+            kind: 'data',
+            data: { handoff: { title: 't', criteria: [{ id: 'c1', text: 'x', check: 'manual' }] } }
+          }
+        ]
+      },
       created_at: '2026-10-19T00:00:00.000Z'
     }
     // Reference: what the CLI would send.
@@ -58,7 +80,13 @@ describe.skipIf(!have)('matches @hawl/protocol', () => {
     expect(bytes.equals(ref.bytes)).toBe(true)
     const sig = signEd25519(k.privateJwk, bytes).toString('base64url')
     expect(sig).toBe(ref.sender_sig.sig)
-    expect(verifySenderSig(ref.client_request, { alg: 'EdDSA', kid: 'key_A', covers: 'client_request', sig }, importPublicJwk(k.publicJwk))).toBe(true)
+    expect(
+      verifySenderSig(
+        ref.client_request,
+        { alg: 'EdDSA', kid: 'key_A', covers: 'client_request', sig },
+        importPublicJwk(k.publicJwk)
+      )
+    ).toBe(true)
     expect(createPublicKey({ key: k.publicJwk, format: 'jwk' }).asymmetricKeyType).toBe('ed25519')
   })
 })

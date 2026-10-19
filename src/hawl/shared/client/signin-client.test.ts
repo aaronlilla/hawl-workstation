@@ -25,7 +25,12 @@ afterEach(async () => {
 const noSleep = async () => {}
 
 async function signIn(): Promise<Credentials> {
-  const s = await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: noSleep, pollMs: 1 })
+  const s = await startDeviceSignIn({
+    site: 'aarons-site',
+    relayUrl: relay.url,
+    sleep: noSleep,
+    pollMs: 1
+  })
   return s.wait()
 }
 
@@ -39,23 +44,55 @@ const userSource = (token = relay.userToken): TokenSource & { invalidated: numbe
 
 describe('core', () => {
   it('canonical JSON sorts keys, drops undefined, keeps arrays in order', () => {
-    expect(jcs({ b: 1, a: [3, 2, { z: null, y: 'x' }], u: undefined })).toBe('{"a":[3,2,{"y":"x","z":null}],"b":1}')
+    expect(jcs({ b: 1, a: [3, 2, { z: null, y: 'x' }], u: undefined })).toBe(
+      '{"a":[3,2,{"y":"x","z":null}],"b":1}'
+    )
   })
 
   it('client assertion is a 60 s EdDSA JWT that verifies with the public key', () => {
     const k = generateWorkerKey()
-    const jwt = clientAssertion('res_X', 'key_Y', k.privateJwk, 'https://relay.test', new Date(1_800_000_000_000))
+    const jwt = clientAssertion(
+      'res_X',
+      'key_Y',
+      k.privateJwk,
+      'https://relay.test',
+      new Date(1_800_000_000_000)
+    )
     const [h, p, s] = jwt.split('.') as [string, string, string]
-    expect(JSON.parse(Buffer.from(h, 'base64url').toString())).toEqual({ alg: 'EdDSA', typ: 'JWT', kid: 'key_Y' })
+    expect(JSON.parse(Buffer.from(h, 'base64url').toString())).toEqual({
+      alg: 'EdDSA',
+      typ: 'JWT',
+      kid: 'key_Y'
+    })
     const c = JSON.parse(Buffer.from(p, 'base64url').toString())
-    expect(c).toMatchObject({ iss: 'res_X', sub: 'res_X', aud: 'https://relay.test', iat: 1_800_000_000, exp: 1_800_000_060 })
-    expect(verify(null, Buffer.from(`${h}.${p}`), createPublicKey({ key: k.publicJwk, format: 'jwk' }), Buffer.from(s, 'base64url'))).toBe(true)
+    expect(c).toMatchObject({
+      iss: 'res_X',
+      sub: 'res_X',
+      aud: 'https://relay.test',
+      iat: 1_800_000_000,
+      exp: 1_800_000_060
+    })
+    expect(
+      verify(
+        null,
+        Buffer.from(`${h}.${p}`),
+        createPublicKey({ key: k.publicJwk, format: 'jwk' }),
+        Buffer.from(s, 'base64url')
+      )
+    ).toBe(true)
   })
 
   it('memory store round-trips and clears', async () => {
     const st = new MemoryCredentialStore()
     expect(await st.load()).toBeNull()
-    const c = { relayUrl: 'u', residentId: 'r', kid: 'k', townId: 't', townSlug: 's', privateJwk: {} }
+    const c = {
+      relayUrl: 'u',
+      residentId: 'r',
+      kid: 'k',
+      townId: 't',
+      townSlug: 's',
+      privateJwk: {}
+    }
     await st.save(c)
     expect(await st.load()).toEqual(c)
     await st.clear()
@@ -90,13 +127,20 @@ describe('device-code sign-in', () => {
 
   it('start sends only the public key, never the private one', async () => {
     await signIn()
-    const start = relay.requests.find((r) => r.path === '/v1/join/start')
-    expect(JSON.stringify(start?.body)).not.toContain('"d"')
-    expect((start?.body as { platform: string }).platform).toBe('hawl_workstation')
+    const start = relay.requests.find((r) => r.path === '/v1/join/start') as {
+      body: { platform: string }
+    }
+    expect(JSON.stringify(start.body)).not.toContain('"d"')
+    expect(start.body.platform).toBe('hawl_workstation')
   })
 
   it('an expired or refused code throws code_expired instead of polling forever', async () => {
-    const s = await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: noSleep, pollMs: 1 })
+    const s = await startDeviceSignIn({
+      site: 'aarons-site',
+      relayUrl: relay.url,
+      sleep: noSleep,
+      pollMs: 1
+    })
     relay.joins.clear()
     await expect(s.wait()).rejects.toMatchObject({ code: 'code_expired', status: 404 })
   })
@@ -110,20 +154,35 @@ describe('device-code sign-in', () => {
   it('stops at the deadline', async () => {
     relay.approveAfterPolls = 1_000_000
     let t = 0
-    const s = await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: async () => { t += 400_000 }, now: () => t, pollMs: 1 })
+    const s = await startDeviceSignIn({
+      site: 'aarons-site',
+      relayUrl: relay.url,
+      sleep: async () => {
+        t += 400_000
+      },
+      now: () => t,
+      pollMs: 1
+    })
     await expect(s.wait()).rejects.toMatchObject({ code: 'timeout' })
   })
 
   it('can be cancelled', async () => {
     relay.approveAfterPolls = 1_000_000
     const ac = new AbortController()
-    const s = await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: async () => ac.abort(), pollMs: 1 })
+    const s = await startDeviceSignIn({
+      site: 'aarons-site',
+      relayUrl: relay.url,
+      sleep: async () => ac.abort(),
+      pollMs: 1
+    })
     await expect(s.wait({ signal: ac.signal })).rejects.toMatchObject({ code: 'cancelled' })
   })
 
   it('a site the relay does not know is a plain error', async () => {
     relay.failNext(/join\/start/, 404)
-    await expect(startDeviceSignIn({ site: 'nope', relayUrl: relay.url })).rejects.toBeInstanceOf(HawlApiError)
+    await expect(startDeviceSignIn({ site: 'nope', relayUrl: relay.url })).rejects.toBeInstanceOf(
+      HawlApiError
+    )
   })
 })
 
@@ -169,7 +228,10 @@ describe('http and tokens', () => {
 
   it('retries GET on 503 and honours Retry-After on 429', async () => {
     const waits: number[] = []
-    const c = new HawlClient({ credentials: await signIn(), sleep: async (ms) => void waits.push(ms) })
+    const c = new HawlClient({
+      credentials: await signIn(),
+      sleep: async (ms) => void waits.push(ms)
+    })
     relay.failNext(/\/v1\/me$/, 503, 2)
     expect((await c.me()).handle).toBe('workstation')
     expect(waits).toEqual([250, 500])
@@ -195,7 +257,11 @@ describe('http and tokens', () => {
 
   it('reports an unreachable relay as network_error', async () => {
     const cred = await signIn()
-    const c = new HawlClient({ credentials: { ...cred, relayUrl: 'http://127.0.0.1:1' }, sleep: noSleep, maxRetries: 0 })
+    const c = new HawlClient({
+      credentials: { ...cred, relayUrl: 'http://127.0.0.1:1' },
+      sleep: noSleep,
+      maxRetries: 0
+    })
     await expect(c.me()).rejects.toMatchObject({ code: 'network_error' })
   })
 
@@ -224,17 +290,28 @@ describe('api surface', () => {
   it('workers, handoffs, board, channels', async () => {
     expect((await c.workers.who()).workers.length).toBe(2)
     expect((await c.workers.who('sam')).workers.length).toBe(1)
-    expect((await c.handoffs.list({ mine: true })).handoffs[0]).toMatchObject({ handoff_id: 'hnd_1' })
+    expect((await c.handoffs.list({ mine: true })).handoffs[0]).toMatchObject({
+      handoff_id: 'hnd_1'
+    })
     expect(await c.handoffs.get('hnd_1')).toMatchObject({ state: 'accepted' })
-    const done = await c.handoffs.done('hnd_1', { pr_url: 'https://github.com/a/b/pull/1', note: 'ok' })
+    const done = await c.handoffs.done('hnd_1', {
+      pr_url: 'https://github.com/a/b/pull/1',
+      note: 'ok'
+    })
     expect(done).toMatchObject({ echo: { op: 'done', evidence: { note: 'ok' } } })
     expect((await c.board.read()).pins).toEqual([])
     expect((await c.channels.list()).items.map((i) => i.kind)).toEqual(['square', 'room'])
   })
 
   it('user plane: approvals list and approve carry the user token, not the worker token', async () => {
-    expect((await c.approvals.list(relay.townId)).items[0]).toMatchObject({ approval_id: 'apr_1', state: 'pending' })
-    expect(await c.approvals.approve('apr_1', 'looks right')).toMatchObject({ state: 'approved', note: 'looks right' })
+    expect((await c.approvals.list(relay.townId)).items[0]).toMatchObject({
+      approval_id: 'apr_1',
+      state: 'pending'
+    })
+    expect(await c.approvals.approve('apr_1', 'looks right')).toMatchObject({
+      state: 'approved',
+      note: 'looks right'
+    })
     const hits = relay.requests.filter((r) => r.path.includes('approv'))
     expect(hits.every((h) => h.auth === `Bearer ${relay.userToken}`)).toBe(true)
   })
@@ -269,12 +346,18 @@ describe('api surface', () => {
       content: {
         parts: [
           { kind: 'text', text: 'Make the login button work.' },
-          { kind: 'data', data: { handoff: { title: 'Fix login', task_type: 'code', verifier: 'any_other_owner' } } }
+          {
+            kind: 'data',
+            data: {
+              handoff: { title: 'Fix login', task_type: 'code', verifier: 'any_other_owner' }
+            }
+          }
         ]
       }
     })
     // The terms in the data part must not carry `spec` or `to`: the relay rebuilds them from the other args.
-    const data = (s.cr.content as { parts: { data?: { handoff: Record<string, unknown> } }[] }).parts[1]!.data!.handoff
+    const data = (s.cr.content as { parts: { data?: { handoff: Record<string, unknown> } }[] })
+      .parts[1]!.data!.handoff
     expect(Object.keys(data).sort()).toEqual(['criteria', 'task_type', 'title', 'verifier'])
   })
 
@@ -285,9 +368,20 @@ describe('api surface', () => {
     expect(relay.signedSends.map((s) => s.sigOk)).toEqual([true, true, true])
     // Plain messages use POST /v1/messages with an Idempotency-Key equal to the signed one.
     expect(relay.signedSends.map((s) => s.tool)).toEqual(['message', 'message', 'message'])
-    expect(relay.signedSends[0]!.cr).toMatchObject({ intent: 'ask', to: { kind: 'worker', resident_id: 'res_KIT' } })
-    expect(relay.signedSends[1]!.cr.to).toEqual({ kind: 'channel', channel_id: 'chn_SQ', mentions: ['res_SAM'] })
-    expect(relay.signedSends[2]!.cr.to).toEqual({ kind: 'channel', channel_id: 'chn_R1', mentions: [] })
+    expect(relay.signedSends[0]!.cr).toMatchObject({
+      intent: 'ask',
+      to: { kind: 'worker', resident_id: 'res_KIT' }
+    })
+    expect(relay.signedSends[1]!.cr.to).toEqual({
+      kind: 'channel',
+      channel_id: 'chn_SQ',
+      mentions: ['res_SAM']
+    })
+    expect(relay.signedSends[2]!.cr.to).toEqual({
+      kind: 'channel',
+      channel_id: 'chn_R1',
+      mentions: []
+    })
     await expect(c.send.dm('ghost', 'x')).rejects.toMatchObject({ status: 404 })
     await expect(c.send.room('nope', 'x')).rejects.toMatchObject({ status: 404 })
   })
@@ -302,7 +396,11 @@ describe('api surface', () => {
   it('files: upload declares size and hash, PUTs the bytes, download returns them', async () => {
     const bytes = new TextEncoder().encode('hello hawl')
     const up = await c.files.upload('note.txt', bytes, 'text/plain')
-    const decl = relay.requests.find((r) => r.path === '/v1/files/uploads')!.body as { sha256: string; bytes: number; name: string }
+    const decl = relay.requests.find((r) => r.path === '/v1/files/uploads')!.body as {
+      sha256: string
+      bytes: number
+      name: string
+    }
     expect(decl).toMatchObject({ bytes: 10, name: 'note.txt' })
     expect(up.result.sha256).toBe(decl.sha256)
     expect(new TextDecoder().decode(await c.files.download('fil_1'))).toBe('hello hawl')

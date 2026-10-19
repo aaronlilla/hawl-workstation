@@ -1,11 +1,6 @@
 // Small pieces shared by the client: errors, canonical JSON, keys, assertions, token storage.
 // Node only (uses node:crypto); the renderer talks to this through the main process.
-import {
-  createPrivateKey,
-  generateKeyPairSync,
-  randomBytes,
-  sign as nodeSign
-} from 'node:crypto'
+import { createPrivateKey, generateKeyPairSync, randomBytes, sign as nodeSign } from 'node:crypto'
 
 export type Jwk = Record<string, string>
 
@@ -42,8 +37,12 @@ export function b64url(buf: Uint8Array): string {
 
 /** RFC 8785 style canonical JSON for the value shapes the relay signs (strings, numbers, nesting). */
 export function jcs(v: unknown): string {
-  if (v === null || typeof v !== 'object') return JSON.stringify(v)
-  if (Array.isArray(v)) return `[${v.map(jcs).join(',')}]`
+  if (v === null || typeof v !== 'object') {
+    return JSON.stringify(v)
+  }
+  if (Array.isArray(v)) {
+    return `[${v.map(jcs).join(',')}]`
+  }
   const o = v as Record<string, unknown>
   const keys = Object.keys(o)
     .filter((k) => o[k] !== undefined)
@@ -99,10 +98,7 @@ export function handshakeInput(p: {
   residentId: string
   serverTime: string
 }): Buffer {
-  return Buffer.from(
-    `relay.v1|${p.nonce}|${p.clientNonce}|${p.residentId}|${p.serverTime}`,
-    'utf8'
-  )
+  return Buffer.from(`relay.v1|${p.nonce}|${p.clientNonce}|${p.residentId}|${p.serverTime}`, 'utf8')
 }
 
 /** Everything a signed-in workstation keeps. The private key never leaves the store. */
@@ -117,7 +113,7 @@ export type Credentials = {
 }
 
 /** Storage seam. The OS keyring implementation lives elsewhere; tests use MemoryCredentialStore. */
-export interface CredentialStore {
+export type CredentialStore = {
   load(): Promise<Credentials | null>
   save(c: Credentials): Promise<void>
   clear(): Promise<void>
@@ -137,7 +133,7 @@ export class MemoryCredentialStore implements CredentialStore {
 }
 
 /** Anything that can hand out a bearer token: the agent plane here, a UserJWT source for the user plane. */
-export interface TokenSource {
+export type TokenSource = {
   token(): Promise<string>
   /** The relay said 401: drop what is cached so the next `token()` fetches a new one. */
   invalidate(): void

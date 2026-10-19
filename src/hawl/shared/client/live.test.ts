@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { AgentSocket, type Credentials, HawlClient, startDeviceSignIn, type TokenSource } from './index'
+import {
+  AgentSocket,
+  type Credentials,
+  HawlClient,
+  startDeviceSignIn,
+  type TokenSource
+} from './index'
 import { FakeRelay } from './fake-relay'
 
 let relay: FakeRelay
@@ -8,23 +14,36 @@ const stoppers: (() => void)[] = []
 
 beforeEach(async () => {
   relay = await new FakeRelay().start()
-  const s = await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: async () => {}, pollMs: 1 })
+  const s = await startDeviceSignIn({
+    site: 'aarons-site',
+    relayUrl: relay.url,
+    sleep: async () => {},
+    pollMs: 1
+  })
   cred = await s.wait()
 })
 afterEach(async () => {
-  for (const s of stoppers.splice(0)) s()
+  for (const s of stoppers.splice(0)) {
+    s()
+  }
   await relay.stop()
 })
 
-const env = (seq: number): Record<string, unknown> => ({ relay: { message_id: `msg_${seq}`, delivery: { inbox_seq: seq } } })
+const env = (seq: number): Record<string, unknown> => ({
+  relay: { message_id: `msg_${seq}`, delivery: { inbox_seq: seq } }
+})
 
 function until<T>(fn: () => T | undefined | false, ms = 5000): Promise<T> {
   const t0 = Date.now()
   return new Promise((resolve, reject) => {
     const tick = () => {
       const v = fn()
-      if (v) return resolve(v as T)
-      if (Date.now() - t0 > ms) return reject(new Error(`timed out waiting: ${fn.toString()}`))
+      if (v) {
+        return resolve(v as T)
+      }
+      if (Date.now() - t0 > ms) {
+        return reject(new Error(`timed out waiting: ${fn.toString()}`))
+      }
       setTimeout(tick, 10)
     }
     tick()
@@ -32,7 +51,12 @@ function until<T>(fn: () => T | undefined | false, ms = 5000): Promise<T> {
 }
 
 function sock(o: Partial<ConstructorParameters<typeof AgentSocket>[0]> = {}): AgentSocket {
-  const s = new AgentSocket({ credentials: cred, reconnectMs: { min: 10, max: 40 }, random: () => 0, ...o })
+  const s = new AgentSocket({
+    credentials: cred,
+    reconnectMs: { min: 10, max: 40 },
+    random: () => 0,
+    ...o
+  })
   stoppers.push(() => s.stop())
   return s
 }
@@ -48,7 +72,14 @@ describe('agent socket', () => {
   })
 
   it('a wrong key never gets past the handshake', async () => {
-    const other = await (await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: async () => {}, pollMs: 1 })).wait()
+    const other = await (
+      await startDeviceSignIn({
+        site: 'aarons-site',
+        relayUrl: relay.url,
+        sleep: async () => {},
+        pollMs: 1
+      })
+    ).wait()
     // Right worker id and kid, someone else's private key.
     const s = sock({ credentials: { ...cred, privateJwk: other.privateJwk } })
     const states: string[] = []
@@ -63,7 +94,9 @@ describe('agent socket', () => {
     relay.inbox.push(env(1), env(2))
     const got: number[] = []
     const s = sock()
-    s.on('deliver', (e) => got.push((e.relay as { delivery: { inbox_seq: number } }).delivery.inbox_seq))
+    s.on('deliver', (e) =>
+      got.push((e.relay as { delivery: { inbox_seq: number } }).delivery.inbox_seq)
+    )
     s.start()
     await until(() => got.length === 2)
     relay.pushDeliver(env(3))
@@ -75,7 +108,9 @@ describe('agent socket', () => {
   it('after a drop it reconnects and asks for the missed messages, with no duplicates', async () => {
     const got: number[] = []
     const s = sock()
-    s.on('deliver', (e) => got.push((e.relay as { delivery: { inbox_seq: number } }).delivery.inbox_seq))
+    s.on('deliver', (e) =>
+      got.push((e.relay as { delivery: { inbox_seq: number } }).delivery.inbox_seq)
+    )
     s.start()
     await until(() => s.state === 'connected')
     relay.pushDeliver(env(1))
@@ -159,7 +194,9 @@ describe('town events', () => {
   }
 
   it('replays history by pages, then goes live without repeating the last page', async () => {
-    for (let i = 1; i <= 5; i++) relay.events.push(ev(i))
+    for (let i = 1; i <= 5; i++) {
+      relay.events.push(ev(i))
+    }
     const s = mk()
     const seqs: number[] = []
     const streams: (string | undefined)[] = []
@@ -204,11 +241,20 @@ describe('town events', () => {
     const got: string[] = []
     s.on('event', (e) => got.push(`${e.stream}:${e.seq}`))
     // Three two-stream events waiting; the relay cuts the socket after 3 frames (mid-event 2).
-    for (let i = 1; i <= 3; i++) relay.events.push(ev(i, ['feed', 'needs_action']))
+    for (let i = 1; i <= 3; i++) {
+      relay.events.push(ev(i, ['feed', 'needs_action']))
+    }
     relay.consoleDropAfter = 3
     await s.start()
     await until(() => got.length >= 6, 8000)
-    expect(got.sort()).toEqual(['feed:1', 'feed:2', 'feed:3', 'needs_action:1', 'needs_action:2', 'needs_action:3'])
+    expect(got.sort()).toEqual([
+      'feed:1',
+      'feed:2',
+      'feed:3',
+      'needs_action:1',
+      'needs_action:2',
+      'needs_action:3'
+    ])
   })
 
   it('a 4401 close asks the token source for a fresh token', async () => {
@@ -216,7 +262,9 @@ describe('town events', () => {
     const s = mk(u, { socketOnly: true })
     await s.start()
     await until(() => s.state === 'live')
-    for (const w of relay.consoleConns) w.close(4401, 'expired')
+    for (const w of relay.consoleConns) {
+      w.close(4401, 'expired')
+    }
     await until(() => u.invalidated === 1)
     await until(() => relay.consoleConns.length === 1 && s.state === 'live')
   })
@@ -231,7 +279,9 @@ describe('town events', () => {
   })
 
   it('a failed REST page is reported and the socket still replays from the cursor', async () => {
-    for (let i = 1; i <= 3; i++) relay.events.push(ev(i))
+    for (let i = 1; i <= 3; i++) {
+      relay.events.push(ev(i))
+    }
     relay.failNext(/\/events$/, 500, 5)
     const s = mk()
     const errs: Error[] = []

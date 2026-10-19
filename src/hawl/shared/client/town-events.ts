@@ -5,7 +5,14 @@ import WebSocket from 'ws'
 import { HawlApiError, type TokenSource, wsUrlFor } from './core'
 import type { Http } from './http'
 
-export const CONSOLE_STREAMS = ['feed', 'handoffs', 'workers', 'needs_action', 'files', 'map'] as const
+export const CONSOLE_STREAMS = [
+  'feed',
+  'handoffs',
+  'workers',
+  'needs_action',
+  'files',
+  'map'
+] as const
 export type ConsoleStreamName = (typeof CONSOLE_STREAMS)[number]
 
 /** A site event. REST rows have no `stream`; socket frames name the stream they came on (`t`). */
@@ -34,7 +41,7 @@ export type TownEventStreamOptions = {
   socketOnly?: boolean
 }
 
-export interface TownEventStreamEvents {
+export type TownEventStreamEvents = {
   event: [TownEventFrame]
   state: ['replaying' | 'connecting' | 'live' | 'stopped']
   error: [Error]
@@ -88,7 +95,9 @@ export class TownEventStream extends EventEmitter {
 
   stop(): void {
     this.#stopped = true
-    if (this.#timer) clearTimeout(this.#timer)
+    if (this.#timer) {
+      clearTimeout(this.#timer)
+    }
     this.#timer = null
     this.#ws?.close(1000)
     this.#set('stopped')
@@ -103,7 +112,9 @@ export class TownEventStream extends EventEmitter {
         `/v1/towns/${this.#o.townId}/events`,
         { plane: 'user', query: { after_seq: this.cursor } }
       )
-      if (page.events.length === 0) return n
+      if (page.events.length === 0) {
+        return n
+      }
       for (const e of page.events) {
         if (this.#take(`rest:${e.seq}`, e.seq)) {
           this.emit('event', e)
@@ -111,30 +122,44 @@ export class TownEventStream extends EventEmitter {
         }
       }
       // A page that does not move the cursor would loop forever.
-      if (page.next_after_seq <= before) return n
+      if (page.next_after_seq <= before) {
+        return n
+      }
       this.cursor = Math.max(this.cursor, page.next_after_seq)
     }
   }
 
   #take(key: string, seq: number): boolean {
-    if (this.#seen.has(key)) return false
+    if (this.#seen.has(key)) {
+      return false
+    }
     this.#seen.add(key)
-    if (this.#seen.size > 20_000) this.#seen.delete(this.#seen.values().next().value as string)
-    if (seq > this.cursor) this.cursor = seq
+    if (this.#seen.size > 20_000) {
+      this.#seen.delete(this.#seen.values().next().value as string)
+    }
+    if (seq > this.cursor) {
+      this.cursor = seq
+    }
     return true
   }
 
   #set(s: TownEventStream['state']): void {
-    if (this.state === s) return
+    if (this.state === s) {
+      return
+    }
     this.state = s
     this.emit('state', s)
   }
 
   #connect(): void {
-    if (this.#stopped) return
+    if (this.#stopped) {
+      return
+    }
     this.#set('connecting')
     const headers: Record<string, string> = {}
-    if (this.#o.origin) headers.origin = this.#o.origin
+    if (this.#o.origin) {
+      headers.origin = this.#o.origin
+    }
     const ws = new WebSocket(wsUrlFor(this.#o.relayUrl, '/v1/console/ws'), { headers })
     this.#ws = ws
     ws.on('open', () => {
@@ -166,20 +191,33 @@ export class TownEventStream extends EventEmitter {
       }
       if (f.t === 'error') {
         const e = (f.error ?? {}) as { code?: string; message?: string }
-        this.emit('error', new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.'))
+        this.emit(
+          'error',
+          new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.')
+        )
         return
       }
-      if (typeof f.seq !== 'number' || typeof f.t !== 'string' || f.seq <= this.#floor) return
-      if (!this.#take(`${f.t}:${f.seq}`, f.seq)) return
+      if (typeof f.seq !== 'number' || typeof f.t !== 'string' || f.seq <= this.#floor) {
+        return
+      }
+      if (!this.#take(`${f.t}:${f.seq}`, f.seq)) {
+        return
+      }
       const { t, ...rest } = f
       this.emit('event', { ...rest, stream: t } as TownEventFrame)
     })
     ws.on('close', (code) => {
-      if (this.#ws !== ws) return
+      if (this.#ws !== ws) {
+        return
+      }
       this.#ws = null
-      if (this.#stopped) return
+      if (this.#stopped) {
+        return
+      }
       // 4401: the UserJWT expired or was refused. Fetch a fresh one on the way back.
-      if (code === 4401) this.#o.user.invalidate()
+      if (code === 4401) {
+        this.#o.user.invalidate()
+      }
       this.#set('connecting')
       const max = this.#o.reconnectMs?.max ?? 30_000
       const r = (this.#o.random ?? Math.random)()

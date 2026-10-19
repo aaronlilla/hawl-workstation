@@ -64,8 +64,10 @@ export class Http {
       if (plane !== 'none' && !source) {
         throw new HawlApiError(401, 'unauthenticated', `No ${plane} credentials are set.`)
       }
-      const headers: Record<string, string> = { ...(r.headers ?? {}) }
-      if (source) headers.authorization = `Bearer ${await source.token()}`
+      const headers: Record<string, string> = { ...r.headers }
+      if (source) {
+        headers.authorization = `Bearer ${await source.token()}`
+      }
       let payload: string | Uint8Array | undefined
       if (r.rawBody) {
         payload = r.rawBody
@@ -77,11 +79,17 @@ export class Http {
       let netErr: unknown = null
       try {
         const init: RequestInit = { method, headers }
-        if (payload !== undefined) init.body = payload as BodyInit
-        if (r.signal) init.signal = r.signal
+        if (payload !== undefined) {
+          init.body = payload as BodyInit
+        }
+        if (r.signal) {
+          init.signal = r.signal
+        }
         res = await this.#fetch(this.url(path, r.query), init)
       } catch (e) {
-        if (r.signal?.aborted) throw e
+        if (r.signal?.aborted) {
+          throw e
+        }
         netErr = e
       }
       if (res && res.status === 401 && source && !refreshed) {
@@ -100,8 +108,12 @@ export class Http {
       if (!res) {
         throw new HawlApiError(0, 'network_error', `Could not reach the relay: ${String(netErr)}`)
       }
-      if (!res.ok) throw await toError(res)
-      if (r.asBytes) return new Uint8Array(await res.arrayBuffer()) as T
+      if (!res.ok) {
+        throw await toError(res)
+      }
+      if (r.asBytes) {
+        return new Uint8Array(await res.arrayBuffer()) as T
+      }
       const text = await res.text()
       return (text ? JSON.parse(text) : {}) as T
     }
@@ -122,7 +134,12 @@ export class Http {
 
   url(path: string, query?: RequestOptions['query']): string {
     const u = new URL(this.baseUrl + path)
-    for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined) u.searchParams.set(k, String(v))
+    for (const [k, v] of Object.entries(query ?? {})) {
+      if (v === undefined) {
+        continue
+      }
+      u.searchParams.set(k, String(v))
+    }
     return u.toString()
   }
 }
@@ -154,7 +171,9 @@ async function toError(res: Response): Promise<HawlApiError> {
     // not JSON: keep the status text
   }
   const h = Number(res.headers.get('retry-after'))
-  if (retryAfter === null && h > 0) retryAfter = h
+  if (retryAfter === null && h > 0) {
+    retryAfter = h
+  }
   return new HawlApiError(res.status, code, message, { retryAfter, requestId, details })
 }
 
@@ -178,7 +197,9 @@ export class AgentTokenSource implements TokenSource {
   async token(): Promise<string> {
     const t = this.#tok
     // Renew 30 s early so a call never leaves with a token that dies in flight.
-    if (t && t.expMs - 30_000 > this.#now()) return t.value
+    if (t && t.expMs - 30_000 > this.#now()) {
+      return t.value
+    }
     this.#inflight ??= this.#exchange().finally(() => {
       this.#inflight = null
     })
@@ -208,7 +229,9 @@ export class AgentTokenSource implements TokenSource {
     } catch (e) {
       throw new HawlApiError(0, 'network_error', `Could not reach the relay: ${String(e)}`)
     }
-    if (!res.ok) throw await toError(res)
+    if (!res.ok) {
+      throw await toError(res)
+    }
     const j = (await res.json()) as { access_token: string; expires_in: number }
     this.#tok = { value: j.access_token, expMs: this.#now() + j.expires_in * 1000 }
     return j.access_token

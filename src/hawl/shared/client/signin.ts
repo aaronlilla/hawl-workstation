@@ -68,16 +68,26 @@ export class DeviceSignIn {
   async claim(): Promise<ClaimOutcome> {
     const ts = Math.floor((this.#o.now ?? Date.now)() / 1000)
     const nonce = randomBytes(16).toString('hex')
-    const sig = b64url(signEd25519(this.#key.privateJwk, Buffer.from(jcs({ join_id: this.joinId, nonce, ts }))))
+    const sig = b64url(
+      signEd25519(this.#key.privateJwk, Buffer.from(jcs({ join_id: this.joinId, nonce, ts })))
+    )
     const res = await this.#fetch(`${this.#base}/v1/join/${this.joinId}/claim`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ nonce, ts, sig })
     })
-    if (res.status === 202) return { state: 'pending' }
-    if (res.status >= 500) throw new HawlApiError(res.status, 'relay_unavailable', 'The relay is not answering.')
+    if (res.status === 202) {
+      return { state: 'pending' }
+    }
+    if (res.status >= 500) {
+      throw new HawlApiError(res.status, 'relay_unavailable', 'The relay is not answering.')
+    }
     if (!res.ok) {
-      throw new HawlApiError(res.status, 'code_expired', 'The code expired or was not approved. Start sign-in again.')
+      throw new HawlApiError(
+        res.status,
+        'code_expired',
+        'The code expired or was not approved. Start sign-in again.'
+      )
     }
     const c = (await res.json()) as {
       resident_id: string
@@ -108,13 +118,19 @@ export class DeviceSignIn {
     const sleep = this.#o.sleep ?? realSleep
     const now = this.#o.now ?? Date.now
     for (;;) {
-      if (o.signal?.aborted) throw new HawlApiError(0, 'cancelled', 'Sign-in cancelled.')
+      if (o.signal?.aborted) {
+        throw new HawlApiError(0, 'cancelled', 'Sign-in cancelled.')
+      }
       try {
         const r = await this.claim()
-        if (r.state === 'claimed') return r.credentials
+        if (r.state === 'claimed') {
+          return r.credentials
+        }
       } catch (e) {
         const transient = !(e instanceof HawlApiError) || e.code === 'relay_unavailable'
-        if (!transient) throw e
+        if (!transient) {
+          throw e
+        }
       }
       if (now() >= this.expiresAt) {
         throw new HawlApiError(0, 'timeout', 'Timed out waiting for approval. Start sign-in again.')
@@ -149,7 +165,9 @@ export async function startDeviceSignIn(o: SignInOptions): Promise<DeviceSignIn>
       msg = j.error?.message ?? msg
       throw new HawlApiError(res.status, j.error?.code ?? `http_${res.status}`, msg)
     } catch (e) {
-      if (e instanceof HawlApiError) throw e
+      if (e instanceof HawlApiError) {
+        throw e
+      }
       throw new HawlApiError(res.status, `http_${res.status}`, msg)
     }
   }
