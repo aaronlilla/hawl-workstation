@@ -3,7 +3,6 @@ import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import SidebarHeader from './SidebarHeader'
-import SidebarNav from './SidebarNav'
 import SetupScriptPromptCard from './SetupScriptPromptCard'
 import WorktreeList from './WorktreeList'
 import SidebarToolbar from './SidebarToolbar'
@@ -20,6 +19,7 @@ import { useSystemPrefersDark } from '@/components/terminal-pane/use-system-pref
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
 import { HawlSidebarBrand } from '../../../../hawl/renderer/shell/HawlSidebarTop'
 import { HawlSlot } from '../../../../hawl/renderer/shell/HawlSlots'
+import { HawlGetSetUp, HawlNav } from '../../../../hawl/renderer/shell/HawlNav'
 import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
 import { SeveredTerminalDaemonBanner } from './SeveredTerminalDaemonBanner'
 import { StalledTerminalDaemonBanner } from './StalledTerminalDaemonBanner'
@@ -175,7 +175,7 @@ function Sidebar({
             {/* Fixed controls */}
             {/* Hawl fork: brand block, then marked slots for the yard tree and foreman strip. */}
             <HawlSidebarBrand />
-            <SidebarNav />
+            <HawlNav />
             <HawlSlot name="yard-tree" />
             <SidebarHeader
               onWorkspaceBoardMenuOpenChange={setWorkspaceBoardMenuOpen}
@@ -214,6 +214,7 @@ function Sidebar({
             )}
 
             <HawlSlot name="foreman-strip" />
+            <HawlGetSetUp />
             <div className="relative shrink-0">
               <SetupScriptPromptCard />
 

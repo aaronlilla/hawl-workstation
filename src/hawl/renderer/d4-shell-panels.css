@@ -1,0 +1,304 @@
+/* D4-shell, panels: the page slab (the screen the work sits in), the tab strip as a segmented control,
+   the right panel, the terminal well and the status bar. Light theme only (html:not(.dark)). */
+
+/* ── Page slab: one lit object the work sits in ──────────────────────────────────────── */
+html:not(.dark) .hawl-page-column {
+  padding: 0 0 8px 4px;
+}
+html:not(.dark) .hawl-page-slab {
+  border-radius: 24px;
+  background: var(--background);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.3),
+    0 1px 0 #e6d9bb,
+    0 2px 0 #cdbb97,
+    1px 8px 8px -2px rgba(var(--hw-shade), 0.3),
+    8px 20px 28px -8px rgba(var(--hw-shade), 0.34);
+}
+html:not(.dark) .hawl-page-slab > * {
+  border-radius: inherit;
+}
+/* Specular sheen along the lit (top-left) edge; never catches the pointer. */
+html:not(.dark) .hawl-page-slab::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(420px 60px at 14% 0%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 60px);
+}
+html:not(.dark) .hawl-page-slab:has([data-hawl-home])::after {
+  display: none;
+}
+/* Collapsed-sidebar titlebar stays inside the slab corner. */
+html:not(.dark) .hawl-page-column > .titlebar {
+  border-radius: 14px;
+}
+
+/* ── Tab strip (H01 segmented control): a recessed trough, one raised acrylic segment ──── */
+html:not(.dark) [class*='@container/tab-strip'] {
+  height: 54px !important;
+  border-bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 252, 244, 0.9), rgba(250, 242, 224, 0.7));
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 1px 0 rgba(60, 38, 10, 0.16),
+    0 2px 0 rgba(255, 255, 255, 0.85);
+}
+html:not(.dark) [class*='@container/tab-strip'] > div {
+  align-items: center;
+  padding: 0 10px 0 12px;
+}
+html:not(.dark) .terminal-tab-strip {
+  height: 38px !important;
+  align-self: center;
+  gap: 3px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--hw-trough);
+  box-shadow:
+    inset 0 3px 6px rgba(70, 44, 12, 0.5),
+    inset 0 1px 1px rgba(60, 38, 10, 0.5),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.22);
+}
+html:not(.dark) [data-testid='sortable-tab'] {
+  position: relative;
+  border: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0 10px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--hw-ink-3);
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition:
+    color 0.18s,
+    background 0.18s,
+    box-shadow 0.18s;
+}
+html:not(.dark) [data-testid='sortable-tab']:hover {
+  color: var(--hw-ink);
+  background: rgba(255, 255, 255, 0.35);
+}
+html:not(.dark) [data-testid='sortable-tab'][data-active='true'] {
+  color: var(--hw-ink);
+  text-shadow: none;
+  background:
+    radial-gradient(40px 14px at 28% 0%, #fff, rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset -1px -2px 2px rgba(150, 110, 60, 0.3),
+    0 0 0 1px rgba(52, 34, 10, 0.62),
+    0 1px 0 #cdbb93,
+    0 2px 0 #a89268,
+    1px 5px 3px -1px rgba(8, 4, 0, 0.5);
+}
+/* The old underline becomes a small lit marker on the open segment. */
+html:not(.dark) [data-testid='sortable-tab'] > span.absolute.bottom-0 {
+  left: 50%;
+  right: auto;
+  width: 20px;
+  height: 3px;
+  margin-left: -10px;
+  bottom: 1px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ffc08a, #f26a1b 50%, #c54709);
+  box-shadow:
+    0 0 8px 1px rgba(255, 120, 30, 0.7),
+    0 0 18px 3px rgba(255, 120, 30, 0.3);
+}
+/* New tab and Command: small physical keys. */
+html:not(.dark) [class*='@container/tab-strip'] button[class*='ml-2'][class*='h-7'],
+html:not(.dark) [class*='@container/tab-strip'] button[class*='my-auto'][class*='h-7'] {
+  height: 34px;
+  border-radius: 12px;
+  color: var(--hw-ink-2);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise-low);
+  transition:
+    transform 0.12s var(--hw-ease),
+    box-shadow 0.12s;
+}
+html:not(.dark) [class*='@container/tab-strip'] button[class*='ml-2'][class*='h-7'] {
+  width: 34px;
+  margin-left: 10px;
+}
+html:not(.dark) [class*='@container/tab-strip'] button[class*='h-7']:hover {
+  background: #fff;
+  color: var(--hw-ink);
+}
+html:not(.dark) [class*='@container/tab-strip'] button[class*='h-7']:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 3px 4px rgba(var(--hw-shade), 0.3), 0 0 0 1px rgba(60, 38, 10, 0.4);
+}
+
+/* ── Terminal: a recessed screen inside the slab ─────────────────────────────────────── */
+html:not(.dark) .pane {
+  box-shadow: inset 0 3px 8px rgba(var(--hw-shade), 0.14);
+}
+
+/* ── Right panel: a second slab, its tab row a segmented control ────────────────────── */
+html:not(.dark) .hawl-right-panel {
+  border-left: 0 !important;
+  margin: 0 8px 8px 4px;
+  border-radius: 24px;
+  background: var(--sidebar);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.3),
+    0 1px 0 #e6d9bb,
+    0 2px 0 #cdbb97,
+    1px 8px 8px -2px rgba(var(--hw-shade), 0.3),
+    8px 20px 28px -8px rgba(var(--hw-shade), 0.34);
+}
+html:not(.dark) .hawl-right-panel .border-b {
+  border-bottom: 0;
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.85);
+}
+html:not(.dark) .right-sidebar-activity-strip {
+  height: 52px;
+  min-height: 52px;
+  padding: 0 12px;
+  align-items: center;
+}
+html:not(.dark) .right-sidebar-activity-strip > div:first-child {
+  flex: 0 1 auto;
+  gap: 3px;
+  padding: 3px 4px;
+  border-radius: 14px;
+  background: var(--hw-trough);
+  box-shadow:
+    inset 0 3px 6px rgba(70, 44, 12, 0.5),
+    inset 0 1px 1px rgba(60, 38, 10, 0.5),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.22);
+}
+html:not(.dark) .right-sidebar-activity-strip button {
+  height: 34px;
+  width: 38px;
+  border-radius: 11px;
+  color: var(--hw-ink-3);
+  transition:
+    background 0.18s,
+    box-shadow 0.18s,
+    color 0.18s;
+}
+html:not(.dark) .right-sidebar-activity-strip button svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.9;
+}
+html:not(.dark) .right-sidebar-activity-strip button:hover {
+  color: var(--hw-ink);
+}
+html:not(.dark) .right-sidebar-activity-strip button.text-foreground {
+  color: var(--hw-orange-700);
+  background:
+    radial-gradient(40px 14px at 28% 0%, #fff, rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset -1px -2px 2px rgba(150, 110, 60, 0.3),
+    0 0 0 1px rgba(52, 34, 10, 0.62),
+    0 1px 0 #cdbb93,
+    0 2px 0 #a89268,
+    1px 5px 3px -1px rgba(8, 4, 0, 0.5);
+}
+html:not(.dark) .right-sidebar-activity-strip button.text-foreground::after,
+html:not(.dark) .right-sidebar-activity-strip button.text-foreground::before {
+  display: none;
+}
+/* Find files and the Names / Contents switch: a recessed well and a small trough. */
+html:not(.dark) .hawl-right-panel div[class*='bg-input'] {
+  border: 0;
+  border-radius: 12px;
+  background: var(--hw-well-fill);
+  box-shadow: var(--hw-well);
+  height: 30px;
+}
+html:not(.dark) .hawl-right-panel div[class*='bg-input']:focus-within {
+  box-shadow: var(--hw-well), var(--hw-focus);
+}
+html:not(.dark) .hawl-right-panel div[class*='bg-input'] input {
+  box-shadow: none;
+  background: transparent;
+}
+html:not(.dark) .hawl-right-panel div[class*='toggle-group'] {
+  height: 32px;
+  padding: 3px;
+  gap: 3px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--hw-trough);
+  box-shadow:
+    inset 0 3px 6px rgba(70, 44, 12, 0.45),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.22);
+}
+html:not(.dark) .hawl-right-panel div[class*='toggle-group'] button {
+  height: 100%;
+  border: 0;
+  border-radius: 9px;
+  color: var(--hw-ink-3);
+  font-weight: 600;
+}
+html:not(.dark) .hawl-right-panel div[class*='toggle-group'] button[data-state='on'],
+html:not(.dark) .hawl-right-panel div[class*='toggle-group'] button[aria-pressed='true'],
+html:not(.dark) .hawl-right-panel div[class*='toggle-group'] button[aria-checked='true'] {
+  color: var(--hw-ink);
+  background:
+    radial-gradient(30px 10px at 28% 0%, #fff, rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(52, 34, 10, 0.55),
+    0 1px 0 #cdbb93,
+    1px 3px 2px -1px rgba(8, 4, 0, 0.45);
+}
+
+/* ── Status bar: quiet glass chips on the ground ─────────────────────────────────────── */
+html:not(.dark) .hawl-statusbar {
+  background: transparent;
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(120, 86, 40, 0.14),
+    inset 0 3px 0 rgba(255, 255, 255, 0.7);
+  height: 30px;
+  min-height: 30px;
+  color: var(--hw-ink-3);
+  font-weight: 500;
+}
+html:not(.dark) .hawl-statusbar button {
+  height: 22px;
+  border-radius: 8px;
+  color: var(--hw-ink-3);
+  transition:
+    background 0.16s,
+    box-shadow 0.16s;
+}
+html:not(.dark) .hawl-statusbar button:hover {
+  background: linear-gradient(180deg, #ffffff, #f5ecda);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.28),
+    0 1px 0 #cdbb97,
+    0 2px 3px rgba(var(--hw-shade), 0.22);
+}
+html:not(.dark) .hawl-statusbar span,
+html:not(.dark) .hawl-statusbar svg {
+  color: inherit;
+}
+html:not(.dark) .hawl-statusbar svg[class*='lucide-coffee'],
+html:not(.dark) .hawl-statusbar svg[class*='lucide-plug'],
+html:not(.dark) .hawl-statusbar svg[class*='lucide-terminal'],
+html:not(.dark) .hawl-statusbar svg[class*='lucide-memory-stick'] {
+  color: var(--hw-ink-3);
+}

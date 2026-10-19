@@ -79,9 +79,9 @@ export function useAppChromeLayout() {
   const workspaceChromeActive =
     activeView === 'terminal' && activeWorktreeId !== null && !creationLayoutActive
   const hasTabBar = tabCount >= 2
-  // Activity/Space are full-page navigation surfaces (like Settings), so the worktree sidebar is hidden there.
-  const showSidebar =
-    activeView !== 'settings' && activeView !== 'activity' && activeView !== 'space'
+  // Settings/Space are full-page navigation surfaces, so the worktree sidebar is hidden there.
+  // Hawl fork: Activity keeps the sidebar, because the Hawl navigation (Needs you, Work, Activity, ...) lives in it.
+  const showSidebar = activeView !== 'settings' && activeView !== 'space'
   // Tasks/Landing show the full titlebar only when the sidebar is collapsed; open, they mirror workspace view (creation suppresses it).
   const stackedSidebarOpen =
     !workspaceChromeActive && !creationLayoutActive && showSidebar && sidebarOpen

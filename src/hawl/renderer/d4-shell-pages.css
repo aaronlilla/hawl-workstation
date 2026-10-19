@@ -1,0 +1,111 @@
+/* D4-shell, pages: the sidebar footer group and project tree, the setup note, the Settings frame, and the
+   chrome of the Tasks and Automations pages. Controls inside those pages belong to the controls piece (D2)
+   and their surfaces to D3; this file only sets the frame, headings, rows and lights around them.
+   Light theme only (html:not(.dark)). */
+
+/* ── Sidebar footer (H01 bottom group): Settings and Help as labelled rows ─────────────── */
+html:not(.dark) .hawl-sidebar-footer > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 2px;
+  padding: 8px 6px 8px;
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(120, 86, 40, 0.14),
+    inset 0 3px 0 rgba(255, 255, 255, 0.7);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:last-child {
+  justify-content: flex-end;
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label] {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  gap: 13px;
+  justify-content: flex-start;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--hw-ink-2);
+  font: 600 14px/1 var(--app-font-family);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    background 0.18s,
+    box-shadow 0.18s;
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label] svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.8;
+  color: var(--hw-ink-2);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label]::after {
+  content: attr(aria-label);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label]:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 236, 0.62));
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(80, 56, 24, 0.22),
+    0 3px 0 rgba(190, 166, 122, 0.5),
+    0 8px 14px -4px rgba(var(--hw-shade), 0.32);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label]:hover svg {
+  color: var(--hw-orange-600);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child > div {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+}
+/* The small utility icons (locate, workspace board) sit as quiet keys. */
+html:not(.dark) .hawl-sidebar-footer > div > div:last-child button {
+  border-radius: 10px;
+  color: var(--hw-ink-3);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:last-child button:hover {
+  background: linear-gradient(180deg, #ffffff, #f5ecda);
+  box-shadow: var(--hw-raise-low);
+}
+
+/* ── Projects tree: a quiet section label, rows as text, the open workspace a raised slab ── */
+html:not(.dark) .hawl-sidebar [data-sidebar-section-title] {
+  font: 700 11.5px/1 var(--app-font-family);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--hw-ink-4);
+  text-shadow: 0 1px 0 #fff;
+}
+html:not(.dark) .hawl-sidebar [class*='worktree-sidebar-foreground'] {
+  color: var(--hw-ink-2);
+}
+html:not(.dark) .hawl-sidebar [data-worktree-card],
+html:not(.dark) .hawl-sidebar [role='option'] {
+  border-radius: 15px;
+}
+
+/* ── Setup note (stock "Add a setup script" card) as a floating sheet of glass ─────────── */
+html:not(.dark) [data-setup-script-prompt-layer] > div {
+  border: 0;
+  border-radius: 24px;
+  color: var(--hw-ink);
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.8), rgba(255, 246, 228, 0.58));
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow: var(--hw-glass-rim), var(--hw-glass-drop);
+}
+
+/* The note is a one-line ask plus its button; the longer text lives in the Configure page. */
+html:not(.dark) [data-setup-script-prompt-layer] > div {
+  padding: 12px 14px 12px;
+}
+html:not(.dark) [data-setup-script-prompt-layer] > div > p.mt-0\.5,
+html:not(.dark) [data-setup-script-prompt-layer] > div > p.mt-1 {
+  display: none;
+}

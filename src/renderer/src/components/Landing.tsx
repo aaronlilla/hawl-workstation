@@ -254,7 +254,7 @@ export default function Landing(): React.JSX.Element {
 
   // Hawl fork: the empty home is HawlLanding (src/hawl/renderer/shell).
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-background">
+    <div className="hawl-home-wrap absolute inset-0 bg-background">
       <HawlLanding
         hasProjects={hasProjects}
         createTargetLabel={createTargetLabel}

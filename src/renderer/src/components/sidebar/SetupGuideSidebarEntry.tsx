@@ -1,5 +1,5 @@
 import React from 'react'
-import { EyeOff } from 'lucide-react'
+import { EyeOff, Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import {
@@ -13,7 +13,6 @@ import {
   type FeatureWallSetupStepId
 } from '../../../../shared/feature-wall-setup-steps'
 import type { FeatureWallSetupProgress } from '../feature-wall/feature-wall-setup-progress'
-import { SetupGuideProgressRing } from '../setup-guide/SetupGuideProgressRing'
 import { useSetupGuideProgress } from '../setup-guide/use-setup-guide-progress'
 import { translate } from '@/i18n/i18n'
 
@@ -95,18 +94,15 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
               : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
           )}
         >
-          <SetupGuideProgressRing
-            done={renderedProgress.coreDoneCount}
-            total={renderedProgress.coreTotal}
-            sizeClassName="size-4"
-          />
+          {/* Hawl fork: H01 "Get set up  2 of 4" row (flag, label, count) instead of the progress ring. */}
+          <Flag className="hawl-setup-flag size-4 shrink-0" aria-hidden />
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate">
-              {translate(
-                'auto.components.sidebar.SetupGuideSidebarEntry.88d402b71d',
-                'Onboarding checklist'
-              )}
+              {translate('hawl.sidebar.getSetUp', 'Get set up')}
             </span>
+          </span>
+          <span className="hawl-setup-count shrink-0">
+            {renderedProgress.coreDoneCount} of {renderedProgress.coreTotal}
           </span>
         </button>
       </ContextMenuTrigger>
