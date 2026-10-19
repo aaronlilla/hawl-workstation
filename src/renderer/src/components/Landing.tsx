@@ -12,7 +12,8 @@ import {
 import { ShortcutKeyCombo } from './ShortcutKeyCombo'
 import { useShortcutKeyDetails, type ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { useMountedRef } from '@/hooks/useMountedRef'
-import logo from '../../../../resources/logo.svg'
+import hawlLogoLight from '../../../hawl/renderer/assets/hawl-horizontal-color-light.svg'
+import hawlLogoDark from '../../../hawl/renderer/assets/hawl-horizontal-color-dark.svg'
 import { HAWL_STAR_NAG_ENABLED } from '../../../hawl/shared/brand'
 import { translate } from '@/i18n/i18n'
 import { hasGitHubBackedProject, type PreflightIssue } from './landing-preflight-issues'
@@ -257,19 +258,9 @@ export default function Landing(): React.JSX.Element {
     <div className="absolute inset-0 flex items-center justify-center bg-background">
       <div className="w-full max-w-lg px-6">
         <div className="flex flex-col items-center gap-4 py-8">
-          <div
-            className="flex items-center justify-center size-20 rounded-2xl border border-border/80 shadow-lg shadow-black/40"
-            style={{ backgroundColor: '#12181e' }}
-          >
-            <img
-              src={logo}
-              alt={translate('auto.components.Landing.520304a067', 'Orca logo')}
-              className="size-12"
-            />
-          </div>
-          <h1 className="text-4xl font-bold text-foreground tracking-tight">
-            {translate('auto.components.Landing.6ca6ff404e', 'ORCA')}
-          </h1>
+          {/* Hawl fork: the wordmark sits straight on the surface, never on a plate (DIRECTION.md) */}
+          <img src={hawlLogoLight} alt="hawl" className="hawl-logo hawl-logo-light" draggable={false} />
+          <img src={hawlLogoDark} alt="" aria-hidden className="hawl-logo hawl-logo-dark" draggable={false} />
 
           {preflightIssues.length > 0 && <PreflightBanner issues={preflightIssues} repos={repos} />}
 
