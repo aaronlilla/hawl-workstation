@@ -89,7 +89,9 @@ describe('S15/S21 a relay that is down never leaves a job half moved', () => {
       r.adv(MINUTE_MS)
     }
     expect(r.foreman.outbox()).toEqual([])
-    expect(r.foreman.deadEffects()).toMatchObject([{ kind: 'lifecycle', reason: 'too old to deliver' }])
+    expect(r.foreman.deadEffects()).toMatchObject([
+      { kind: 'lifecycle', reason: 'too old to deliver' }
+    ])
   })
 
   it('S11: a menu that cannot be sent keeps its revision, is sent on retry, and a newer menu replaces it', () => {
@@ -110,6 +112,19 @@ describe('S15/S21 a relay that is down never leaves a job half moved', () => {
     }
     expect(r.menus.map((m) => m.revision)).toEqual([1, 3])
     expect(r.menus.at(-1)?.menu.capabilities.map((c) => c.id)).toEqual(['review-pr'])
+  })
+
+  it('S18: the owner notice is not held back by a relay that is down', () => {
+    const r = ready()
+    r.faults.sendLifecycle = 1000
+    r.send('j1', 'audit')
+    // The accept is stuck behind the relay; the "needs your OK" notice still reached the owner.
+    expect(r.notices).toEqual([{ kind: 'job_needs_approval', taskId: 'j1' }])
+    r.foreman.ownerDecision('j1', 'accept', 'owner')
+    expect(r.events('accept')).toHaveLength(0)
+    expect(r.foreman.outbox().map((i) => i.effect.kind)).toEqual(
+      ['lifecycle', 'lifecycle'].slice(0, 1)
+    )
   })
 
   it('S48: a heartbeat that cannot be sent is not queued; the next call sends a fresh one', () => {
@@ -258,7 +273,10 @@ describe('S16/S17 an agent that goes down is noticed', () => {
     expect(r.foreman.jobView('j1')).toMatchObject({ exec: 'queued', queuedNotRunning: true })
     r.adv(MINUTE_MS)
     r.foreman.agentUp('a1')
-    expect(r.foreman.jobView('j1')).toMatchObject({ exec: 'offered', claim: { agentId: 'a1', epoch: 2 } })
+    expect(r.foreman.jobView('j1')).toMatchObject({
+      exec: 'offered',
+      claim: { agentId: 'a1', epoch: 2 }
+    })
   })
 
   it('S17: a running agent that goes down loses the claim after the 2 minute grace and the job moves on', () => {
@@ -309,8 +327,16 @@ describe('S17 a damaged saved file leaves the foreman as it was', () => {
   it('S17: each way a file can be wrong is refused before anything changes', () => {
     const cases: [string, (s: Record<string, unknown>) => void][] = [
       ['not an object', () => undefined],
-      ['a job without an id', (s) => (s.jobs as Record<string, unknown>[])[0] && delete (s.jobs as Record<string, unknown>[])[0].taskId],
-      ['a job in an unknown state', (s) => ((s.jobs as Record<string, unknown>[])[0].state = 'flying')],
+      [
+        'a job without an id',
+        (s) =>
+          (s.jobs as Record<string, unknown>[])[0] &&
+          delete (s.jobs as Record<string, unknown>[])[0].taskId
+      ],
+      [
+        'a job in an unknown state',
+        (s) => ((s.jobs as Record<string, unknown>[])[0].state = 'flying')
+      ],
       ['two jobs with one id', (s) => (s.jobs as unknown[]).push((s.jobs as unknown[])[0])],
       ['seq not a number', (s) => (s.seq = 'x')],
       ['a task without a key', (s) => (s.tasks as unknown[]).push({ kind: 'delegate' })],
@@ -325,14 +351,26 @@ describe('S17 a damaged saved file leaves the foreman as it was', () => {
       const snap = good()
       damage(snap)
       const input = name === 'not an object' ? 'text' : snap
-      expect(code(() => b.foreman.restore(input)), name).toBe('bad_snapshot')
+      expect(
+        code(() => b.foreman.restore(input)),
+        name
+      ).toBe('bad_snapshot')
       expect(b.foreman.jobIds(), name).toEqual(['j9'])
     }
   })
 
   it('S17: a file from before versions existed is upgraded; the same file marked version 1 loads too', () => {
     const snap = good()
-    for (const k of ['version', 'agents', 'tombs', 'outbox', 'outSeq', 'dead', 'settings', 'savedAt']) {
+    for (const k of [
+      'version',
+      'agents',
+      'tombs',
+      'outbox',
+      'outSeq',
+      'dead',
+      'settings',
+      'savedAt'
+    ]) {
       delete snap[k]
     }
     for (const v of [undefined, 1]) {
@@ -356,7 +394,12 @@ describe('S17 a damaged saved file leaves the foreman as it was', () => {
     b.foreman.restore(JSON.parse(JSON.stringify(snap)))
     const again = b.foreman.snapshot()
     // Agents come back offline and the outbox waits for a retry time of "now"; everything else is equal.
-    expect({ ...again, savedAt: 0, agents: [], outbox: [] }).toEqual({ ...snap, savedAt: 0, agents: [], outbox: [] })
+    expect({ ...again, savedAt: 0, agents: [], outbox: [] }).toEqual({
+      ...snap,
+      savedAt: 0,
+      agents: [],
+      outbox: []
+    })
   })
 })
 
@@ -390,7 +433,10 @@ describe('S18 the hold and release times can be changed from the console', () =>
       { releaseMs: 31 * 24 * HOUR_MS },
       { holdMs: 1.5 * MINUTE_MS + 0.5 }
     ]) {
-      expect(code(() => r.foreman.setTimes(t)), JSON.stringify(t)).toBe('bad_setting')
+      expect(
+        code(() => r.foreman.setTimes(t)),
+        JSON.stringify(t)
+      ).toBe('bad_setting')
     }
     expect(r.foreman.settings()).toMatchObject({ holdMs: 4 * HOUR_MS, releaseMs: 24 * HOUR_MS })
   })
@@ -446,12 +492,51 @@ describe('S21 an async transport', () => {
     }
   }
 
+  it('S21: an effect refused for good by an async relay is dropped and the one behind it goes at once', async () => {
+    const a = asyncRig()
+    a.f.setCapabilities([{ id: 'fix-bug', description: 'Fix' }])
+    a.f.publishMenu()
+    a.f.intake({
+      offer: {
+        yard: 'acme-dev',
+        task_id: 'j1',
+        event: 'offer',
+        at: new Date(a.now()).toISOString(),
+        capability: 'fix-bug'
+      },
+      requester: 'site'
+    })
+    expect(a.pending.map((p) => p.name)).toEqual(['menu'])
+    await a.settle(0, Object.assign(new Error('422'), { permanent: true }))
+    // No tick, no new call: the refusal itself moves the queue on.
+    expect(a.pending.map((p) => p.name)).toEqual(['menu', 'accept'])
+    expect(a.f.deadEffects()).toMatchObject([{ kind: 'menu' }])
+    await a.settle(1, 'ok')
+    expect(a.f.outbox()).toEqual([])
+  })
+
+  it('S21: every failed delivery is reported to the error hook with where it happened', () => {
+    const r = ready()
+    const seen: string[] = []
+    r.foreman.attach({ onError: (_e, where) => void seen.push(where) })
+    r.faults.sendLifecycle = 2
+    r.send('j1')
+    r.adv(1000)
+    expect(seen).toEqual(['deliver lifecycle', 'deliver lifecycle'])
+  })
+
   it('S21: the second effect waits until the first is confirmed; a rejection is retried; order holds', async () => {
     const a = asyncRig()
     a.f.setCapabilities([{ id: 'fix-bug', description: 'Fix' }])
     a.f.publishMenu()
     a.f.intake({
-      offer: { yard: 'acme-dev', task_id: 'j1', event: 'offer', at: new Date(a.now()).toISOString(), capability: 'fix-bug' },
+      offer: {
+        yard: 'acme-dev',
+        task_id: 'j1',
+        event: 'offer',
+        at: new Date(a.now()).toISOString(),
+        capability: 'fix-bug'
+      },
       requester: 'site'
     })
     // Only the menu is in flight; the accept waits behind it.

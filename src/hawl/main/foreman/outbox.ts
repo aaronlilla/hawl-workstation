@@ -43,7 +43,8 @@ export class Outbox {
   seq = 0
   /** Highest item id that is known to be in the saved snapshot. */
   savedUpTo = 0
-  inflightId: number | null = null
+  /** Ids being delivered now (one per lane). */
+  readonly inflight = new Set<number>()
   #flushing = false
   readonly #env: OutboxEnv
 
@@ -57,7 +58,7 @@ export class Outbox {
       // A newer menu replaces an older one that has not gone out yet.
       for (let i = this.items.length - 1; i >= 0; i--) {
         const it = this.items[i]
-        if (it.effect.kind === 'menu' && it.id !== this.inflightId) {
+        if (it.effect.kind === 'menu' && !this.inflight.has(it.id)) {
           this.items.splice(i, 1)
         }
       }
@@ -68,8 +69,22 @@ export class Outbox {
 
   /** The earliest time the outbox wants another go, or Infinity. */
   dueAt(): number {
-    const head = this.items[0]
-    return head && this.inflightId !== head.id ? head.retryAt : Infinity
+    return Math.min(
+      Infinity,
+      ...this.#heads()
+        .filter((h) => !this.inflight.has(h.id))
+        .map((h) => h.retryAt)
+    )
+  }
+
+  /**
+   * Two lanes, each in order: what goes to the relay, and what stays on this machine (owner notices).
+   * A relay that is down must not hold back the owner's own notification.
+   */
+  #heads(): OutboxItem[] {
+    const local = this.items.find((i) => i.effect.kind === 'owner')
+    const relay = this.items.find((i) => i.effect.kind !== 'owner')
+    return [local, relay].filter((x): x is OutboxItem => x !== undefined)
   }
 
   /** Put back what a snapshot held. Everything restored is already on disk; the first try is at once. */
@@ -81,7 +96,7 @@ export class Outbox {
     }
     this.seq = Math.max(seq, ...items.map((it) => it.id), 0)
     this.savedUpTo = this.seq
-    this.inflightId = null
+    this.inflight.clear()
     this.dead.length = 0
     this.dead.push(...dead)
   }
@@ -128,57 +143,62 @@ export class Outbox {
     }
     this.#flushing = true
     try {
-      for (;;) {
-        const head = this.items[0]
-        if (!head || this.inflightId === head.id) {
-          return
-        }
-        const now = this.#env.now()
-        if (head.retryAt > now) {
-          return
-        }
-        if (now - head.at > this.#env.maxAgeMs()) {
-          this.#drop(head, 'too old to deliver')
-          continue
-        }
-        if (head.id > this.savedUpTo) {
-          try {
-            this.#env.hooks().persist?.()
-          } catch (err) {
-            // Never send what is not written down. Try again shortly.
-            this.#env.hooks().onError?.(err, 'save before send')
-            head.retryAt = now + 1000
-            return
-          }
-          this.savedUpTo = this.seq
-        }
-        let r: void | Promise<void>
-        try {
-          r = this.#env.deliver(head.effect)
-        } catch (err) {
-          const before = this.items.length
-          this.#fail(head, err)
-          if (this.items.length < before) {
+      for (let again = true; again;) {
+        again = false
+        for (const head of this.#heads()) {
+          if (this.inflight.has(head.id) || !this.#tryOne(head)) {
             continue
           }
-          return
+          again = true
         }
-        if (isThenable(r)) {
-          this.#await(head, r)
-          return
-        }
-        this.items.shift()
       }
     } finally {
       this.#flushing = false
     }
   }
 
+  /** Try the head of a lane once. True when it left the queue (so the lane has a new head to try). */
+  #tryOne(head: OutboxItem): boolean {
+    const now = this.#env.now()
+    if (head.retryAt > now) {
+      return false
+    }
+    if (now - head.at > this.#env.maxAgeMs()) {
+      this.#drop(head, 'too old to deliver')
+      return true
+    }
+    if (head.id > this.savedUpTo) {
+      try {
+        this.#env.hooks().persist?.()
+      } catch (err) {
+        // Never send what is not written down. Try again shortly.
+        this.#env.hooks().onError?.(err, 'save before send')
+        head.retryAt = now + 1000
+        return false
+      }
+      this.savedUpTo = this.seq
+    }
+    let r: void | Promise<void>
+    try {
+      r = this.#env.deliver(head.effect)
+    } catch (err) {
+      const before = this.items.length
+      this.#fail(head, err)
+      return this.items.length < before
+    }
+    if (isThenable(r)) {
+      this.#await(head, r)
+      return false
+    }
+    this.items.splice(this.items.indexOf(head), 1)
+    return true
+  }
+
   #await(head: OutboxItem, r: Promise<void>): void {
-    this.inflightId = head.id
+    this.inflight.add(head.id)
     r.then(
       () => {
-        this.inflightId = null
+        this.inflight.delete(head.id)
         const at = this.items.findIndex((x) => x.id === head.id)
         if (at !== -1) {
           this.items.splice(at, 1)
@@ -187,7 +207,7 @@ export class Outbox {
         this.#env.hooks().onChange?.()
       },
       (err: unknown) => {
-        this.inflightId = null
+        this.inflight.delete(head.id)
         this.#fail(head, err)
         // A refused-for-good effect is gone: whatever waited behind it goes now.
         this.flush()

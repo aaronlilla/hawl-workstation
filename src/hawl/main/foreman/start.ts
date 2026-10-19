@@ -167,6 +167,8 @@ export async function startHawlForeman(o: StartOptions): Promise<ForemanHandle> 
     )
   }
   if (o.dev) {
+    // Only with HAWL_FOREMAN_DEV=1: lets a test script play an agent through the door.
+    console.info(`[hawl-foreman] dev door ${bridgeUrl} ${bridge.token}`)
     handle(DEV_OFFER_CHANNEL, (taskId, capability, requester) => {
       fromDispatcher(
         {
