@@ -1,6 +1,6 @@
 {
   "name": "orca",
-  "version": "1.4.214",
+  "version": "0.1.0",
   "description": "Hawl Workstation: the agentic IDE for Hawl. Built on Orca (MIT).",
   "homepage": "https://github.com/aaronlilla/hawl-workstation",
   "author": "Aaron Lilla",

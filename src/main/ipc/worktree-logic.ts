@@ -179,7 +179,7 @@ function workspaceRootForMirrorHome(
   // terminals stay on the WSL filesystem; repo-relative roots can resolve
   // directly against the WSL repo path.
   return wslHome
-    ? win32.join(wslHome, 'orca', 'workspaces')
+    ? win32.join(wslHome, 'hawl', 'workspaces')
     : resolveWorkspaceDirForRepo(repoPath, workspaceDir)
 }
 

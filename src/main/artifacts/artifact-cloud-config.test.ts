@@ -5,8 +5,8 @@ import {
 } from './artifact-cloud-config'
 
 describe('resolveArtifactCloudApiUrl', () => {
-  it('uses the first-party production origin by default', () => {
-    expect(resolveArtifactCloudApiUrl(undefined, {}, true)).toBe('https://share.onorca.dev')
+  it('has no default origin (hosted sharing is not part of Hawl Workstation)', () => {
+    expect(() => resolveArtifactCloudApiUrl(undefined, {}, true)).toThrow(/not available/)
   })
 
   it('allows loopback HTTP only in development', () => {

@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import { HAWL_DEV_USER_DATA_DIR, HAWL_USER_DATA_DIR } from '../../hawl/shared/brand'
 import { quitProcess } from './process-quit-request'
 import { mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -213,6 +214,8 @@ export function configureDevUserDataPath(isDev: boolean): void {
   }
 
   if (!isDev) {
+    // Hawl: a packaged Hawl Workstation keeps its own profile folder, never stock Orca's %APPDATA%\orca.
+    app.setPath('userData', join(app.getPath('appData'), HAWL_USER_DATA_DIR))
     return
   }
   const overrideUserDataPath = process.env.ORCA_DEV_USER_DATA_PATH
@@ -222,7 +225,7 @@ export function configureDevUserDataPath(isDev: boolean): void {
     return
   }
   // Why: without a dev-only path, pnpm dev overwrites the packaged app's runtime pointer under userData and breaks the orca CLI.
-  app.setPath('userData', join(app.getPath('appData'), 'orca-dev'))
+  app.setPath('userData', join(app.getPath('appData'), HAWL_DEV_USER_DATA_DIR))
 }
 
 function areSameE2EHomePath(left: string, right: string): boolean {
