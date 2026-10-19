@@ -1,0 +1,9 @@
+<!doctype html><meta charset=utf-8><title>Hawl Workstation progress</title><meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{color-scheme:light dark;--bg:#f4f1ea;--fg:#1b2433;--card:#fff;--mut:#6b7280}@media(prefers-color-scheme:dark){:root{--bg:#10151f;--fg:#e8ecf3;--card:#18202d;--mut:#8b95a7}}
+body{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:15px system-ui}h1{font-size:20px;margin:0 0 4px}.m{color:var(--mut);font-size:13px}
+.b{height:8px;background:#0002;border-radius:4px;margin:12px 0;overflow:hidden}.b i{display:block;height:100%;background:#2f7d5b}
+.p{background:var(--card);border-radius:10px;padding:10px 12px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:2px 12px}.s{font-weight:600;font-size:12px;text-transform:uppercase}
+.passed{color:#2f7d5b}.building,.looping{color:#b7791f}.critic{color:#6b46c1}.blocked{color:#c53030}.todo{color:var(--mut)}</style>
+<h1 id=g></h1><div class=m id=u></div><div class=b><i id=bar></i></div><div id=l></div>
+<script>async function t(){try{const s=await(await fetch('status.json')).json();g.textContent=s.goal;u.textContent='Updated '+s.updated;const n=s.pieces.filter(p=>p.state=='passed').length;bar.style.width=100*n/s.pieces.length+'%';
+l.innerHTML=s.pieces.map(p=>`<div class=p><b>${p.id} ${p.title}</b><span class="s ${p.state}">${p.state}${p.round?' r'+p.round:''}</span><span class=m>${p.note||''}</span><span class=m>${p.verdict||''} ${p.at||''}</span></div>`).join('')+`<div class=m>${n}/${s.pieces.length} pieces passed blind critic</div>`}catch{}}t();setInterval(t,3000)</script>
