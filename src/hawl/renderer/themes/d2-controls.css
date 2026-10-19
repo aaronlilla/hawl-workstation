@@ -130,7 +130,7 @@ html.dark {
 
 /* ── primary: soft-touch orange with an inner light ── */
 :is(:is([data-slot='button'], button[data-variant][data-size]):not([data-slot='toggle-group-item']):not([role='combobox'])[data-variant='default'], button:not([data-slot])[class~='bg-primary']) {
-  --core: 0.9;
+  --core: 1;
   --wall-p:
     calc(0.4px * var(--wk)) calc(1px * var(--wk)) 0 1px #c5530f,
     calc(0.8px * var(--wk)) calc(2px * var(--wk)) 0 1px #a9440b,
