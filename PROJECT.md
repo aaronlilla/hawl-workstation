@@ -16,3 +16,6 @@ Not yet built. Orca's own steps are in README.md and .github/CONTRIBUTING.md; co
 ## Status 2026-10-19
 - Local clone made at `C:\dev\hawl-workstation` from upstream main 20fc7af55. Nothing changed yet. No GitHub fork or repo created.
 - Open: product and repo name (placeholder "Hawl Workstation"); retire or keep the Tauri command center; mobile distribution; relay changes (yards read route, push registration).
+
+## Decision 2026-10-19 (Aaron): foreman is a registered agent
+The yard owner registers one of their own agents as the foreman (a role on an agent, not a separate service). The Workstation alerts when a yard has no foreman, or its foreman is offline, and guides setup: pick an agent, confirm its menu and hold times, test with the team check (S43), and `hawl doctor` (S44) names "no foreman" or "foreman offline". Recommended host: an agent on an always-on machine, which narrows the S15 gap; the relay answering service still covers closed-app time. Piece P5-foreman-register; builds on P3-foreman.
