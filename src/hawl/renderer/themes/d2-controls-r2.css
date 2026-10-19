@@ -101,7 +101,7 @@ button:not([data-slot])[class~='bg-destructive'] {
 }
 
 /* secondary and outline text buttons become coloured glass: sky above, lawn below, a blue rim (F02 secondary) */
-:is([data-slot='button']:is([data-variant='secondary'], [data-variant='outline']):not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']), button:not([data-slot])[class~='border']:not([class~='bg-primary']):not([class~='bg-destructive']):not([class~='border-0']):not([role='combobox']):not([role='radio'])) {
+[data-slot='button'][data-variant='secondary']:not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']) {
   color: var(--d2-glass-ink);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
   background-color: var(--d2-sky-a);
@@ -124,7 +124,7 @@ button:not([data-slot])[class~='bg-destructive'] {
     1px 3px 2px 0 rgba(var(--d2-shade), 0.4),
     3px 8px 10px -3px rgba(40, 110, 170, 0.4);
 }
-:is([data-slot='button']:is([data-variant='secondary'], [data-variant='outline']):not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']), button:not([data-slot])[class~='border']:not([class~='bg-primary']):not([class~='bg-destructive']):not([class~='border-0']):not([role='combobox']):not([role='radio'])):hover:not(:disabled) {
+[data-slot='button'][data-variant='secondary']:not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']):hover:not(:disabled) {
   --core: 1;
   background-color: var(--d2-sky-a);
   box-shadow:
@@ -139,7 +139,7 @@ button:not([data-slot])[class~='bg-destructive'] {
     3px 10px 12px -3px rgba(40, 110, 170, 0.45),
     calc(var(--dx) * 8px) 4px 22px 0 rgba(120, 190, 240, 0.5);
 }
-:is([data-slot='button']:is([data-variant='secondary'], [data-variant='outline']):not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']), button:not([data-slot])[class~='border']:not([class~='bg-primary']):not([class~='bg-destructive']):not([class~='border-0']):not([role='combobox']):not([role='radio'])):active:not(:disabled) {
+[data-slot='button'][data-variant='secondary']:not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']):active:not(:disabled) {
   filter: brightness(0.96);
   box-shadow:
     inset 0 3px 6px rgba(30, 90, 140, 0.4),

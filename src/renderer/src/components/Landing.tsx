@@ -282,9 +282,13 @@ export default function Landing(): React.JSX.Element {
               : translate('auto.components.Landing.cd21242762', 'Add a project to get started.')}
           </p>
 
-          <div className="flex items-center justify-center gap-2.5 flex-wrap">
+          <div className="hawl-landing-actions flex items-center justify-center gap-2.5 flex-wrap">
             <button
-              className="inline-flex items-center gap-1.5 bg-secondary/70 border border-border/80 text-foreground font-medium text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
+              className={
+                hasProjects
+                  ? 'inline-flex items-center gap-1.5 bg-secondary/70 border border-border/80 text-foreground font-medium text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors'
+                  : 'inline-flex items-center gap-1.5 bg-primary text-primary-foreground font-medium text-sm px-4 py-2 rounded-md cursor-pointer transition-colors'
+              }
               onClick={() => openModal('add-repo')}
             >
               <FolderPlus className="size-3.5" />

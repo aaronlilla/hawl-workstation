@@ -26,7 +26,7 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 | File | Hook |
 |---|---|
 | `src/renderer/src/assets/main.css` | one `@import` of `src/hawl/renderer/hawl-theme.css` (overrides use `html:root` / `html.dark`) |
-| `src/hawl/renderer/hawl-theme.css` | two `@import`s, `./themes/d2-controls.css` and `./themes/d2-controls-r2.css` (round 2: sizes, glass secondary, menus, avatars)` (piece D2-controls: lit buttons, switch, checkbox, slider, fields, chips, status lights, progress, tooltip, segmented; CSS only, reaches Orca's `src/renderer/src/components/ui/*` through their `data-slot` / `data-variant` attributes, no component edited) |
+| `src/hawl/renderer/hawl-theme.css` | two `@import`s, `./themes/d2-controls.css`, `./themes/d2-controls-r2.css` and `./themes/d2-controls-r3.css` (round 2: sizes, glass secondary, menus, avatars)` (piece D2-controls: lit buttons, switch, checkbox, slider, fields, chips, status lights, progress, tooltip, segmented; CSS only, reaches Orca's `src/renderer/src/components/ui/*` through their `data-slot` / `data-variant` attributes, no component edited) |
 | `src/renderer/src/main.tsx` | one `import '../../hawl/renderer/themes/d2-controls'` (D2-controls: the pointer-light follower, one delegated listener) |
 | `src/shared/terminal-themes/index.ts` | adds `HAWL_TERMINAL_THEMES` to the catalog |
 | `src/shared/default-global-settings.ts`, `src/shared/terminal-theme-selection.ts` | default terminal themes `Hawl Ember` / `Hawl Daylight`, divider colours |
@@ -67,3 +67,4 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 - Orca-named internals: CLI `orca`, `orca-dev`, Windows NSIS script, `%LOCALAPPDATA%\Orca` paths, macOS bundle ids in main-process helpers.
 - Feature-wall onboarding GIFs show Orca's UI.
 - Existing unit tests that assert the old defaults (terminal theme names, bundled plugin ids, feed URLs) are not updated yet.
+| `src/renderer/src/components/Landing.tsx` | D2-controls r3: wrapper class `hawl-landing-actions` on the home buttons, and "Add project" is the orange `bg-primary` key while no project exists (CSS cannot change which button is primary) |

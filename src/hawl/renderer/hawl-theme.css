@@ -6,6 +6,7 @@
 /* D2-controls: lit buttons, switches, fields, chips (Claude Design F01-F04, F08) */
 @import './themes/d2-controls.css';
 @import './themes/d2-controls-r2.css';
+@import './themes/d2-controls-r3.css';
 
 @font-face {
   font-family: 'Hawl Inter';
