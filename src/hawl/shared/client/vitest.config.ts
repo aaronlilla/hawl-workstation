@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/hawl/shared/client/**/*.test.ts'],
-    testTimeout: 15_000
+    testTimeout: 15_000,
+    // The smoke files sign in with the same local owner; two at once overwrite each other's emailed code.
+    fileParallelism: false
   }
 })

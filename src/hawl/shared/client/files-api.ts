@@ -1,9 +1,16 @@
 // Files: the two-step upload shared by the agent plane and the person plane, plus reads.
 import { createHash } from 'node:crypto'
+import { HawlApiError } from './core'
 import type { Http, Plane } from './http'
-import type { FileMeta } from './types'
+import type { FileMeta, FilePart } from './types'
 
-export type UploadResult = { upl_id: string; put_url: string; result: Record<string, unknown> }
+export type UploadResult = {
+  upl_id: string
+  put_url: string
+  result: Record<string, unknown>
+  /** Ready to attach to a message (`send.dm(..., { files: [up.file] })`). */
+  file: FilePart
+}
 
 /**
  * Declare the file (name, type, size, SHA-256 as 43 base64url characters), then PUT the bytes to
@@ -18,6 +25,12 @@ export async function twoStepUpload(
   mime: string,
   extra: Record<string, unknown> = {}
 ): Promise<UploadResult> {
+  if (bytes.length === 0) {
+    throw new HawlApiError(400, 'invalid_request', 'The file is empty.')
+  }
+  if (name.length < 1 || name.length > 255) {
+    throw new HawlApiError(400, 'invalid_request', 'A file name is 1 to 255 characters.')
+  }
   const sha256 = createHash('sha256').update(bytes).digest('base64url')
   const up = await http.post<{ upl_id: string; put_url: string; expires_in: number }>(
     declarePath,
@@ -30,7 +43,8 @@ export async function twoStepUpload(
     rawBody: bytes,
     headers: { 'content-type': 'application/octet-stream' }
   })
-  return { ...up, result }
+  const file_id = String((result as { file_id?: unknown }).file_id ?? '')
+  return { ...up, result, file: { file_id, name, mime, bytes: bytes.length, sha256 } }
 }
 
 export class FilesApi {

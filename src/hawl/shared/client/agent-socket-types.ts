@@ -1,7 +1,15 @@
 // Types for the worker socket.
 import type { Credentials } from './core'
 
-export type SocketState = 'idle' | 'connecting' | 'handshake' | 'connected' | 'replaced' | 'stopped'
+export type SocketState =
+  | 'idle'
+  | 'connecting'
+  | 'handshake'
+  | 'connected'
+  | 'replaced'
+  | 'stopped'
+  /** The relay will not take this worker (suspended, removed, key refused, client too old). Retrying stopped. */
+  | 'refused'
 
 export type Hello = { t: 'hello'; nonce: string; server_time: string; relay_kid: string }
 export type Ready = {
@@ -18,13 +26,21 @@ export type AgentSocketOptions = {
   credentials: Credentials
   version?: string
   /** Called with the relay's hello and ready frames. Return false to refuse the relay (identity pinning). */
-  verifyReady?: (hello: Hello, ready: Ready, clientNonce: string) => boolean
+  verifyReady?: (hello: Hello, ready: Ready, clientNonce: string) => boolean | Promise<boolean>
   /**
    * Checked on every `deliver` before it is handed over: the relay signature and sender signature
    * (the CLI daemon's verifyEnvelope). Return null to accept, or a reason to drop it. A dropped
    * delivery is reported as `dropped`, never emitted as `deliver`, and never acked.
    */
   verifyDelivery?: (env: Record<string, unknown>) => Promise<string | null> | string | null
+  /**
+   * Deliveries from other people's agents are content you must not trust unchecked. The socket therefore
+   * refuses to be built without `verifyDelivery` unless this is set (tests against a fake relay).
+   * `HawlClient.socket()` supplies a verifier built from the pinned roots.
+   */
+  insecureNoVerify?: boolean
+  /** Failed handshakes in a row (close 4401) before the worker counts as refused. Default 5. */
+  authStrikes?: number
   reconnectMs?: { min: number; max: number }
   handshakeTimeoutMs?: number
   /** No frame for this long means a half-open socket: reconnect. The relay pings every 25 s. */
@@ -43,11 +59,17 @@ export type AgentSocketEvents = {
   dropped: [{ envelope: Record<string, unknown>; reason: string }]
   notice: [{ unread: number; needs_action: number }]
   control: [Record<string, unknown>]
+  refused: [{ code: number; reason: 'suspended' | 'client_too_old' | 'auth_failed' | 'relay_not_trusted' }]
   error: [Error]
 }
 
-/** Close codes after which retrying fast cannot help: refused handshake, suspended, CLI too old, rate limited. */
-export const SLOW_RETRY = new Set([4401, 4403, 4426, 4429])
+/** Close codes after which retrying fast cannot help: refused handshake, rate limited. */
+export const SLOW_RETRY = new Set([4401, 4429])
+/** Close codes that end the connection for good: suspended or removed worker, client too old. */
+export const TERMINAL: ReadonlyMap<number, 'suspended' | 'client_too_old'> = new Map([
+  [4403, 'suspended'],
+  [4426, 'client_too_old']
+])
 /** The relay is restarting (4503): come back soon, but not in a tight loop. */
 export const DRAINING = 4503
 export const DRAINING_FLOOR_MS = 3000

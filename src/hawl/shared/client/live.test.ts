@@ -53,6 +53,7 @@ function until<T>(fn: () => T | undefined | false, ms = 5000): Promise<T> {
 function sock(o: Partial<ConstructorParameters<typeof AgentSocket>[0]> = {}): AgentSocket {
   const s = new AgentSocket({
     credentials: cred,
+    insecureNoVerify: true,
     reconnectMs: { min: 10, max: 40 },
     random: () => 0,
     ...o
@@ -166,7 +167,7 @@ describe('agent socket', () => {
   })
 
   it('client.socket() wires the same credentials', async () => {
-    const s = new HawlClient({ credentials: cred }).socket({ reconnectMs: { min: 10, max: 40 } })
+    const s = new HawlClient({ credentials: cred }).socket({ insecureNoVerify: true, reconnectMs: { min: 10, max: 40 } })
     stoppers.push(() => s.stop())
     s.start()
     await until(() => s.state === 'connected')
@@ -192,6 +193,26 @@ describe('town events', () => {
     stoppers.push(() => s.stop())
     return s
   }
+
+  it('follows next_after_seq across a page the relay filtered down to nothing', async () => {
+    // Page size is 2: seqs 1-4 are personal rows the relay cuts out, so the first two pages come back empty.
+    for (let i = 1; i <= 4; i++) {
+      relay.events.push({ ...ev(i), hidden: true })
+    }
+    relay.events.push(ev(5), ev(6))
+    const s = mk(user(), { socketOnly: false })
+    const seqs: number[] = []
+    s.on('event', (e) => seqs.push(e.seq))
+    await s.start()
+    expect(seqs).toEqual([5, 6])
+    expect(s.cursor).toBe(6)
+    expect(relay.requests.filter((r) => r.path.includes('/events?after_seq=')).map((r) => r.path.split('=')[1])).toEqual([
+      '0',
+      '2',
+      '4',
+      '6'
+    ])
+  })
 
   it('replays history by pages, then goes live without repeating the last page', async () => {
     for (let i = 1; i <= 5; i++) {

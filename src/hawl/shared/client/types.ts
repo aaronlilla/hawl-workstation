@@ -239,3 +239,36 @@ export type WhoWorker = {
   knows: string | null
   [k: string]: unknown
 }
+
+/** What `POST /v1/towns/:twn/asks` accepts (relay `ASK_SOURCES`). Anything else is a 400 'Bad source.' */
+export const ASK_SOURCES = ['invite', 'permission', 'free_banner', 'plan_limit', 'stuck'] as const
+export type AskSource = (typeof ASK_SOURCES)[number]
+
+/** Snooze presets of `needs-action/snooze` (relay `PRESETS`). */
+export const SNOOZE_PRESETS = ['1h', 'tomorrow', 'next_week'] as const
+export type SnoozePreset = (typeof SNOOZE_PRESETS)[number]
+
+/**
+ * A person's work order (`POST /v1/towns/:twn/handoffs`). `to` is a worker id (`res_...`) or "auto" for the
+ * Dispatcher to pick; the relay refuses a handle.
+ */
+export type HandoffSend = {
+  to: `res_${string}` | 'auto'
+  spec: string
+  title?: string
+  task_type?: string
+  quality_bar?: string
+  /** ISO time. */
+  deadline?: string
+}
+
+export type HandoffSent = {
+  handoff_id: string
+  number: number
+  state: 'asked'
+  assignee: string
+  routed: boolean
+}
+
+/** A file attached to a message: the fields of the upload that the sender signs over. */
+export type FilePart = { file_id: string; name: string; mime: string; bytes: number; sha256: string }

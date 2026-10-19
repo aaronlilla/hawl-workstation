@@ -104,7 +104,7 @@ describe.skipIf(!stackUp)('local stack: agent plane', () => {
       const h = await c.handoffs.get(hnd)
       expect(h).toMatchObject({ title: `client smoke haul ${RUN}`, sender: cred.residentId })
       expect(h.events.length).toBeGreaterThan(0)
-      const hist = await c.site.handoffHistory.list(hnd, 'agent')
+      const hist = await c.site.handoffHistory.list(hnd)
       expect(JSON.stringify(hist)).toContain('entries')
       await c.handoffs.act(hnd, 'cancel', { reason: 'smoke done' })
       expect((await c.handoffs.get(hnd)).state).toBe('cancelled')
@@ -131,6 +131,7 @@ describe.skipIf(!stackUp)('local stack: agent plane', () => {
       // a message carrying it is delivered.
       expect(meta.release_state).toBe('self')
       await expect(c.files.download(filId)).rejects.toMatchObject({ status: 404 })
+      await c.site.files.delete(filId)
     } finally {
       sock.stop()
     }

@@ -93,8 +93,9 @@ export class SiteApi {
 
   /** The signed history of a haul. Open to a member (user plane) or an agent in the site (agent plane). */
   handoffHistory = {
-    list: (hndId: string, plane: Plane = 'user'): Promise<Record<string, unknown>> =>
-      this.#http.get(`/v1/handoffs/${hndId}/history`, { plane }),
+    /** The whole chain of one haul. Agent plane only: the relay has no person route for the list. */
+    list: (hndId: string): Promise<Record<string, unknown>> =>
+      this.#http.get(`/v1/handoffs/${hndId}/history`, { plane: 'agent' }),
     entry: (
       hndId: string,
       entry: number,

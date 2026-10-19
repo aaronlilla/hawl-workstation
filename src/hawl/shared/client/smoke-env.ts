@@ -4,9 +4,20 @@
 //   web    HAWL_SMOKE_WEB     default http://localhost:3000
 // Read-only SQL finds a local site owner (email) in the two local databases; sign-in itself goes
 // through the real web app (emailed code read from the local e2e sink) and the real approve-device route.
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { Http, HawlClient, SiteApi, WebSession, startDeviceSignIn } from './index'
+import { Http, HawlClient, PINNED_ROOTS, SiteApi, WebSession, startDeviceSignIn } from './index'
 import type { Credentials } from './index'
+
+/** The local stack's throwaway ROOT public key (never the private half), plus the pinned production root. */
+export function localRoots(): Record<string, Record<string, string>> {
+  const file = `${platformDir}/_work/local-stack/secrets.json`
+  const sec = JSON.parse(readFileSync(file, 'utf8')) as {
+    rootKid: string
+    rootPublicKey: Record<string, string>
+  }
+  return { ...PINNED_ROOTS, [sec.rootKid]: sec.rootPublicKey }
+}
 
 export const RELAY = process.env.HAWL_SMOKE_LOCAL ?? 'http://localhost:8080'
 export const WEB = process.env.HAWL_SMOKE_WEB ?? 'http://localhost:3000'
@@ -112,6 +123,32 @@ export async function findOwner(): Promise<Owner> {
   }
 }
 
+/** An active non-owner member of the owner's site with a test address. Read-only lookup. */
+export async function findMember(owner: Owner): Promise<Owner> {
+  const relay = await pg('relay_local')
+  const accounts = await pg('accounts_local')
+  try {
+    const rows = (
+      await relay.query(
+        `SELECT m.user_id FROM members m JOIN sites s ON s.id = m.town_id
+          WHERE s.slug = $1 AND m.role = 'member' AND m.status = 'active' LIMIT 20`,
+        [owner.slug]
+      )
+    ).rows as { user_id: string }[]
+    for (const r of rows) {
+      const u = (await accounts.query('SELECT email FROM "user" WHERE id = $1', [r.user_id]))
+        .rows[0] as { email?: string } | undefined
+      if (u?.email?.endsWith('@example.com')) {
+        return { slug: owner.slug, userId: r.user_id, email: u.email }
+      }
+    }
+    throw new Error(`no active member with a test address in ${owner.slug}`)
+  } finally {
+    await relay.end()
+    await accounts.end()
+  }
+}
+
 /** Real web sign-in: emailed code (read from the local sink) -> session cookie. */
 export async function webSignIn(email: string): Promise<WebSession> {
   await WebSession.sendCode(email, { webOrigin: WEB })
@@ -137,7 +174,7 @@ export async function workerSignIn(
   owner: Owner,
   session: WebSession,
   label: string
-): Promise<{ cred: Credentials; client: HawlClient }> {
+): Promise<{ cred: Credentials; client: HawlClient; joinId: string }> {
   const s = await startDeviceSignIn({
     site: owner.slug,
     relayUrl: RELAY,
@@ -152,5 +189,14 @@ export async function workerSignIn(
   }
   await site.joins.approveDevice(found.join_id, s.userCode, found.key_fingerprint)
   const cred = await s.wait()
-  return { cred, client: new HawlClient({ credentials: cred, user: session, webOrigin: WEB }) }
+  return {
+    cred,
+    joinId: found.join_id,
+    client: new HawlClient({
+      credentials: cred,
+      user: session,
+      webOrigin: WEB,
+      trust: { roots: localRoots() }
+    })
+  }
 }

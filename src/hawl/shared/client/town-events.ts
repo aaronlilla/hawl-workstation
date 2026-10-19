@@ -128,20 +128,20 @@ export class TownEventStream extends EventEmitter {
         `/v1/towns/${this.#o.townId}/events`,
         { plane: 'user', query: { after_seq: this.cursor } }
       )
-      if (page.events.length === 0) {
-        return n
-      }
       for (const e of page.events) {
         if (this.#take(`rest:${e.seq}`, e.seq)) {
           this.emit('event', e)
           n++
         }
       }
+      // The relay cuts the page first and filters personal and owner-only rows after, so a full page can
+      // come back with no events at all and still move `next_after_seq`. Follow it, or the cursor sticks.
+      const next = Number(page.next_after_seq)
       // A page that does not move the cursor would loop forever.
-      if (page.next_after_seq <= before) {
+      if (!Number.isFinite(next) || next <= before) {
         return n
       }
-      this.cursor = Math.max(this.cursor, page.next_after_seq)
+      this.cursor = Math.max(this.cursor, next)
     }
   }
 

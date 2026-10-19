@@ -14,6 +14,7 @@ import type { AddressInfo } from 'node:net'
 import type { WebSocket } from 'ws'
 import { WebSocketServer } from 'ws'
 import { handshakeInput, jcs, type Jwk } from './core'
+import type { TrustFixture } from './trust-fixture'
 
 type WorkerRec = { id: string; kid: string; pub: KeyObject; jwk: Jwk; slug: string }
 type JoinRec = { id: string; pub: KeyObject; jwk: Jwk; slug: string; polls: number; code: string }
@@ -59,6 +60,10 @@ export class FakeRelay {
   /** Close the console socket after sending this many frames per subscription (0 = never). */
   consoleDropAfter = 0
   files = new Map<string, Buffer>()
+  /** When set: the manifest, relay-signed `ready` frames and sender keys, like the real relay. */
+  trust: TrustFixture | null = null
+  senderKeys = new Map<string, { public_jwk: Jwk; compromised_at?: string | null }>()
+  manifestOverride: unknown = undefined
   signedSends: { tool: string; args: unknown; cr: Record<string, unknown>; sigOk: boolean }[] = []
 
   async start(): Promise<this> {
@@ -173,6 +178,21 @@ export class FakeRelay {
     }
     const user = () => bearer === this.userToken
     const m = req.method ?? 'GET'
+
+    if (m === 'GET' && path === '/.well-known/relay-key-manifest.json') {
+      const mf = this.manifestOverride ?? this.trust?.manifest()
+      return mf ? json(200, mf) : this.#err(res, 404, 'not_found', 'No manifest.')
+    }
+    const keyM = /^\/v1\/keys\/(key_[A-Za-z0-9_-]+)$/.exec(path)
+    if (m === 'GET' && keyM) {
+      if (!agent()) {
+        return this.#err(res, 401, 'unauthenticated', 'Sign in.')
+      }
+      const k = this.senderKeys.get(keyM[1] as string)
+      return k
+        ? json(200, { kid: keyM[1], state: 'active', compromised_at: null, ...k })
+        : this.#err(res, 404, 'not_found', 'Not found.')
+    }
 
     if (m === 'POST' && path === '/v1/join/start') {
       const b = body as { town_slug: string; public_jwk: Jwk; platform: string }
@@ -460,7 +480,11 @@ export class FakeRelay {
         const after = Number(url.searchParams.get('after_seq') ?? 0)
         const page = this.events.filter((e) => e.seq > after).slice(0, this.eventPageSize)
         return json(200, {
-          events: page.map((e) => ({ ...e, town_id: this.townId, at: '2026-10-19T00:00:00Z' })),
+          // Like the relay: personal and owner-only rows are filtered out AFTER the page is cut, and
+          // next_after_seq still comes from the unfiltered page.
+          events: page
+            .filter((e) => e.hidden !== true)
+            .map((e) => ({ ...e, town_id: this.townId, at: '2026-10-19T00:00:00Z' })),
           next_after_seq: page.length ? (page.at(-1) as FakeEvent).seq : after
         })
       }
@@ -491,7 +515,7 @@ export class FakeRelay {
         t: 'hello',
         nonce,
         server_time: serverTime,
-        relay_kid: 'rk_test',
+        relay_kid: this.trust?.relayKid ?? 'rk_test',
         protocol: 1
       })
     )
@@ -532,7 +556,15 @@ export class FakeRelay {
             town_id: this.townId,
             pending: this.inbox.length,
             heartbeat_s: 25,
-            relay_sig: 'x'
+            relay_sig: this.trust
+              ? this.trust.signReady({
+                  nonce,
+                  client_nonce: String(f.client_nonce),
+                  resident_id: w.id,
+                  session_id: 'ses_1',
+                  server_time: serverTime
+                })
+              : 'x'
           })
         )
         // The real relay pushes everything claimable after ready.

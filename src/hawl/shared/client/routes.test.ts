@@ -79,12 +79,12 @@ describe('route table', () => {
     ],
     [
       'asks.askOwner',
-      (c) => c.asks.askOwner(T, { kind: 'x' }, 'hnd_1'),
+      (c) => c.asks.askOwner(T, 'stuck', 'hnd_1'),
       {
         method: 'POST',
         path: `/v1/towns/${T}/asks`,
         auth: U,
-        body: { source: { kind: 'x' }, handoff_id: 'hnd_1' }
+        body: { source: 'stuck', handoff_id: 'hnd_1' }
       }
     ],
     [
@@ -150,8 +150,8 @@ describe('route table', () => {
     ],
     [
       'handoffs.send',
-      (c) => c.handoffs.send(T, { to: 'auto' }),
-      { method: 'POST', path: `/v1/towns/${T}/handoffs`, auth: U, body: { to: 'auto' } }
+      (c) => c.handoffs.send(T, { to: 'auto', spec: 'do it' }),
+      { method: 'POST', path: `/v1/towns/${T}/handoffs`, auth: U, body: { to: 'auto', spec: 'do it' } }
     ],
     [
       'handoffs.byPerson',
@@ -199,9 +199,9 @@ describe('route table', () => {
       { method: 'PUT', path: `/v1/towns/${T}/agents/res_2/label`, auth: U, body: { label: 'L' } }
     ],
     [
-      'site.handoffHistory.list (user)',
+      'site.handoffHistory.list (agent: the relay has no person route for the list)',
       (c) => c.site.handoffHistory.list('hnd_1'),
-      { path: '/v1/handoffs/hnd_1/history', auth: U }
+      { path: '/v1/handoffs/hnd_1/history', auth: A }
     ],
     [
       'site.handoffHistory.entry (agent)',

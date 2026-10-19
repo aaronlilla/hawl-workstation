@@ -1,22 +1,21 @@
 // The worker socket (`/v1/ws`, subprotocol relay.v1): hello, signed auth, ready, deliveries, notices.
 // Reconnects with jittered backoff and asks for everything after the last delivery it saw.
 import { EventEmitter } from 'node:events'
-import { randomBytes } from 'node:crypto'
 import WebSocket from 'ws'
+import { Handshake } from './agent-handshake'
 import { Rpc } from './rpc'
-import { b64url, HawlApiError, handshakeInput, signEd25519, wsUrlFor } from './core'
+import { HawlApiError, wsUrlFor } from './core'
 import {
   type AgentSocketEvents,
   type AgentSocketOptions,
   checkDelivery,
   DRAINING,
   DRAINING_FLOOR_MS,
-  type Hello,
   REPLACED,
-  type Ready,
   seqOf,
   SLOW_RETRY,
-  type SocketState
+  type SocketState,
+  TERMINAL
 } from './agent-socket-types'
 
 export type * from './agent-socket-types'
@@ -36,9 +35,15 @@ export class AgentSocket extends EventEmitter {
   #chain: Promise<void> = Promise.resolve()
   readonly #rpc = new Rpc()
   readonly #seen = new Set<number>()
+  #strikes = 0
 
   constructor(o: AgentSocketOptions) {
     super()
+    if (!o.verifyDelivery && !o.insecureNoVerify) {
+      throw new Error(
+        'AgentSocket needs verifyDelivery (use HawlClient.socket(), or set insecureNoVerify for tests).'
+      )
+    }
     this.#o = o
     this.#backoff = o.reconnectMs?.min ?? 1000
     this.lastSeq = o.afterSeq ?? 0
@@ -54,6 +59,10 @@ export class AgentSocket extends EventEmitter {
   /** Safe to call again: after a stop, or after `replaced` to take the socket back. */
   start(): void {
     this.#stopped = false
+    if (this.state === 'refused') {
+      this.#strikes = 0
+      this.state = 'idle'
+    }
     if (this.#ws || this.#timer) {
       return // already connecting or connected
     }
@@ -146,14 +155,32 @@ export class AgentSocket extends EventEmitter {
     const c = this.#o.credentials
     const ws = new WebSocket(wsUrlFor(c.relayUrl, '/v1/ws'), 'relay.v1')
     this.#ws = ws
-    let hello: Hello | null = null
-    let clientNonce = ''
-    let ready = false
     this.#lastSeen = Date.now()
     const hs = setTimeout(
       () => ws.close(4408, 'handshake timeout'),
       this.#o.handshakeTimeoutMs ?? 10_000
     )
+    const shake = new Handshake({
+      ws,
+      credentials: c,
+      version: this.#o.version ?? '0.0.0',
+      verifyReady: this.#o.verifyReady,
+      current: () => this.#ws === ws,
+      onHello: () => this.#set('handshake'),
+      onError: (e) => this.emit('error', e),
+      onReady: (r) => {
+        clearTimeout(hs)
+        this.#backoff = this.#o.reconnectMs?.min ?? 1000
+        this.#strikes = 0
+        this.#set('connected')
+        this.emit('ready', r)
+        // The relay pushes whatever is claimable; this also covers rows already delivered but never acked.
+        if (this.lastSeq > 0) {
+          this.fetchInbox(this.lastSeq)
+        }
+      },
+      replay: (frames) => frames.forEach((fr) => this.#onFrame(fr))
+    })
 
     ws.on('message', (raw) => {
       this.#lastSeen = Date.now()
@@ -163,71 +190,11 @@ export class AgentSocket extends EventEmitter {
       } catch {
         return
       }
-      if (!ready) {
-        if (f.t === 'hello' && !hello) {
-          hello = f as unknown as Hello
-          this.#set('handshake')
-          clientNonce = b64url(randomBytes(32))
-          const sig = signEd25519(
-            c.privateJwk,
-            handshakeInput({
-              nonce: hello.nonce,
-              clientNonce,
-              residentId: c.residentId,
-              serverTime: hello.server_time
-            })
-          )
-          ws.send(
-            JSON.stringify({
-              t: 'auth',
-              resident_id: c.residentId,
-              kid: c.kid,
-              client_nonce: clientNonce,
-              sig: b64url(sig),
-              client: { name: 'hawl-workstation', version: this.#o.version ?? '0.0.0' }
-            })
-          )
-          return
-        }
-        if (f.t === 'ready' && hello) {
-          const r = f as unknown as Ready
-          if (r.resident_id !== c.residentId) {
-            this.emit(
-              'error',
-              new HawlApiError(0, 'bad_ready', 'The relay answered for another worker.')
-            )
-            ws.close(4401, 'handshake refused')
-            return
-          }
-          if (this.#o.verifyReady && !this.#o.verifyReady(hello, r, clientNonce)) {
-            this.emit(
-              'error',
-              new HawlApiError(0, 'relay_not_trusted', 'The relay identity did not verify.')
-            )
-            ws.close(4401, 'handshake refused')
-            return
-          }
-          ready = true
-          clearTimeout(hs)
-          this.#backoff = this.#o.reconnectMs?.min ?? 1000
-          this.#set('connected')
-          this.emit('ready', r)
-          // The relay pushes whatever is claimable; this also covers rows already delivered but never acked.
-          if (this.lastSeq > 0) {
-            this.fetchInbox(this.lastSeq)
-          }
-          return
-        }
-        if (f.t === 'error') {
-          const e = (f.error ?? {}) as { code?: string; message?: string }
-          this.emit(
-            'error',
-            new HawlApiError(0, e.code ?? 'handshake_error', e.message ?? 'Handshake failed.')
-          )
-        }
-        return // nothing else is trusted before ready
+      if (shake.ready) {
+        this.#onFrame(f)
+      } else {
+        shake.feed(f)
       }
-      this.#onFrame(f)
     })
 
     ws.on('close', (code) => {
@@ -239,6 +206,20 @@ export class AgentSocket extends EventEmitter {
       this.#rpc.failAll('relay connection closed')
       if (this.#stopped) {
         return
+      }
+      const terminal = TERMINAL.get(code)
+      if (terminal) {
+        this.#set('refused')
+        this.emit('refused', { code, reason: terminal })
+        return
+      }
+      if (code === 4401 && !shake.untrusted && !shake.ready) {
+        this.#strikes++
+        if (this.#strikes >= (this.#o.authStrikes ?? 5)) {
+          this.#set('refused')
+          this.emit('refused', { code, reason: 'auth_failed' })
+          return
+        }
       }
       if (code === REPLACED) {
         // Another session of this worker took over. Fighting for the socket would flap both.
@@ -269,6 +250,13 @@ export class AgentSocket extends EventEmitter {
     const check = this.#o.verifyDelivery
     const reason = check ? await checkDelivery(check, env) : null
     if (reason !== null) {
+      if (reason === 'manifest_unusable' || reason === 'relay_key_unknown') {
+        // Our key list may just be old: let a later fetch hand it over again.
+        const seq = seqOf(env)
+        if (seq !== null) {
+          this.#seen.delete(seq)
+        }
+      }
       this.emit('dropped', { envelope: env, reason })
       return
     }

@@ -100,6 +100,7 @@ describe('worker socket under failure', () => {
   const sock = (o: Partial<ConstructorParameters<typeof AgentSocket>[0]> = {}) => {
     const s = new AgentSocket({
       credentials: cred,
+      insecureNoVerify: true,
       reconnectMs: { min: 10, max: 400 },
       random: () => 0,
       ...o

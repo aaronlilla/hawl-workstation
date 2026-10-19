@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto'
 import { b64url, HawlApiError, jcs, signEd25519 } from './core'
 import type { HawlClient } from './client'
-import type { HandoffCreate } from './types'
+import type { FilePart, HandoffCreate } from './types'
 
 type To =
   | { kind: 'worker'; resident_id: string }
@@ -33,7 +33,11 @@ export class Sender {
   }
 
   /** `thread_reply`: answer a message this worker sent or received, in its conversation. */
-  async reply(messageId: string, text: string, o: { data?: unknown } = {}): Out {
+  async reply(
+    messageId: string,
+    text: string,
+    o: { data?: unknown; files?: FilePart[] } = {}
+  ): Out {
     const m = (await this.#c.messages.get(messageId)) as {
       conversation_id?: string
       from?: string
@@ -57,11 +61,16 @@ export class Sender {
       'reply',
       undefined,
       messageId,
-      m.conversation_id
+      m.conversation_id,
+      o.files
     )
   }
 
-  dm(to: string, text: string, o: { data?: unknown; intent?: Intent; replyTo?: string } = {}): Out {
+  dm(
+    to: string,
+    text: string,
+    o: { data?: unknown; intent?: Intent; replyTo?: string; files?: FilePart[] } = {}
+  ): Out {
     const args = {
       to,
       text,
@@ -77,15 +86,17 @@ export class Sender {
       o.data,
       o.intent ?? 'inform',
       to,
-      o.replyTo
+      o.replyTo,
+      undefined,
+      o.files
     )
   }
 
-  square(text: string, o: { data?: unknown; mentions?: string[] } = {}): Out {
+  square(text: string, o: { data?: unknown; mentions?: string[]; files?: FilePart[] } = {}): Out {
     return this.#toChannel('square_post', undefined, text, o)
   }
 
-  room(room: string, text: string, o: { data?: unknown; mentions?: string[] } = {}): Out {
+  room(room: string, text: string, o: { data?: unknown; mentions?: string[]; files?: FilePart[] } = {}): Out {
     return this.#toChannel('room_post', room, text, o)
   }
 
@@ -93,7 +104,7 @@ export class Sender {
     tool: 'square_post' | 'room_post',
     room: string | undefined,
     text: string,
-    o: { data?: unknown; mentions?: string[] }
+    o: { data?: unknown; mentions?: string[]; files?: FilePart[] }
   ): Out {
     const { items } = await this.#c.channels.list()
     const name = room?.replace(/^#/, '')
@@ -121,7 +132,11 @@ export class Sender {
       { kind: 'channel', channel_id: chan.channel_id, mentions },
       text,
       o.data,
-      'inform'
+      'inform',
+      undefined,
+      undefined,
+      undefined,
+      o.files
     )
   }
 
@@ -145,7 +160,8 @@ export class Sender {
     intent: string,
     handle?: string,
     replyTo?: string,
-    conversationId?: string
+    conversationId?: string,
+    files?: FilePart[]
   ): Out {
     const c = this.#c.credentials
     // Handoffs go through the tool route (it also opens the haul). Plain messages go to
@@ -158,6 +174,9 @@ export class Sender {
     const parts: unknown[] = [{ kind: 'text', text }]
     if (data !== undefined) {
       parts.push({ kind: 'data', data })
+    }
+    for (const f of files ?? []) {
+      parts.push({ kind: 'file', ...f })
     }
     const cr = {
       v: 1,

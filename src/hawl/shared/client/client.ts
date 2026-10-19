@@ -6,6 +6,7 @@ import {
   type Credentials,
   type FetchLike,
   HawlApiError,
+  type Jwk,
   type Sleep,
   type TokenSource,
   trimUrl
@@ -13,20 +14,26 @@ import {
 import { AgentSocket, type AgentSocketOptions } from './agent-socket'
 import { AgentTokenSource, Http } from './http'
 import { Sender } from './send'
+import { createDeliveryTrust, type DeliveryTrust, type ManifestPersistence, pinnedRoots } from './verify'
+import { channelsApi } from './channels-api'
 import { FilesApi } from './files-api'
 import { SiteApi } from './site-api'
+import { ASK_SOURCES } from './types'
 import type {
   ApprovalItem,
+  AskSource,
   BoardPin,
-  Channel,
   Handoff,
   HandoffCreate,
   HandoffEvidence,
   HandoffOp,
   HandoffRow,
+  HandoffSend,
+  HandoffSent,
   HandoffState,
   Me,
   NeedsList,
+  SnoozePreset,
   SiteSummary,
   WhoWorker,
   WorkerRow
@@ -45,6 +52,11 @@ export type ClientOptions = {
   /** Sent as the Origin of the console socket; must equal the relay's web origin. Default https://hawl.ai. */
   webOrigin?: string
   version?: string
+  /**
+   * Who the relay is trusted through. Default: the pinned production root, plus `HAWL_DEV_PINNED_ROOTS`
+   * for a loopback or staging relay. `persist` keeps the accepted key manifest between runs.
+   */
+  trust?: { roots?: Record<string, Jwk>; persist?: ManifestPersistence; minRefreshGapMs?: number }
 }
 
 export class HawlClient {
@@ -155,9 +167,16 @@ export class HawlClient {
       this.http.post(`/v1/handoffs/${id}/renew`),
     receipt: (rcp: string): Promise<{ receipt: Record<string, unknown>; superseded: boolean }> =>
       this.http.get(`/v1/receipts/${rcp}`),
-    /** A person sends a work order (user plane). `to` is a handle or "auto". */
-    send: (townId: string, body: Record<string, unknown>): Promise<Record<string, unknown>> =>
-      this.http.post(`/v1/towns/${townId}/handoffs`, body, { plane: 'user' }),
+    /** A person sends a work order (user plane). `to` is a worker id (`res_...`) or "auto", never a handle. */
+    send: async (townId: string, body: HandoffSend): Promise<HandoffSent> => {
+      if (body.to !== 'auto' && !/^res_[A-Za-z0-9_-]+$/.test(String(body.to))) {
+        throw new HawlApiError(400, 'invalid_request', 'to is a worker id (res_...) or "auto", not a handle.')
+      }
+      if (typeof body.spec !== 'string' || body.spec.trim() === '' || body.spec.length > 8000) {
+        throw new HawlApiError(400, 'invalid_request', 'Describe the work in 1 to 8000 characters.')
+      }
+      return this.http.post(`/v1/towns/${townId}/handoffs`, body, { plane: 'user' })
+    },
     /** A person acts on one (user plane). */
     byPerson: (
       id: string,
@@ -183,16 +202,20 @@ export class HawlClient {
 
   asks = {
     /** Ask the site owner. `new:false` means this person already asked in the last 24 h. */
-    askOwner: (
+    askOwner: async (
       townId: string,
-      source: unknown,
+      source: AskSource,
       handoffId?: string
-    ): Promise<{ sent: boolean; new: boolean; owner_user_id: string; asked_at: string }> =>
-      this.http.post(
+    ): Promise<{ sent: boolean; new: boolean; owner_user_id: string; asked_at: string }> => {
+      if (!(ASK_SOURCES as readonly string[]).includes(source)) {
+        throw new HawlApiError(400, 'invalid_request', `Bad source. Use one of: ${ASK_SOURCES.join(', ')}.`)
+      }
+      return this.http.post(
         `/v1/towns/${townId}/asks`,
         { source, ...(handoffId ? { handoff_id: handoffId } : {}) },
         { plane: 'user' }
       )
+    }
   }
 
   needs = {
@@ -204,7 +227,7 @@ export class HawlClient {
         { item_id: itemId },
         { plane: 'user' }
       ),
-    snooze: (townId: string, itemId: string, preset: string, utcOffsetMin = 0): Promise<unknown> =>
+    snooze: (townId: string, itemId: string, preset: SnoozePreset, utcOffsetMin = 0): Promise<unknown> =>
       this.http.post(
         `/v1/towns/${townId}/needs-action/snooze`,
         { item_id: itemId, preset, utc_offset_min: utcOffsetMin },
@@ -214,35 +237,7 @@ export class HawlClient {
 
   // ---- channels (square and rooms) ------------------------------------------------------------
 
-  channels = {
-    list: (): Promise<{ items: Channel[] }> => this.http.get('/v1/channels'),
-    create: (name: string, topic?: string): Promise<Channel> =>
-      this.http.post('/v1/channels', { name, ...(topic ? { topic } : {}) }),
-    join: (chnId: string, wakeOn?: unknown): Promise<Channel> =>
-      this.http.post(`/v1/channels/${chnId}/join`, wakeOn === undefined ? {} : { wake_on: wakeOn }),
-    /** A member posts from the app (user plane). */
-    post: (
-      townId: string,
-      chnId: string,
-      text: string,
-      o: { mentions?: string[]; as?: string; files?: { file_id: string }[]; replyTo?: string } = {}
-    ): Promise<{ message_id: string; state: string }> =>
-      this.http.post(
-        `/v1/towns/${townId}/channels/${chnId}/messages`,
-        {
-          text,
-          ...(o.mentions ? { mentions: o.mentions } : {}),
-          ...(o.as ? { as: o.as } : {}),
-          ...(o.files ? { files: o.files } : {}),
-          ...(o.replyTo ? { reply_to: o.replyTo } : {})
-        },
-        { plane: 'user' }
-      ),
-    thread: (townId: string, chnId: string, msgId: string): Promise<Record<string, unknown>> =>
-      this.http.get(`/v1/towns/${townId}/channels/${chnId}/threads/${msgId}`, { plane: 'user' }),
-    discussHandoff: (townId: string, hndId: string): Promise<Record<string, unknown>> =>
-      this.http.post(`/v1/towns/${townId}/handoffs/${hndId}/discuss`, {}, { plane: 'user' })
-  }
+  channels = channelsApi(() => this.http)
 
   // ---- messages and inbox (agent plane) -------------------------------------------------------
 
@@ -301,11 +296,32 @@ export class HawlClient {
 
   /** The worker socket for this app's agent: deliveries, notices, tool calls. Call `.start()`. */
   socket(o: Partial<AgentSocketOptions> = {}): AgentSocket {
+    // Every delivery is checked (relay signature from the root-signed key manifest, sender signature,
+    // hashes, recipient) and the relay proves itself in `ready`, unless the caller brings its own checks.
+    const trusted =
+      o.insecureNoVerify || o.verifyDelivery
+        ? {}
+        : { verifyDelivery: this.trust.verifyDelivery, verifyReady: this.trust.verifyReady }
     return new AgentSocket({
       credentials: this.credentials,
       ...(this.#o.version ? { version: this.#o.version } : {}),
+      ...trusted,
       ...o
     })
+  }
+
+  #trust: DeliveryTrust | null = null
+  /** The pinned roots, key manifest and sender-key cache for this worker. Built on first use. */
+  get trust(): DeliveryTrust {
+    return (this.#trust ??= createDeliveryTrust({
+      relayUrl: this.credentials.relayUrl,
+      residentId: this.credentials.residentId,
+      roots: this.#o.trust?.roots ?? pinnedRoots(this.credentials.relayUrl),
+      ...(this.#o.fetch ? { fetch: this.#o.fetch } : {}),
+      ...(this.#o.trust?.persist ? { persist: this.#o.trust.persist } : {}),
+      ...(this.#o.trust?.minRefreshGapMs !== undefined ? { minRefreshGapMs: this.#o.trust.minRefreshGapMs } : {}),
+      getJson: (path) => this.http.get(path)
+    }))
   }
 
   /** Site events with replay and reconnect (user plane). Call `.start()`. */
