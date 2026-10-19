@@ -1,7 +1,6 @@
 import type React from 'react'
 import { AppWindow } from 'lucide-react'
 import type { OpenInApplication } from '../../../shared/ui-chrome-types'
-import { cn } from './utils'
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
@@ -60,18 +59,7 @@ export function OpenInApplicationIcon({
   size?: number
 }): React.JSX.Element {
   const preset = getOpenInAppPreset(application)
-  if (preset) {
-    return (
-      <img
-        src={`https://www.google.com/s2/favicons?domain=${preset.faviconDomain}&sz=64`}
-        width={size}
-        height={size}
-        alt=""
-        aria-hidden
-        className={cn('shrink-0', preset.iconClassName)}
-        style={{ borderRadius: 2 }}
-      />
-    )
-  }
+  // Hawl: no Google favicon lookups; generic icon instead.
+  void preset
   return <AppWindow width={size} height={size} />
 }

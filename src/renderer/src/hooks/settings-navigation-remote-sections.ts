@@ -92,7 +92,7 @@ export function buildRemoteSettingsSections(
       ),
       description: translate(
         'auto.hooks.useSettingsNavigationMetadata.8400cfe1c1',
-        'Anonymous usage data and telemetry controls.'
+        'What Hawl Workstation sends, and to whom.'
       ),
       icon: Lock,
       searchEntries: getPrivacyPaneSearchEntries(),

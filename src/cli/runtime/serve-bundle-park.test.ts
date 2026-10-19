@@ -15,7 +15,7 @@ import { openServeBundlePark } from './serve-bundle-park'
 import { superviseServeService } from './serve-supervised-service'
 import { createSupervisedParkWatch } from './serve-supervised-park-watch'
 
-const LABEL = 'com.stablyai.orca.serve.default'
+const LABEL = 'com.hawl.workstation.serve.default'
 
 describe('openServeBundlePark', () => {
   let root: string

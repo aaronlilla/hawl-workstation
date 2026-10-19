@@ -279,6 +279,7 @@ describe('TerminalThemeCatalogSection', () => {
     const element = renderCatalog(
       makeSettings({
         terminalUseSeparateLightTheme: true,
+        terminalThemeDark: 'Hawl Ember',
         terminalThemeLight: 'GitHub Light'
       }),
       vi.fn(),
