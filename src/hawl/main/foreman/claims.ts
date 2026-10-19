@@ -114,7 +114,7 @@ export function delegate(c: ForemanCtx, job: Job): void {
   if (job.tried.length >= c.cfg.maxAgentsPerJob) {
     if (!job.exhaustedNotified) {
       job.exhaustedNotified = true
-      c.deps.transport.notifyOwner({ kind: 'job_unclaimed', taskId: job.taskId })
+      c.notifyOwner({ kind: 'job_unclaimed', taskId: job.taskId })
     }
     return
   }
@@ -144,7 +144,7 @@ export function delegate(c: ForemanCtx, job: Job): void {
   })
   job.exec = 'offered'
   c.schedule('claim_timeout', job.taskId, String(epoch), offerExpiresAt)
-  c.deps.agents.offer(agent.id, {
+  c.agentOffer(agent.id, {
     taskId: job.taskId,
     epoch,
     why: chosen.via,

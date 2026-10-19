@@ -79,7 +79,7 @@ export function openLine(c: ForemanCtx, taskId: string, req: LineRequest): void 
   } else if (policy === 'job_parties') {
     decideLocal(c, job, true)
   } else {
-    c.deps.transport.notifyOwner({ kind: 'line_request', taskId })
+    c.notifyOwner({ kind: 'line_request', taskId })
   }
 }
 

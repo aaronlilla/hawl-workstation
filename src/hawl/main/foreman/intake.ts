@@ -191,7 +191,7 @@ function admit(c: ForemanCtx, job: Job): IntakeResult {
 function hold(c: ForemanCtx, job: Job): void {
   job.exec = 'held'
   c.schedule('held_expire', job.taskId, '', job.receivedAt + c.cfg.releaseMs)
-  c.deps.transport.notifyOwner({ kind: 'job_needs_approval', taskId: job.taskId })
+  c.notifyOwner({ kind: 'job_needs_approval', taskId: job.taskId })
 }
 
 /** The owner answers a held job. */
@@ -251,7 +251,7 @@ export function exportQueue(c: ForemanCtx): QueueEntry[] {
       live.state = 'released'
       live.endedAt = c.now()
       live.endReason = 'handed_over'
-      c.deps.agents.revoke(live.agentId, {
+      c.agentRevoke(live.agentId, {
         taskId: j.taskId,
         epoch: live.epoch,
         reason: 'handed_over'
@@ -318,7 +318,7 @@ export function adoptQueue(
       c.jobs.set(job.taskId, job)
       c.schedule('held_expire', job.taskId, '', job.receivedAt + c.cfg.releaseMs)
       if (!e.ownerNotified) {
-        c.deps.transport.notifyOwner({ kind: 'job_needs_approval', taskId: job.taskId })
+        c.notifyOwner({ kind: 'job_needs_approval', taskId: job.taskId })
       }
       adopted.push(job.taskId)
       continue

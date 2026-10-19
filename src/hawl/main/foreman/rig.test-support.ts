@@ -44,6 +44,15 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
   const notices: OwnerNotice[] = []
   const offers: { agentId: string; offer: AgentOffer }[] = []
   const revokes: { agentId: string; revoke: AgentRevoke }[] = []
+  /** Make the next N calls of a transport method throw, to prove nothing is left half done. */
+  const faults = { sendMenu: 0, sendHeartbeat: 0, sendLifecycle: 0, notifyOwner: 0, handBack: 0, offer: 0 }
+  let permanent = false
+  const boom = (k: keyof typeof faults): void => {
+    if (faults[k] > 0) {
+      faults[k]--
+      throw Object.assign(new Error(`relay down (${k})`), { permanent })
+    }
+  }
 
   const foreman = new Foreman(
     { yard: 'acme-dev', owner: 'usr_aaron', displayName: "Aaron's yard", ...cfg },
@@ -51,10 +60,12 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
       clock,
       transport: {
         sendMenu: (menu, revision, extended) => {
+          boom('sendMenu')
           calls.push(`menu:${revision}`)
           menus.push({ menu, revision, extended })
         },
         handBack: (back) => {
+          boom('handBack')
           calls.push(`handback:${back.op}:${back.taskId}`)
           handBacks.push(back)
           wire.push({ dir: 'handback', taskId: back.taskId })
@@ -64,20 +75,24 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
           requesterNotices.push(n)
         },
         sendHeartbeat: (hb) => {
+          boom('sendHeartbeat')
           calls.push(`beat:${hb.state}`)
           beats.push(hb)
         },
         sendLifecycle: (ev) => {
+          boom('sendLifecycle')
           calls.push(`out:${ev.event}:${ev.task_id}`)
           wire.push({ dir: 'out', ev })
         },
         notifyOwner: (n) => {
+          boom('notifyOwner')
           calls.push(`notify:${n.kind}:${n.taskId}`)
           notices.push(n)
         }
       },
       agents: {
         offer: (agentId, offer) => {
+          boom('offer')
           calls.push(`offer:${agentId}:${offer.taskId}:e${offer.epoch}`)
           offers.push({ agentId, offer })
         },
@@ -94,6 +109,11 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
 
   const rig = {
     foreman,
+    faults,
+    /** true: the injected faults say "refused for good" instead of "try again". */
+    permanent(on: boolean): void {
+      permanent = on
+    },
     calls,
     wire,
     menus,

@@ -7,23 +7,32 @@ import {
   type LifecycleEventName
 } from '../../shared/gateway-contract/contract'
 import { CardBook } from './cards'
+import { deliver, Outbox } from './outbox'
 import { checkHandBack } from './m2-schemas'
+import type { ExtendedMenu } from './menu'
 import {
   ForemanError,
   HOUR_MS,
   MINUTE_MS,
   type AgentInfo,
   type CapabilityConfig,
+  type AgentOffer,
+  type AgentRevoke,
   type Claim,
+  type Effect,
   type ForemanConfig,
   type ForemanDeps,
+  type ForemanHooks,
   type ForemanRule,
   type ForemanTask,
   type FullTaskKind,
   type HistoryKind,
   type Job,
+  type OwnerNotice,
+  type RequesterNotice,
   type Tombstone
 } from './types'
+import type { Menu } from '../../shared/gateway-contract/contract'
 
 export const DEFAULTS = {
   holdMs: 4 * HOUR_MS,
@@ -34,13 +43,14 @@ export const DEFAULTS = {
   maxReroutes: 3,
   maxSendBacks: 3,
   heartbeatMs: 30_000,
+  downGraceMs: 2 * MINUTE_MS,
+  outboxMaxAgeMs: 24 * HOUR_MS,
   retentionMs: 30 * 24 * HOUR_MS,
   timeZone: 'UTC'
 }
 
 export type ResolvedConfig = ForemanConfig & typeof DEFAULTS
 
-const MAX_TOMBSTONES = 100_000
 
 export const iso = (ms: number): string => new Date(ms).toISOString()
 
@@ -59,6 +69,10 @@ export class ForemanCtx {
   readonly spent = new Map<string, number>()
   /** Ended jobs that were forgotten: a redelivery of their offer is still a duplicate (S21), whatever the retention. */
   readonly tombs = new Map<string, Tombstone>()
+  readonly box: Outbox
+  /** Times the owner set from the console; they outlive a restart and beat the configured ones. */
+  ownerTimes: { holdMs: number; releaseMs: number } | null = null
+  hooks: ForemanHooks = {}
   published: CapabilityConfig[] = []
   draft: CapabilityConfig[] = []
   menuRevision = 0
@@ -80,6 +94,12 @@ export class ForemanCtx {
     this.deps = deps
     this.autoAccept = cfg.autoAccept ?? true
     this.cards = new CardBook(deps.clock, deps.newId ?? (() => `crd_${++this.ids}`))
+    this.box = new Outbox({
+      now: () => this.now(),
+      maxAgeMs: () => this.cfg.outboxMaxAgeMs,
+      hooks: () => this.hooks,
+      deliver: (e) => deliver(this.deps.transport, e)
+    })
   }
 
   now(): number {
@@ -148,7 +168,11 @@ export class ForemanCtx {
     job.history.push({ at: this.now(), kind, by, reason, agentId, toAgentId })
   }
 
-  /** Validate an event against the contract and the task state machine, then send it. */
+  /**
+   * Validate an event against the contract and the task state machine, then move the job and queue
+   * the event. Nothing is changed when the check fails. The send itself happens later from the outbox,
+   * so a relay that is down never leaves the job half-moved.
+   */
   emit(job: Job, event: LifecycleEventName, extra: Partial<LifecycleEvent>): void {
     const ev: LifecycleEvent = {
       yard: this.cfg.yard,
@@ -166,7 +190,49 @@ export class ForemanCtx {
       throw new ForemanError('bad_state', `${event} not allowed from ${job.state}`)
     }
     job.state = next
-    this.deps.transport.sendLifecycle(ev)
+    this.queue({ kind: 'lifecycle', ev })
+  }
+
+  // ---- outbox (outbox.ts)
+
+  queue(effect: Effect): void {
+    this.box.queue(effect)
+  }
+
+  flush(): void {
+    this.box.flush()
+  }
+
+  notifyOwner(notice: OwnerNotice): void {
+    this.queue({ kind: 'owner', notice })
+  }
+
+  notifyRequester(notice: RequesterNotice): void {
+    this.queue({ kind: 'requester', notice })
+  }
+
+  sendMenu(menu: Menu, revision: number, extended: ExtendedMenu): void {
+    this.queue({ kind: 'menu', menu, revision, extended })
+  }
+
+  // ---- agent port (local; a terminal that is gone must not break the foreman)
+
+  agentOffer(agentId: string, offer: AgentOffer): void {
+    try {
+      this.deps.agents.offer(agentId, offer)
+    } catch (err) {
+      // The offer times out on its own (claim_timeout) and goes to the next agent.
+      this.hooks.onError?.(err, 'offer to agent')
+    }
+  }
+
+  agentRevoke(agentId: string, revoke: AgentRevoke): void {
+    try {
+      this.deps.agents.revoke(agentId, revoke)
+    } catch (err) {
+      // The claim is already revoked here (epoch moved on): a late "done" from it is refused.
+      this.hooks.onError?.(err, 'revoke to agent')
+    }
   }
 
   // ---- claims
@@ -201,7 +267,7 @@ export class ForemanCtx {
       line.state = 'closed'
       line.closeReason = 'claim_revoked'
     }
-    this.deps.agents.revoke(claim.agentId, { taskId: job.taskId, epoch: claim.epoch, reason })
+    this.agentRevoke(claim.agentId, { taskId: job.taskId, epoch: claim.epoch, reason })
   }
 
   revokeLive(job: Job, reason: string): void {
@@ -271,45 +337,8 @@ export class ForemanCtx {
     }
     this.revokeLive(job, 'job_closed')
     job.state = 'reassigned'
-    this.deps.transport.handBack({ taskId: job.taskId, op, reason: body })
+    this.queue({ kind: 'handBack', back: { taskId: job.taskId, op, reason: body } })
     this.finish(job, reason)
-  }
-
-  /** Forget jobs that ended longer ago than the retention time, leaving a small tombstone (S21). */
-  prune(): void {
-    const cutoff = this.now() - this.cfg.retentionMs
-    for (const [id, j] of this.jobs) {
-      if (j.closedAt !== null && j.exec === null && !j.transferred && j.closedAt <= cutoff) {
-        this.jobs.delete(id)
-        this.tombs.set(id, { taskId: id, state: j.state, closedAt: j.closedAt, offerAt: j.offerAt })
-      }
-    }
-    // A tombstone is a few bytes; the cap only stops a runaway file. Oldest go first.
-    while (this.tombs.size > MAX_TOMBSTONES) {
-      const first = this.tombs.keys().next().value
-      if (first === undefined) {
-        break
-      }
-      this.tombs.delete(first)
-    }
-  }
-
-  /**
-   * An agent showed up again (restart, back from away). Agents that lapsed or let an offer expire
-   * get another chance on queued jobs; an agent that said "no" to a job stays out of that job.
-   */
-  forgetTried(agentId: string): void {
-    for (const j of this.jobs.values()) {
-      if (j.state !== 'accepted' || j.exec !== 'queued' || !j.tried.includes(agentId)) {
-        continue
-      }
-      const last = j.claims.findLast((cl) => cl.agentId === agentId)
-      if (last?.endReason === 'declined') {
-        continue
-      }
-      j.tried = j.tried.filter((id) => id !== agentId)
-      j.exhaustedNotified = false
-    }
   }
 
   /** Ask every waiting job to look for an agent, oldest first. */

@@ -55,11 +55,28 @@ export function beatIfDue(c: ForemanCtx): void {
   if (c.lastBeatAt !== null && sig === c.lastBeatSig && now - c.lastBeatAt < c.cfg.heartbeatMs) {
     return
   }
+  // A failed send leaves the signature empty, so the next call sends again; one try a second at most.
+  if (c.lastBeatAt !== null && c.lastBeatSig === '' && now - c.lastBeatAt < 1000) {
+    return
+  }
   const err = checkContract('heartbeat', hb)
   if (err) {
-    throw new ForemanError('bad_event', `heartbeat: ${err}`)
+    // A heartbeat that does not fit the contract is a bug here; it must not stop jobs from moving.
+    c.hooks.onError?.(new ForemanError('bad_event', `heartbeat: ${err}`), 'heartbeat')
+    return
   }
   c.lastBeatAt = now
   c.lastBeatSig = sig
-  c.deps.transport.sendHeartbeat(hb)
+  const failed = (e: unknown): void => {
+    c.lastBeatSig = ''
+    c.hooks.onError?.(e, 'heartbeat')
+  }
+  try {
+    const r = c.deps.transport.sendHeartbeat(hb)
+    if (typeof (r as { then?: unknown } | undefined)?.then === 'function') {
+      ;(r as Promise<void>).catch(failed)
+    }
+  } catch (e) {
+    failed(e)
+  }
 }

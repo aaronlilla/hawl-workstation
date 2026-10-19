@@ -375,11 +375,11 @@ describe('restart: agents and heartbeat survive', () => {
     b.foreman.restore(snap)
     b.foreman.tick()
     expect(b.beats).toHaveLength(0)
-    // The 30 s cadence continues from the restored time, not from the restart.
+    // The 30 s cadence continues from the restored time (the first beat went out at T0), not from the restart.
     b.adv(19_000)
     expect(b.beats).toHaveLength(0)
     b.adv(2_000)
-    expect(b.beats).toHaveLength(0)
+    expect(b.beats).toHaveLength(1)
     b.adv(10_000)
     expect(b.beats).toHaveLength(1)
   })
@@ -388,10 +388,10 @@ describe('restart: agents and heartbeat survive', () => {
     const a = ready({}, ['a1'])
     a.send('j1')
     const snap = JSON.parse(JSON.stringify(a.foreman.snapshot()))
-    delete snap.agents
-    delete snap.tombs
-    delete snap.lastBeatAt
-    delete snap.lastBeatSig
+    // A real old file has no version and none of the later fields.
+    for (const k of ['version', 'agents', 'tombs', 'lastBeatAt', 'lastBeatSig', 'outbox', 'outSeq', 'dead', 'settings', 'savedAt']) {
+      delete snap[k]
+    }
     for (const j of snap.jobs) {
       delete j.pinAgent
       delete j.routing

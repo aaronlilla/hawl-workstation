@@ -230,6 +230,25 @@ export class CardBook {
     }
   }
 
+  /** Throws bad_snapshot when a saved card book is damaged. Changes nothing. */
+  static check(s: unknown): void {
+    const o = s as { cards?: unknown; publish?: unknown } | null
+    if (!o || !Array.isArray(o.cards) || !Array.isArray(o.publish)) {
+      throw new ForemanError('bad_snapshot', '"cards" is damaged')
+    }
+    for (const c of o.cards as unknown[]) {
+      const k = c as Partial<Card> | null
+      if (!k || typeof k.id !== 'string' || typeof k.agentId !== 'string' || typeof k.title !== 'string') {
+        throw new ForemanError('bad_snapshot', 'a work card is damaged')
+      }
+    }
+    for (const p of o.publish as unknown[]) {
+      if (!Array.isArray(p) || typeof p[0] !== 'string' || !Array.isArray(p[1])) {
+        throw new ForemanError('bad_snapshot', 'a card publish entry is damaged')
+      }
+    }
+  }
+
   restore(s: { cards: Card[]; publish: [string, PublishField[]][] }): void {
     this.#cards.clear()
     this.#publish.clear()

@@ -16,50 +16,39 @@ import type { DoneReport } from './claims'
 import type { CardBook } from './cards'
 import { buildBeat } from './heartbeat'
 import { adoptQueue, exportQueue, intake, ownerDecision } from './intake'
-import { addRule, decline, onLifecycle, reroute, resolveNeedsHuman } from './lifecycle'
+import { addRule, decline, onLifecycle, removeRule, reroute, resolveNeedsHuman } from './lifecycle'
 import { decideLine, lineAllows, openLine, remoteLineDecision } from './lines'
 import type { LineRequest } from './lines'
 import { publishMenu, setCapabilities } from './menu'
 import type { ExtendedMenu } from './menu'
 import { ForemanCtx } from './state'
+import { parseSnapshot } from './snapshot'
+import { applySnapshot, takeSnapshot } from './snapshot-io'
+import type { ForemanSnapshot, SnapshotSettings } from './snapshot'
+import { forgetTried } from './housekeeping'
+import { agentDown, agentUp, resumeAfterGap } from './agents'
+import { setTimes, settingsOf } from './settings'
+import type { SettingsView } from './settings'
 import { due, nextDueAt } from './timers'
 import { busyAgentIds, claimsOf, jobView } from './views'
 import type {
   AgentInfo,
   CapabilityConfig,
   Claim,
+  DeadEffect,
   ForemanConfig,
   ForemanDeps,
+  ForemanHooks,
   ForemanRule,
-  ForemanTask,
   IntakeInput,
   IntakeResult,
-  Job,
   JobView,
-  QueueEntry,
-  Tombstone
+  OutboxItem,
+  QueueEntry
 } from './types'
+import { CardBook as Cards } from './cards'
 
-export type ForemanSnapshot = {
-  jobs: Job[]
-  tasks: ForemanTask[]
-  rules: ForemanRule[]
-  menuRevision: number
-  published: CapabilityConfig[]
-  draft: CapabilityConfig[]
-  spent: [string, number][]
-  seq: number
-  ids: number
-  lastContactAt: number | null
-  paused: boolean
-  autoAccept: boolean
-  cards: ReturnType<CardBook['snapshot']>
-  /** Known inner agents. They restore as offline: a restarted app must hear from each terminal again. */
-  agents: AgentInfo[]
-  tombs: Tombstone[]
-  lastBeatAt: number | null
-  lastBeatSig: string
-}
+export type { ForemanSnapshot } from './snapshot'
 
 export class Foreman {
   readonly #c: ForemanCtx
@@ -75,10 +64,35 @@ export class Foreman {
 
   /** Catch up on due work, run the call, catch up again. A call that throws skips the second. */
   #do<T>(fn: (c: ForemanCtx) => T): T {
-    due(this.#c)
-    const result = fn(this.#c)
-    due(this.#c)
-    return result
+    try {
+      due(this.#c)
+      const result = fn(this.#c)
+      due(this.#c)
+      return result
+    } finally {
+      // Whatever the call changed is delivered now; a call that threw still delivers what it had queued.
+      this.#c.flush()
+    }
+  }
+
+  /** The runtime plugs in saving (before any send), error reporting and the "delivery finished" signal. */
+  attach(hooks: ForemanHooks): void {
+    this.#c.hooks = hooks
+  }
+
+  /** Deliver what is queued and due. The outbox also drains on every call and every tick. */
+  flush(): void {
+    this.#c.flush()
+  }
+
+  /** Effects still waiting to reach the Dispatcher or the owner. */
+  outbox(): OutboxItem[] {
+    return structuredClone(this.#c.box.items)
+  }
+
+  /** Effects that were dropped (refused for good, or too old). */
+  deadEffects(): DeadEffect[] {
+    return structuredClone(this.#c.box.dead)
   }
 
   // ---- menu (S11, S12, S48)
@@ -88,7 +102,13 @@ export class Foreman {
   }
 
   publishMenu(): { menu: Menu; extended: ExtendedMenu; revision: number } {
-    return publishMenu(this.#c)
+    return this.#do((c) => publishMenu(c))
+  }
+
+  /** The menu as the owner edits it: the draft, what is published, and the revision. */
+  menuState(): { draft: CapabilityConfig[]; published: CapabilityConfig[]; revision: number } {
+    const c = this.#c
+    return { draft: structuredClone(c.draft), published: structuredClone(c.published), revision: c.menuRevision }
   }
 
   get menuRevision(): number {
@@ -118,6 +138,20 @@ export class Foreman {
     this.#c.autoAccept = on
   }
 
+  get autoAccept(): boolean {
+    return this.#c.autoAccept
+  }
+
+  /** What the owner can change from the console, as it stands now. */
+  settings(): SettingsView {
+    return settingsOf(this.#c)
+  }
+
+  /** The hold time (owner told) and release time (job goes back to the Dispatcher), S18. */
+  setTimes(t: { holdMs?: number; releaseMs?: number }): SnapshotSettings {
+    return this.#do((c) => setTimes(c, t))
+  }
+
   /** Cost reported by agents; the daily budget in the menu policy holds new jobs once reached. */
   recordCost(usd: number): void {
     const day = this.#c.dayKey()
@@ -130,34 +164,21 @@ export class Foreman {
   // ---- agents
 
   agentUp(id: string, opts: { label?: string; capacity?: number } = {}): void {
-    this.#do((c) => {
-      const prev = c.agents.get(id)
-      const now = c.now()
-      c.agents.set(id, {
-        id,
-        label: opts.label ?? prev?.label ?? id,
-        online: true,
-        away: false,
-        capacity: opts.capacity ?? prev?.capacity ?? 1,
-        lastSeenAt: now
-      })
-      c.lastContactAt = now
-      // Back after a lapse or a missed offer: queued jobs may be offered to it again.
-      c.forgetTried(id)
-      c.delegateAll()
-    })
+    this.#do((c) => agentUp(c, id, opts))
   }
 
-  /** The claim is not touched: its lease lapses on its own and is then revoked (S17). */
+  /** An offer it had not answered moves on at once; a running claim gets the 2 minute down grace (agents.ts). */
   agentDown(id: string): void {
-    this.#do((c) => {
-      const a = c.agents.get(id)
-      if (a) {
-        a.online = false
-        a.lastSeenAt = c.now()
-        c.lastContactAt = a.lastSeenAt
-      }
-    })
+    this.#do((c) => agentDown(c, id))
+  }
+
+  /** The foreman was asleep or closed: renew running leases and open offers once (agents.ts). Call before anything else. */
+  resumeAfterGap(): number {
+    try {
+      return resumeAfterGap(this.#c)
+    } finally {
+      this.#c.flush()
+    }
   }
 
   agentAway(id: string, away: boolean): void {
@@ -166,7 +187,7 @@ export class Foreman {
       if (a) {
         a.away = away
         if (!away) {
-          c.forgetTried(id)
+          forgetTried(c, id)
           c.delegateAll()
         }
       }
@@ -248,6 +269,10 @@ export class Foreman {
     return addRule(this.#c, match, action, source)
   }
 
+  removeRule(id: string): void {
+    this.#do((c) => removeRule(c, id))
+  }
+
   rules(): ForemanRule[] {
     return this.#c.rules.map((r) => ({ ...r, match: { ...r.match }, action: { ...r.action } }))
   }
@@ -316,71 +341,16 @@ export class Foreman {
   // ---- persistence
 
   snapshot(): ForemanSnapshot {
-    const c = this.#c
-    return structuredClone({
-      jobs: [...c.jobs.values()],
-      tasks: [...c.tasks.values()].filter((t) => !t.done),
-      rules: c.rules,
-      menuRevision: c.menuRevision,
-      published: c.published,
-      draft: c.draft,
-      spent: [...c.spent],
-      seq: c.seq,
-      ids: c.ids,
-      lastContactAt: c.lastContactAt,
-      paused: c.paused,
-      autoAccept: c.autoAccept,
-      cards: c.cards.snapshot(),
-      agents: [...c.agents.values()],
-      tombs: [...c.tombs.values()],
-      lastBeatAt: c.lastBeatAt,
-      lastBeatSig: c.lastBeatSig
-    })
+    return takeSnapshot(this.#c)
   }
 
-  restore(s: ForemanSnapshot): void {
-    const c = this.#c
-    const snap = structuredClone(s)
-    c.jobs.clear()
-    c.tasks.clear()
-    c.rules.length = 0
-    c.spent.clear()
-    c.agents.clear()
-    c.tombs.clear()
-    for (const j of snap.jobs) {
-      c.jobs.set(j.taskId, j)
-    }
-    for (const t of snap.tasks) {
-      c.tasks.set(t.key, t)
-    }
-    c.rules.push(...snap.rules)
-    c.menuRevision = snap.menuRevision
-    c.published = snap.published
-    c.draft = snap.draft
-    for (const [k, v] of snap.spent) {
-      c.spent.set(k, v)
-    }
-    c.seq = snap.seq
-    c.ids = snap.ids
-    c.lastContactAt = snap.lastContactAt
-    c.paused = snap.paused
-    c.autoAccept = snap.autoAccept
-    c.cards.restore(snap.cards)
-    for (const j of snap.jobs) {
-      // Snapshots from before these fields existed.
-      j.pinAgent ??= null
-      j.routing ??= []
-      j.offerAt ??= j.receivedAt
-      j.transferred ??= false
-    }
-    for (const a of snap.agents ?? []) {
-      // The terminals died with the old process: known, but offline until they announce themselves.
-      c.agents.set(a.id, { ...a, online: false, away: false })
-    }
-    for (const t of snap.tombs ?? []) {
-      c.tombs.set(t.taskId, t)
-    }
-    c.lastBeatAt = snap.lastBeatAt ?? null
-    c.lastBeatSig = snap.lastBeatSig ?? ''
+  /**
+   * Load a saved snapshot. The whole file is checked first (snapshot.ts); a damaged or newer file throws
+   * ForemanError('bad_snapshot') and the foreman is left exactly as it was. Returns when it was saved.
+   */
+  restore(s: unknown): { savedAt: number } {
+    const snap = parseSnapshot(s, Cards.check)
+    applySnapshot(this.#c, snap)
+    return { savedAt: snap.savedAt }
   }
 }

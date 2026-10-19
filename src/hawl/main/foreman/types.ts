@@ -25,6 +25,9 @@ export type ForemanErrorCode =
   | 'bad_card'
   | 'bad_line'
   | 'bad_rule'
+  | 'bad_snapshot'
+  | 'bad_setting'
+  | 'untrusted_sender'
 
 export class ForemanError extends Error {
   readonly code: ForemanErrorCode
@@ -35,16 +38,25 @@ export class ForemanError extends Error {
   }
 }
 
-/** Where the foreman speaks to the Dispatcher (relay). Fire and forget; the adapter retries. */
+/**
+ * Where the foreman speaks to the Dispatcher (relay).
+ *
+ * Every method may return a promise. Everything except the heartbeat goes through the outbox
+ * (outbox.ts): a call that throws or rejects is tried again with a growing wait, in order, and
+ * the effect is already in the saved snapshot before the first try. So a method may be called
+ * more than once for the same effect (at-least-once): the receiving side treats a repeat as a
+ * no-op (S21). A thrown error with `permanent: true` drops the effect instead of retrying.
+ */
 export type ForemanTransport = {
   /** `menu` is the strict gateway-contract menu; `extended` adds the m2 policy fields for the ledger. */
-  sendMenu(menu: Menu, revision: number, extended: ExtendedMenu): void
-  sendHeartbeat(hb: Heartbeat): void
-  sendLifecycle(ev: LifecycleEvent): void
+  sendMenu(menu: Menu, revision: number, extended: ExtendedMenu): void | Promise<void>
+  /** Heartbeats are not queued: a stale one is useless. A failed one is simply sent again soon. */
+  sendHeartbeat(hb: Heartbeat): void | Promise<void>
+  sendLifecycle(ev: LifecycleEvent): void | Promise<void>
   /** Structured only: a kind and a reference, never free text. */
-  notifyOwner(notice: OwnerNotice): void
+  notifyOwner(notice: OwnerNotice): void | Promise<void>
   /** Structured only: tells the requester a job stopped on their side (S35). */
-  notifyRequester(notice: RequesterNotice): void
+  notifyRequester(notice: RequesterNotice): void | Promise<void>
   /**
    * A job leaves this yard and goes back to the Dispatcher to be routed again (S18, S20).
    * Not a gateway lifecycle event: the gateway state machine has no accepted -> reassigned move,
@@ -52,7 +64,7 @@ export type ForemanTransport = {
    * ops decline and release) and the job is not cancelled. The body is checked against
    * HAND_BACK_SCHEMA (m2-schemas.ts). The relay handler is another piece and is NOT exercised here.
    */
-  handBack(back: HandBack): void
+  handBack(back: HandBack): void | Promise<void>
 }
 
 export type HandBack = { taskId: string; op: 'decline' | 'release'; reason: string }
@@ -88,6 +100,41 @@ export type AgentOffer = {
 
 export type AgentRevoke = { taskId: string; epoch: number; reason: string }
 
+/**
+ * An effect that must reach the Dispatcher or the owner. It is recorded in the state change that
+ * caused it and delivered afterwards, so the state is the same whether delivery works or not.
+ */
+export type Effect =
+  | { kind: 'menu'; menu: Menu; revision: number; extended: ExtendedMenu }
+  | { kind: 'lifecycle'; ev: LifecycleEvent }
+  | { kind: 'owner'; notice: OwnerNotice }
+  | { kind: 'requester'; notice: RequesterNotice }
+  | { kind: 'handBack'; back: HandBack }
+
+export type OutboxItem = {
+  id: number
+  effect: Effect
+  /** When it was queued (ms). */
+  at: number
+  attempts: number
+  /** Earliest time of the next try (ms). */
+  retryAt: number
+  lastError: string | null
+}
+
+/** An effect that was dropped: a permanent refusal, or too old to matter. Kept for the owner to see. */
+export type DeadEffect = { at: number; kind: Effect['kind']; ref: string; reason: string }
+
+/** Wired by the runtime (or a test): saving, errors and "something changed, re-plan". */
+export type ForemanHooks = {
+  /** Save the snapshot now. Called before the first try of any queued effect (write-ahead). May throw. */
+  persist?: () => void
+  /** Something went wrong that the foreman handled (a failed delivery, a refused local call). */
+  onError?: (err: unknown, where: string) => void
+  /** An async delivery finished: the runtime saves and re-plans its sleep. */
+  onChange?: () => void
+}
+
 export type ForemanDeps = {
   clock: Clock
   transport: ForemanTransport
@@ -116,6 +163,13 @@ export type ForemanConfig = {
   offerMs?: number
   /** Agents tried per job before the owner is told. Default 3. */
   maxAgentsPerJob?: number
+  /**
+   * An agent that went down (not away) keeps its running claim this long, then the lease is
+   * treated as lapsed so the job can move on. Coming back in time restores the full lease. Default 2 min.
+   */
+  downGraceMs?: number
+  /** An effect that could not be delivered for this long is dropped and listed as dead. Default 24 h. */
+  outboxMaxAgeMs?: number
   /** Reroutes before a job goes to a person (S20). Default 3. */
   maxReroutes?: number
   /** Send-backs before a job goes to the requester (S35). Default 3. */
@@ -180,6 +234,8 @@ export type Claim = {
   leaseExpiresAt: number | null
   endedAt: number | null
   endReason: string | null
+  /** Set while the agent is down: the lease it had before it was cut short to the down grace. */
+  graceFrom?: number | null
 }
 
 export type HistoryKind =

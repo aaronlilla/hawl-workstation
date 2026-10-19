@@ -39,7 +39,7 @@ export function onLifecycle(c: ForemanCtx, ev: LifecycleEvent): void {
     if (job.sendBacks >= c.cfg.maxSendBacks) {
       // S35: the third send-back stops the job and goes to the requester, not the yard owner.
       job.needsHuman = true
-      c.deps.transport.notifyRequester({
+      c.notifyRequester({
         kind: 'send_back_limit',
         taskId: job.taskId,
         requester: job.requester
@@ -94,6 +94,15 @@ export function addRule(
   return id
 }
 
+/** Delete a rule. The jobs it routed keep their history. */
+export function removeRule(c: ForemanCtx, id: string): void {
+  const at = c.rules.findIndex((r) => r.id === id)
+  if (at === -1) {
+    throw new ForemanError('bad_rule', `no rule ${id}`)
+  }
+  c.rules.splice(at, 1)
+}
+
 /**
  * Move a job to another inner agent. The old claim is revoked first. A job rerouted
  * maxReroutes times goes to a person and is no longer offered. With makeRule the next
@@ -135,7 +144,7 @@ export function reroute(
   }
   if (job.reroutes >= c.cfg.maxReroutes) {
     job.needsHuman = true
-    c.deps.transport.notifyOwner({ kind: 'needs_human', taskId: job.taskId })
+    c.notifyOwner({ kind: 'needs_human', taskId: job.taskId })
   } else {
     job.pinAgent = opts.toAgent
     job.tried = job.tried.filter((id) => id !== opts.toAgent)

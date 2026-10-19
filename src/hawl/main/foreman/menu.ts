@@ -72,7 +72,7 @@ export function publishMenu(c: ForemanCtx): {
   }
   c.published = c.draft.map((cap) => ({ ...cap }))
   c.menuRevision++
-  c.deps.transport.sendMenu(menu, c.menuRevision, extended)
+  c.sendMenu(menu, c.menuRevision, extended)
   return { menu, extended, revision: c.menuRevision }
 }
 

@@ -8,86 +8,9 @@ import { Foreman } from './foreman'
 import { FOREMAN_CHANNELS, registerForemanIpc } from './ipc'
 import type { IpcLike } from './ipc'
 import { ForemanRuntime } from './runtime'
-import type { Scheduler, SnapshotStorage } from './runtime'
-import { CAPS, HOUR_MS, MINUTE_MS, code, makeRig } from './rig.test-support'
+import { CAPS, HOUR_MS, MINUTE_MS, code } from './rig.test-support'
+import { memoryStorage, setup } from './runtime.test-support'
 import type { HandBack, OwnerNotice } from './types'
-
-/** Timers on the rig's fake clock: advance() moves time and runs what came due, in order. */
-function virtualScheduler(rig: ReturnType<typeof makeRig>) {
-  type T = { id: number; at: number; fn: () => void }
-  let next = 1
-  const timers: T[] = []
-  const scheduler: Scheduler = {
-    set(fn, ms) {
-      const t = { id: next++, at: rig.now() + ms, fn }
-      timers.push(t)
-      return t.id
-    },
-    clear(h) {
-      const i = timers.findIndex((t) => t.id === h)
-      if (i !== -1) {
-        timers.splice(i, 1)
-      }
-    }
-  }
-  return {
-    scheduler,
-    pending: () => timers.map((t) => t.at - rig.now()).sort((a, b) => a - b),
-    /** Move time forward in steps, firing timers as they come due. */
-    advance(ms: number): void {
-      const end = rig.now() + ms
-      for (let guard = 0; guard < 100_000; guard++) {
-        const first = timers.toSorted((a, b) => a.at - b.at || a.id - b.id)[0]
-        if (!first || first.at > end) {
-          break
-        }
-        rig.skip(Math.max(0, first.at - rig.now()))
-        timers.splice(timers.indexOf(first), 1)
-        first.fn()
-      }
-      rig.skip(Math.max(0, end - rig.now()))
-    }
-  }
-}
-
-type Memory = {
-  text: string | null
-  writes: number
-  quarantined: string[]
-  api: SnapshotStorage
-}
-
-function memoryStorage(initial: string | null = null): Memory {
-  const s: Memory = {
-    text: initial,
-    writes: 0,
-    quarantined: [] as string[],
-    api: {
-      read: () => s.text,
-      write: (t: string) => {
-        s.text = t
-        s.writes++
-      },
-      quarantine: (t: string) => {
-        s.quarantined.push(t)
-      }
-    }
-  }
-  return s
-}
-
-function setup(storage = memoryStorage(), errors: unknown[] = []) {
-  const rig = makeRig()
-  const sched = virtualScheduler(rig)
-  const rt = new ForemanRuntime({
-    foreman: rig.foreman,
-    clock: { now: rig.now },
-    storage: storage.api,
-    scheduler: sched.scheduler,
-    onError: (e) => errors.push(e)
-  })
-  return { rig, sched, rt, storage, errors }
-}
 
 describe('S18 the runtime sleeps until something is due, with nobody calling the foreman', () => {
   it('S18: hold notice at 4 h and hand-back at 24 h happen from timers alone', () => {
@@ -156,12 +79,14 @@ describe('restart: the runtime saves and restores', () => {
     rt.start()
     rt.run((f) => f.publishMenu())
     rt.run((f) => f.intake({ offer: rig.offerEvent('j1'), requester: 'site' }))
-    expect(storage.writes).toBe(0)
+    // The menu and the accept were each saved just before they were sent (write-ahead): 2 writes.
+    expect(storage.writes).toBe(2)
     sched.advance(200)
-    expect(storage.writes).toBe(1)
+    // One more write, merged: the state after both were delivered.
+    expect(storage.writes).toBe(3)
     rt.run((f) => f.pause())
     rt.stop()
-    expect(storage.writes).toBe(2)
+    expect(storage.writes).toBe(4)
     const saved = JSON.parse(storage.text ?? '{}')
     expect(saved.jobs.map((j: { taskId: string }) => j.taskId)).toEqual(['j1'])
     expect(saved.paused).toBe(true)
@@ -176,7 +101,8 @@ describe('restart: the runtime saves and restores', () => {
 
     const b = setup(a.storage)
     b.rig.skip(5 * HOUR_MS)
-    expect(b.rt.start()).toEqual({ restored: true })
+    // 5 h since the last save is a gap: running leases are renewed once (none here).
+    expect(b.rt.start()).toEqual({ restored: true, resumed: true })
     expect(b.rig.notices).toEqual([{ kind: 'job_held_offline', taskId: 'j1' }])
     expect(b.rig.handBacks).toEqual([])
     b.sched.advance(19 * HOUR_MS + MINUTE_MS)
@@ -200,7 +126,7 @@ describe('restart: the runtime saves and restores', () => {
   it('S17: a snapshot that cannot be read is kept aside, reported, and the app starts empty', () => {
     const errors: unknown[] = []
     const { rt, storage } = setup(memoryStorage('{"jobs": nope'), errors)
-    expect(rt.start()).toEqual({ restored: false })
+    expect(rt.start()).toEqual({ restored: false, resumed: false })
     expect(storage.quarantined).toEqual(['{"jobs": nope'])
     expect(errors).toHaveLength(1)
     rt.stop()
@@ -218,7 +144,8 @@ describe('restart: the runtime saves and restores', () => {
       )
     ).toBe('wrong_yard')
     sched.advance(200)
-    expect(storage.writes).toBe(1)
+    // The publish was saved before it was sent, and once more after it went out; the failed call added nothing.
+    expect(storage.writes).toBe(2)
     rt.stop()
   })
 
@@ -282,9 +209,13 @@ describe('file storage', () => {
             sendMenu: () => {},
             sendHeartbeat: () => {},
             sendLifecycle: () => {},
-            notifyOwner: (n) => notices.push(n),
+            notifyOwner: (n) => {
+              notices.push(n)
+            },
             notifyRequester: () => {},
-            handBack: (b) => backs.push(b)
+            handBack: (b) => {
+              backs.push(b)
+            }
           },
           agents: { offer: () => {}, revoke: () => {} }
         }
@@ -324,7 +255,7 @@ describe('file storage', () => {
       clock: { now: Date.now },
       storage: fileStorage(path)
     })
-    expect(rt2.start()).toEqual({ restored: true })
+    expect(rt2.start()).toMatchObject({ restored: true })
     expect(rt2.run((f) => f.jobView('j1')).state).toBe('reassigned')
     rt2.stop()
   })
@@ -340,7 +271,7 @@ describe('IPC for the owner screens', () => {
       handle: (ch, fn) => handlers.set(ch, fn),
       removeHandler: (ch) => handlers.delete(ch)
     }
-    const off = registerForemanIpc(ipc, rt)
+    const off = registerForemanIpc(ipc, rt, { trusted: () => true })
     const call = (ch: string, ...args: unknown[]) => handlers.get(ch)?.({}, ...args)
     return { rig, rt, handlers, off, call }
   }

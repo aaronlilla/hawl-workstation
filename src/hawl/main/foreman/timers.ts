@@ -2,6 +2,7 @@
 // when due() is called, so a lapsed lease is always revoked before any later call is read.
 import { agentStatus, delegate } from './claims'
 import { beatIfDue } from './heartbeat'
+import { prune } from './housekeeping'
 import { declineAsked } from './intake'
 import type { ForemanCtx } from './state'
 import { MINUTE_MS, type ForemanTask, type Job } from './types'
@@ -46,16 +47,17 @@ export function due(c: ForemanCtx): void {
         c.tasks.delete(k)
       }
     }
-    c.prune()
+    prune(c)
     beatIfDue(c)
   } finally {
     c.running = false
   }
+  c.flush()
 }
 
 /** The earliest time something is due, so an adapter can sleep until then. */
 export function nextDueAt(c: ForemanCtx): number {
-  let min = (c.lastBeatAt ?? c.now()) + c.cfg.heartbeatMs
+  let min = Math.min((c.lastBeatAt ?? c.now()) + c.cfg.heartbeatMs, c.box.dueAt())
   for (const t of c.tasks.values()) {
     if (!t.done && t.runAfter < min) {
       min = t.runAfter
@@ -93,7 +95,7 @@ function run(c: ForemanCtx, task: ForemanTask): void {
       claim.endReason = 'offer_timeout'
       job.tried.push(claim.agentId)
       c.history(job, 'timeout', 'foreman', 'offer not answered', claim.agentId)
-      c.deps.agents.revoke(claim.agentId, {
+      c.agentRevoke(claim.agentId, {
         taskId: job.taskId,
         epoch: claim.epoch,
         reason: 'offer_expired'
@@ -126,11 +128,11 @@ function run(c: ForemanCtx, task: ForemanTask): void {
       } else if (!job.holdNotified) {
         job.holdNotified = true
         if (status === 'none_online') {
-          c.deps.transport.notifyOwner({ kind: 'job_held_offline', taskId: job.taskId })
+          c.notifyOwner({ kind: 'job_held_offline', taskId: job.taskId })
         } else if (!job.exhaustedNotified) {
           // Agents are up, but every one of them already turned the job down or let it lapse.
           job.exhaustedNotified = true
-          c.deps.transport.notifyOwner({ kind: 'job_unclaimed', taskId: job.taskId })
+          c.notifyOwner({ kind: 'job_unclaimed', taskId: job.taskId })
         }
       }
       return
@@ -146,7 +148,7 @@ function run(c: ForemanCtx, task: ForemanTask): void {
               : 'yard_busy'
         c.history(job, 'release', 'foreman', 'release time passed')
         c.handBack(job, 'release', reason)
-        c.deps.transport.notifyOwner({ kind: 'job_released', taskId: job.taskId })
+        c.notifyOwner({ kind: 'job_released', taskId: job.taskId })
       }
       return
     case 'held_expire':
