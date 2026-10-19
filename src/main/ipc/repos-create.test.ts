@@ -101,7 +101,7 @@ describe('repos:create', () => {
     webContents: { send: vi.fn() }
   }
   const tmpPath = (...segments: string[]): string => join('/tmp', ...segments)
-  const defaultProjectParent = join('/Users/alice', 'orca', 'projects')
+  const defaultProjectParent = join('/Users/alice', 'hawl', 'projects')
   // The value a fresh install seeds Settings -> Workspace Directory with.
   const defaultWorkspaceDir = getDefaultWorkspaceDir('/Users/alice')
 
@@ -170,7 +170,7 @@ describe('repos:create', () => {
   })
 
   it.each([undefined, '', '   '])(
-    'falls back to ~/orca/projects for a blank workspace directory: %p',
+    'falls back to ~/hawl/projects for a blank workspace directory: %p',
     async (workspaceDir) => {
       mockStore.getSettings.mockReturnValue({ workspaceDir })
       await expect(callDefaultCreateProjectParent()).resolves.toBe(defaultProjectParent)
@@ -193,10 +193,10 @@ describe('repos:create', () => {
   it('ignores a Windows seeded workspace directory regardless of drive-letter case', async () => {
     homedirMock.mockReturnValue('C:\\Users\\alice')
     mockStore.getSettings.mockReturnValue({
-      workspaceDir: 'c:\\users\\alice\\orca\\workspaces'
+      workspaceDir: 'c:\\users\\alice\\hawl\\workspaces'
     })
     await expect(callDefaultCreateProjectParent()).resolves.toBe(
-      join('C:\\Users\\alice', 'orca', 'projects')
+      join('C:\\Users\\alice', 'hawl', 'projects')
     )
   })
 

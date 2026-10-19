@@ -8,7 +8,7 @@ import {
 import { PluginKillListStore } from './plugin-kill-list-store'
 import { HAWL_VENDOR_SERVICES_ENABLED } from '../../hawl/shared/brand'
 
-export const PLUGIN_KILL_LIST_URL = 'https://onorca.dev/plugins/kill-list.json'
+export const PLUGIN_KILL_LIST_URL = ''
 const PLUGIN_KILL_LIST_DOWNLOAD_LIMIT = 4 * 1024 * 1024
 
 type PluginKillListFetcher = () => Promise<PluginKillList>
