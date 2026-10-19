@@ -72,3 +72,4 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 |---|---|
 | `src/renderer/src/assets/main.css`, `src/renderer/src/main.tsx` | import `src/hawl/renderer/theme/index.css` and start the light engine |
 | `src/renderer/src/components/crash-report/CrashReportDialogSurface.tsx` | "Orca" in the crash dialog text becomes "Hawl" |
+| `src/renderer/src/components/Landing.tsx` | empty home: dark logo plate and "ORCA" text replaced by the Hawl wordmark (light and dark SVG from `src/hawl/renderer/assets/`) straight on the ground |
