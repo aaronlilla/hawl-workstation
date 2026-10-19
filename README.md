@@ -2,11 +2,15 @@
 
 The free, open-source desktop workstation for [Hawl](https://hawl.ai): an agentic IDE where you start and run whole projects, with your agents, your team's agents, jobs, approvals and a live map built in, and Hawl sign-in.
 
-![Hawl design art: the job board (design reference, not a screenshot of this app)](hawl-docs/design-art-board.jpg)
+<p align="center"><img src="hawl-docs/design-art-board.png" alt="Hawl design art: the job board" width="360"></p>
 
-*Design art from the Hawl design set. This is not a screenshot: the app does not show it yet.*
+*Design art from the Hawl design set (transparent PNG). It is a design reference, not a screenshot of this app.*
 
-**Status 2026-10-19: early.** This repository is a thin fork of Orca with design and planning documents added. The Hawl features below are not built. Today the app you get from this source is stock Orca (a terminal workspace for running coding agents in git worktrees), still named Orca.
+**Status 2026-10-19: early.** This repository is a thin fork of Orca with design and planning documents added. The Hawl features below are not built. Today the app you get from this source is stock Orca (a terminal workspace for running coding agents in git worktrees), still named Orca. This is what `pnpm dev` on this tree shows today, captured 2026-10-19 on Windows:
+
+![The window this fork's source opens today: stock Orca, window title "Orca"](hawl-docs/fork-today-window.png)
+
+There is no download yet (release is milestone M7), and no badges: nothing is published.
 
 ## What it will do
 
@@ -31,14 +35,16 @@ Orca's original copyright and license stay in [LICENSE](LICENSE). The weekly rou
 
 There is no Hawl download yet; release is milestone M7. Until then you can run it from source (below) or build a Windows installer yourself with `pnpm build:win` (script exists in `package.json`; not run for this fork). The stock Orca app is a separate program and uses its own data folder.
 
-## Run it from source (Windows, macOS, Linux)
+## Run it from source (seen on Windows only)
 
-What was actually seen on 2026-10-19 on Windows Server 2025 with Node v24.20.0 and pnpm 12.14.0 (two independent runs): `pnpm dev` built the main process and preload, started the renderer dev server (port 5173, or the next free one) and launched Electron ("starting electron app...", DevTools listening). Not checked: a clean `pnpm install` from an empty folder, the window title, `pnpm test` (it needs Bun, not installed on that machine), macOS and Linux.
+Seen on 2026-10-19 on Windows Server 2025, Node v24.20.0, pnpm 12.14.0, in a fresh git worktree of this repository: `pnpm install` exit 0 (it ran `node-gyp rebuild` for native modules, so Windows needs Python and C++ build tools; Python 3.14.7 was present, the C++ toolset was not checked), then `pnpm dev` with `ORCA_DEV_USER_DATA_PATH` set to an empty folder built the main process and preload, started the renderer dev server, launched Electron and showed the window in the screenshot above (title "Orca"). macOS and Linux were not run. `pnpm test` was not run (it needs Bun, not installed on that machine). The same tree does not yet show anything Hawl: no Hawl code is built.
 
 1. Install Node 24 (`package.json` `engines`) and pnpm 12.14.0 (`packageManager`). Bun is needed only for `pnpm test`, version in [config/.bun-version](config/.bun-version). Details: [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md), "Local Setup".
-2. In the repository folder run `pnpm install`.
-3. Run `pnpm dev`. It starts the app with its own user-data folder (`%APPDATA%\orca-dev` on Windows, per `config/scripts/run-electron-vite-dev.mjs:434-451`).
+2. In the repository folder run `pnpm install` and wait for it to finish with exit 0. Do not skip it or stop it early.
+3. Run `pnpm dev`. It uses its own user-data folder (`%APPDATA%\orca-dev` on Windows, per `config/scripts/run-electron-vite-dev.mjs:434-451`).
 4. To keep a dev copy away from an installed Orca or another dev copy, set `ORCA_DEV_USER_DATA_PATH` to a separate folder first. In PowerShell: `$env:ORCA_DEV_USER_DATA_PATH='C:\dev\my-userdata'`. Never run two copies on the same user-data folder.
+
+If `pnpm dev` stops at `ensure:electron-runtime` with `ENOENT ... node_modules\electron\package.json` or `Cannot find package '@electron/rebuild'`, the install did not complete in this folder (seen on a checkout whose `node_modules` was incomplete). Run `pnpm install` again in that folder, check it ends with exit 0, then run `pnpm dev`. That recovery was not reproduced on the failing checkout.
 
 Other commands (from `package.json`): `pnpm typecheck` type-checks all projects, `pnpm lint` runs the lint gates, `node hawl-tools/check-docs.mjs` checks the documents here against the code.
 

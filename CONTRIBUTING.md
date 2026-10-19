@@ -19,4 +19,4 @@ This is a thin fork of Orca. Orca's own contribution rules still apply to anythi
 
 ## Credit
 
-Keep the "Built on Orca" notice in the README and the About screen, and keep [LICENSE](LICENSE) intact.
+Keep the "Built on Orca" notice in the README and in the About panel (the About panel line is [FORK-HOOKS.md](FORK-HOOKS.md) row 11, milestone M0, not applied yet), and keep [LICENSE](LICENSE) intact.

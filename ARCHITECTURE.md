@@ -43,9 +43,10 @@ SPEC-MAP.md uses exactly these names in its "Screen" column. A name that is not 
 | Needs tray | `needs/` | Everything waiting on this person: approvals, agent questions (`ask_human`), held-offline jobs, direct-line requests, send-back stops | Hawl-owned panel, opened from the Sidebar tree header badge | M4 |
 | Messages | `messages/` | Conversations and rooms in this person's yard, DM composer | Hawl-owned panel, opened from the Sidebar tree | M5 |
 | Yard console | `yard/` | Tabs: Menu, Foreman, Ledger, Team check, Doctor, Sites (card fields), Setup interview | Hawl-owned panel, opened from the Sidebar tree yard header | M5 |
-| Settings | `settings/` | Site yard rule (owner only), notification kinds, digest hour | Hawl section added to the app's settings (decide in M2 whether by hook or as a separate Hawl panel) | M5 |
+| Settings | `settings/` | Site yard rule (owner only), notification kinds, digest hour (read and written through the web route `PUT /api/settings/notifications`, see SPEC-MAP S38), the "Built on Orca" credit line (FORK-HOOKS 11) | Hawl section added to the app's settings (decide in M2 whether by hook or as a separate Hawl panel) | M5 |
 | Map view | `map/` | Dispatcher hub, factories, crates; plain list mode | Hawl-owned panel, opened from the Sidebar tree | M5 |
-| Phone app | `hawl-mobile/` | Needs tray, job receipts, ask answers, list view on a phone | Separate Expo app | M6 |
+| Phone web page | not in this fork (hawl-platform `apps/web`: `NeedsCards` H2, web push N2, `TownCanvas` list X5) | What a person sees on a phone for S18, S36 to S40 and the S47 list: needs cards, answer and approve, push, receipt link, plain list | The Hawl website in the phone browser; the workstation only links to it | M4 |
+| Phone app | `hawl-mobile/` | A native phone app (plan decision 2026-10-19): the same needs, receipts, answers and list. No S line depends on it | Separate Expo app | M6 |
 
 Non-screen parts: `client/` and `main/event-hub.ts` (M1), `main/terminal-env.ts` (M3, section 4), `main/foreman/` (section 9, M5).
 
@@ -92,15 +93,15 @@ One terminal = one agent in the owner's yard (plan, "Yard-native projects"). The
 1. Renderer calls IPC `pty:spawn`. Handler: `src/main/ipc/pty/ipc/spawn.ts:10-19`.
 2. Pane identity is stamped first, by `stampPtySpawnPaneEnv` (`src/main/ipc/pty/spawn-pane-env.ts:41`; sets `ORCA_PANE_KEY` `:57`, `ORCA_WORKTREE_ID` `:64`). Call sites: `src/main/ipc/pty/ipc/spawn-env.ts:102` (IPC lane) and `src/main/ipc/pty/runtime/spawn-preflight.ts:118` (runtime lane).
 3. Then the host env is built by `buildPtyHostEnv` (`src/main/ipc/pty/host-env/assembly.ts:44`, mutates `baseEnv` in place, returns it at `:322`). It has exactly two call sites:
-   - `src/main/ipc/pty/spawn-host-env.ts:214`, reached from `resolvePtySpawnHostEnv`. From the IPC lane: `spawn-env.ts:102` stamps, then `spawn-env-codex.ts:13` calls `resolvePtySpawnHostEnv`. From the runtime lane: `spawn-preflight.ts:118` stamps, then `:125` calls it. In both, the stamp runs before `buildPtyHostEnv` (read in code, not run).
-   - `src/main/ipc/pty/provider/local-configure.ts:79`, the `LocalPtyProvider` `buildSpawnEnv` callback. `local-pty-spawn-environment.ts:29-40` spreads `spawn.env` (which carries the stamped `ORCA_PANE_KEY`) into the env and keeps pane keys that the caller named explicitly (`removeUnspecifiedPaneIdentityEnv`), then calls `buildSpawnEnv` at `:68`. Same order; the `spawn.env` object being the stamped one is inferred from those lines, not run.
-4. `buildPtyHostEnv`'s doc comment (`assembly.ts:38-41`) says it must not be called for SSH (`args.connectionId` set).
+   - `src/main/ipc/pty/spawn-host-env.ts:214`, reached from `resolvePtySpawnHostEnv`. From the IPC lane: `src/main/ipc/pty/ipc/spawn-env.ts:102` stamps, then `src/main/ipc/pty/ipc/spawn-env-codex.ts:13` calls `resolvePtySpawnHostEnv`. From the runtime lane: `src/main/ipc/pty/runtime/spawn-preflight.ts:118` stamps, then `:125` calls it. In both, the stamp runs before `buildPtyHostEnv` (read in code, not run).
+   - `src/main/ipc/pty/provider/local-configure.ts:79`, the `LocalPtyProvider` `buildSpawnEnv` callback. `src/main/providers/local-pty-spawn-environment.ts:29-40` spreads `spawn.env` (which carries the stamped `ORCA_PANE_KEY`) into the env and keeps pane keys that the caller named explicitly (`removeUnspecifiedPaneIdentityEnv`), then calls `buildSpawnEnv` at `:68`. Same order; the `spawn.env` object being the stamped one is inferred from those lines, not run.
+4. `buildPtyHostEnv`'s doc comment (`src/main/ipc/pty/host-env/assembly.ts:38-41`) says it must not be called for SSH (`args.connectionId` set).
 
 So at the end of `buildPtyHostEnv`, `baseEnv.ORCA_PANE_KEY` and `baseEnv.ORCA_WORKTREE_ID` are already set for both call sites. The Hawl hook needs no extra argument: it reads them from `baseEnv`.
 
 ### Hook coordinates are conditional
 
-`assembly.ts:128-132` first deletes inherited `ORCA_AGENT_HOOK_*` keys (list in `host-env/spawn-env-keys.ts:4-12`), and then `Object.assign(baseEnv, agentHookServer.buildPtyEnv())` runs only `if (opts.agentStatusHooksEnabled)`. `buildPtyEnv` (`src/main/agent-hooks/server/server-runtime-env.ts:13-22`) itself returns `{}` when `statusHooksEnabled` is false, the port is not yet above 0, or there is no token. So the hook port and token reach a terminal at spawn only when agent status hooks are enabled in settings and the loopback server is already listening. Hawl needs those hooks on (the Pane chip's agent state depends on them), so the workstation turns them on by default and the M3 proof starts a terminal immediately after launch to check the server is ready in time. Whether the default is on today for new installs: **(unverified)**.
+`src/main/ipc/pty/host-env/assembly.ts:128-132` first deletes inherited `ORCA_AGENT_HOOK_*` keys (list in `src/main/ipc/pty/host-env/spawn-env-keys.ts:4-12`), and then `Object.assign(baseEnv, agentHookServer.buildPtyEnv())` runs only `if (opts.agentStatusHooksEnabled)`. `buildPtyEnv` (`src/main/agent-hooks/server/server-runtime-env.ts:13-22`) itself returns `{}` when `statusHooksEnabled` is false, the port is not yet above 0, or there is no token. So the hook port and token reach a terminal at spawn only when agent status hooks are enabled in settings and the loopback server is already listening. Hawl needs those hooks on (the Pane chip's agent state depends on them). They already are on by default: `agentStatusHooksEnabled: true` in `src/shared/default-global-settings.ts:228`, and `src/shared/agent-status-hooks-setting.ts:14` treats anything other than `false` as on (read in code, not run). So the workstation does not need to turn them on. The risk for M3 is timing: a terminal spawned before the loopback server is listening gets no hook port or token, so the M3 proof starts a terminal immediately after launch and checks the chip still gets state.
 
 ### What the Hawl hook sets
 
@@ -135,7 +136,7 @@ Limits found:
 ## 6. Seam: sidebar
 
 - Sidebar root: `src/renderer/src/components/sidebar/index.tsx`. Children in order: `<SidebarNav />` (`:174`), `<SidebarHeader ...>` (`:175`), `<WorktreeList ...>` (`:199`). `SidebarAgentsList` is lazy (`:27`).
-- Plan: site switcher above the tree, then "<Name>'s yard", then each project folder as a station, then its terminals/agents (S4, S5). Orca's tree is Repo -> Worktree (`Repo` `repo-types.ts:53`, `Worktree` `worktree/types.ts:100`). A Hawl station maps to an Orca `Repo` folder; a terminal/agent maps to a pane inside a `Worktree`.
+- Plan: site switcher above the tree, then "<Name>'s yard", then each project folder as a station, then its terminals/agents (S4, S5). Orca's tree is Repo -> Worktree (`Repo` `src/shared/repo-types.ts:53`, `Worktree` `src/shared/worktree/types.ts:100`). A Hawl station maps to an Orca `Repo` folder; a terminal/agent maps to a pane inside a `Worktree`.
 - The sidebar has two bodies: `SidebarAgentsList` (when `sidebarBody === 'agents'`) and the worktree list (`:184` and `:199`, read). Hawl hooks the worktree body first.
 - Hawl hook (FORK-HOOKS 3): render `<HawlSidebarTree />` (site switcher and yard header) above `<WorktreeList>` and let `WorktreeList` row components accept a Hawl decoration slot. Exact insertion points are decided in M2; nothing about `WorktreeList` internals was read **(unverified)**.
 
@@ -151,8 +152,8 @@ The workstation is its own relay client (plan, "Terminal seams"):
 
 Orca has an out-of-process plugin host (`src/main/plugins/`, `src/shared/plugins/`).
 - Manifest (zod): `src/shared/plugins/plugin-manifest.ts:96-121` (`contributes.panels|commands|events|languagePacks|keybindings|vmRecipes|agents`, `capabilities`, `pluginApi: 1`). File name `orca-plugin.json` (from the plan; the manifest-file reader `src/main/plugins/plugin-manifest-file.ts` was not opened **(unverified)**).
-- Panels render in a sandboxed iframe in the right-sidebar activity bar only (`plugin-manifest.ts:44-51`; renderer `components/right-sidebar/PluginPanel.tsx`).
-- Events a plugin can subscribe to: `worktree.created`, `worktree.removed`, `agent.status.changed` (`plugin-events.ts:50-54`, payload schemas).
+- Panels render in a sandboxed iframe in the right-sidebar activity bar only (`src/shared/plugins/plugin-manifest.ts:44-51`; renderer `src/renderer/src/components/right-sidebar/PluginPanel.tsx`).
+- Events a plugin can subscribe to: `worktree.created`, `worktree.removed`, `agent.status.changed` (`src/shared/plugins/plugin-events.ts:50-54`, payload schemas).
 - Experimental, no stability promise: `src/shared/plugins/plugin-host-api.ts` header (read).
 - Official-publisher gate: `src/shared/plugins/plugin-marketplace.ts:9-12` (`OFFICIAL_PLUGIN_PUBLISHER = 'stablyai'`, id prefix `orca-`, marketplace repo `stablyai/orca-plugins`). Bundled plugins must pass that gate, so the fork changes these constants or loads `hawl-plugin/` as a dev/local plugin. Choice made in M2.
 
@@ -169,8 +170,9 @@ Workstation parts, in `src/hawl/main/foreman/` and `src/hawl/renderer/yard/`:
 
 ## 10. Phone
 
-- Orca's phone path (read): Expo app in `mobile/` (`mobile/README.md`), desktop WebSocket RPC server on port 6768 (`mobile/README.md:7`; server code `src/main/runtime/rpc/ws-transport.ts:1-3`), cloud relay client `src/main/runtime/mobile-cloud-relay/` (`desktop-relay-service.ts:45`), cloud relay and push services in `cloud/apps/{push,relay,relay-fence-broker,relay-ops}` (GCP-specific per the plan).
-- Hawl phone (M6): `hawl-mobile/` starts from `mobile/`, replaces the pairing relay and push with Hawl's relay and Hawl's own push. Approvals and ask_human answers (S39, S40) go to the phone through Hawl's relay, not through Orca's cloud. Mobile distribution and signing are open (`PROJECT.md`).
+- Orca's phone path (read): Expo app in `mobile/` (`mobile/README.md`), desktop WebSocket RPC server on port 6768 (`mobile/README.md:7`; server code `src/main/runtime/rpc/ws-transport.ts:1-3`), cloud relay client `src/main/runtime/mobile-cloud-relay/` (`src/main/runtime/mobile-cloud-relay/desktop-relay-service.ts:45`), cloud relay and push services in `cloud/apps/{push,relay,relay-fence-broker,relay-ops}` (GCP-specific per the plan).
+- Phone path for the S lines (M4): the contract's phone path is the Hawl web page plus web push, not a native app: `apps/web/public/sw.js` (N2) for push, `apps/web/components/town/NeedsCards.tsx` (H2) for answering asks and deciding approvals, `TownCanvas.tsx` list (X5) for S47. Those are hawl-platform pieces; the workstation does not build them. S18, S36 to S40 and the S47 phone half are therefore provable at M4 without `hawl-mobile/`.
+- Native Hawl phone app (M6, plan decision 2026-10-19, no S line depends on it): `hawl-mobile/` starts from `mobile/`, replaces the pairing relay and push with Hawl's relay and Hawl's own push, so the same needs, answers and approvals go to a native app through Hawl's relay, not through Orca's cloud. Mobile distribution and signing are open (`PROJECT.md`).
 
 ## 11. Visualizations (map, list)
 
@@ -178,7 +180,7 @@ Map (S45 to S47): the Dispatcher hub, factories, crates. Designs and art come fr
 
 ## 12. Hooks in Orca files
 
-The full list with literal anchors is [FORK-HOOKS.md](FORK-HOOKS.md) (10 rows). Both previously open files are now chosen and read:
+The full list with literal anchors is [FORK-HOOKS.md](FORK-HOOKS.md) (12 rows). Both previously open files are now chosen and read:
 - Main-process start: `src/main/index.ts` only registers handlers and calls `initializeMainProcessReady` (`:134-138`). The ready-phase composition is `src/main/startup/main-process-ready.ts` (`initializeReadyFoundation`, then `initializeReadyRuntimeServices`, then window launch). Hook 4 goes after `initializeReadyRuntimeServices()`.
 - Renderer store: `src/renderer/src/store/index.ts` builds `useAppStore` by spreading ~45 `create*Slice(...a)` calls (`:3-7` imports, `:90` first spread, last spread `createWorkspaceAttentionSlice` at `:137`). Hook 5 adds one spread there and one type in `store/types.ts` (`AppState` at `:52`).
 
@@ -186,7 +188,7 @@ The full list with literal anchors is [FORK-HOOKS.md](FORK-HOOKS.md) (10 rows). 
 
 - Nothing in `src/hawl/` has been built or run. This is a design document. `FORK-HOOKS.md` rows are all `planned`.
 - The Hawl relay routes for yards, ledger, jobs, asks, approvals and the foreman do not exist on hawl-platform origin/main as of 2026-10-19 (plan). They are contract only.
-- Env seam: read in code, not run. Not checked: whether agent status hooks are on by default for a new install; how the main process maps `ORCA_WORKTREE_ID` to a folder; how a pane gets bound to a worker after it registers (peer CLI change, open).
+- Env seam: read in code, not run. Not checked: whether the loopback hook server is listening in time for a terminal opened right at launch (M3 proof); how the main process maps `ORCA_WORKTREE_ID` to a folder; how a pane gets bound to a worker after it registers (peer CLI change, open).
 - SSH behavior, structured-session lane, `WorktreeList` internals, the profile sign-in backend, plugin API stability, lint ratchets on new files, a WebGL context for the Map view.
 - Launch time and terminal latency against stock Orca are measured by P0-bench, not here.
 - Orca line numbers (about 40) can drift. `node hawl-tools/check-docs.mjs` checks that every cited file exists, every cited line is inside the file, and every FORK-HOOKS anchor is still present. It cannot check that a line still says what the text claims; UPSTREAM.md step 6 does that by hand.
