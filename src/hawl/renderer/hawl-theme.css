@@ -3,6 +3,9 @@
    Selectors are `html:root` / `html.dark` (specificity 0,1,1) so they beat Orca's `:root` / `.dark` (0,1,0)
    without touching those blocks. */
 
+/* D2-controls: lit buttons, switches, fields, chips (Claude Design F01-F04, F08) */
+@import './themes/d2-controls.css';
+
 @font-face {
   font-family: 'Hawl Inter';
   src: url('./fonts/inter-latin-wght-normal.woff2') format('woff2');
