@@ -45,6 +45,8 @@ export type AgentSocketOptions = {
   handshakeTimeoutMs?: number
   /** No frame for this long means a half-open socket: reconnect. The relay pings every 25 s. */
   staleMs?: number
+  /** First wait before asking again for a delivery whose check hit a passing failure. Default 1000, doubles, 5 tries. */
+  retryDeliveryMs?: number
   watchdogMs?: number
   /** Jitter source in [0, 1). */
   random?: () => number

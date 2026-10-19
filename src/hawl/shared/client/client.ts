@@ -189,11 +189,20 @@ export class HawlClient {
   // ---- approvals and asks (user plane) --------------------------------------------------------
 
   approvals = {
-    list: (
+    /**
+     * The relay returns the 100 OLDEST rows in that state and has no cursor. `truncated` is true when
+     * the page is full: newer approvals may exist that this call cannot see (needs a relay change).
+     */
+    list: async (
       townId: string,
       state: 'pending' | 'approved' | 'denied' | 'expired' = 'pending'
-    ): Promise<{ items: ApprovalItem[] }> =>
-      this.http.get(`/v1/towns/${townId}/approvals`, { plane: 'user', query: { state } }),
+    ): Promise<{ items: ApprovalItem[]; truncated: boolean }> => {
+      const r = await this.http.get<{ items: ApprovalItem[] }>(`/v1/towns/${townId}/approvals`, {
+        plane: 'user',
+        query: { state }
+      })
+      return { items: r.items, truncated: (r.items?.length ?? 0) >= 100 }
+    },
     approve: (aprId: string, note?: string): Promise<Record<string, unknown>> =>
       this.http.post(`/v1/approvals/${aprId}/approve`, note ? { note } : {}, { plane: 'user' }),
     deny: (aprId: string, note?: string): Promise<Record<string, unknown>> =>

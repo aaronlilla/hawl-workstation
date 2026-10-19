@@ -2,6 +2,7 @@ import {
   clientAssertion,
   type Credentials,
   type FetchLike,
+  assertSecureRelayUrl,
   HawlApiError,
   realSleep,
   type Sleep,
@@ -46,6 +47,7 @@ export class Http {
   readonly #sleep: Sleep
 
   constructor(o: HttpOptions) {
+    assertSecureRelayUrl(o.baseUrl)
     this.#o = o
     this.baseUrl = trimUrl(o.baseUrl)
     this.#fetch = o.fetch ?? fetch
@@ -115,7 +117,18 @@ export class Http {
         return new Uint8Array(await res.arrayBuffer()) as T
       }
       const text = await res.text()
-      return (text ? JSON.parse(text) : {}) as T
+      if (!text) {
+        return {} as T
+      }
+      try {
+        return JSON.parse(text) as T
+      } catch {
+        throw new HawlApiError(
+          res.status,
+          'bad_response',
+          'The relay answered with something that is not JSON (a proxy or a captive page?).'
+        )
+      }
     }
   }
 
@@ -211,6 +224,7 @@ export class AgentTokenSource implements TokenSource {
   }
 
   async #exchange(): Promise<string> {
+    assertSecureRelayUrl(this.#cred.relayUrl)
     const base = trimUrl(this.#cred.relayUrl)
     const assertion = clientAssertion(
       this.#cred.residentId,
@@ -232,7 +246,12 @@ export class AgentTokenSource implements TokenSource {
     if (!res.ok) {
       throw await toError(res)
     }
-    const j = (await res.json()) as { access_token: string; expires_in: number }
+    let j: { access_token: string; expires_in: number }
+    try {
+      j = (await res.json()) as { access_token: string; expires_in: number }
+    } catch {
+      throw new HawlApiError(res.status, 'bad_response', 'The token answer was not JSON.')
+    }
     this.#tok = { value: j.access_token, expMs: this.#now() + j.expires_in * 1000 }
     return j.access_token
   }

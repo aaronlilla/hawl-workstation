@@ -121,6 +121,18 @@ export class TownEventStream extends EventEmitter {
 
   /** Page through `GET /v1/towns/:twn/events` until the relay has nothing newer. */
   async replay(): Promise<number> {
+    try {
+      return await this.#pages()
+    } finally {
+      // Called with the socket already up, the same event would come again as a socket frame
+      // (keyed by stream, REST rows have none). Frames at or below what REST handed over are repeats.
+      if (this.#ws) {
+        this.#floor = Math.max(this.#floor, this.cursor)
+      }
+    }
+  }
+
+  async #pages(): Promise<number> {
     let n = 0
     for (;;) {
       const before = this.cursor
@@ -262,10 +274,7 @@ export class TownEventStream extends EventEmitter {
       }
       if (f.t === 'error') {
         const e = (f.error ?? {}) as { code?: string; message?: string }
-        this.emit(
-          'error',
-          new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.')
-        )
+        this.#fail(new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.'))
         return
       }
       if (typeof f.seq === 'number') {

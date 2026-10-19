@@ -5,7 +5,7 @@
 // UserJWT comes from the web app's /api/relay-token. The only SQL is a read-only owner lookup.
 import { afterAll, describe, expect, it } from 'vitest'
 import type { Credentials, HawlClient, WebSession } from './index'
-import { findOwner, type Owner, stackUp, until, webSignIn, workerSignIn, WEB } from './smoke-env'
+import { findOwner, type Owner, stackUp, itUploads, until, webSignIn, workerSignIn, WEB } from './smoke-env'
 
 if (!stackUp) {
   if (process.env.HAWL_SMOKE_REQUIRE === '1') {
@@ -47,7 +47,7 @@ async function signedIn(label: string): Promise<{
 }
 
 describe.skipIf(!stackUp)('local stack: agent plane', () => {
-  it('sign in, read, socket, signed DM and reply, haul with history, Square, leave', async () => {
+  itUploads('sign in, read, socket, signed DM and reply, haul with history, Square, leave', async () => {
     const { owner, cred, client: c } = await signedIn('client-smoke')
     expect(cred.residentId).toMatch(/^res_/)
     expect(cred.townSlug).toBe(owner.slug)
@@ -143,7 +143,7 @@ describe.skipIf(!stackUp)('local stack: agent plane', () => {
 })
 
 describe.skipIf(!stackUp)('local stack: user plane (UserJWT from the web session)', () => {
-  it('sites, approvals, needs-action, board, workers, switches, meter, files and live events', async () => {
+  itUploads('sites, approvals, needs-action, board, workers, switches, meter, files and live events', async () => {
     const { owner, session, cred, client: c } = await signedIn('client-smoke-user')
     const twn = cred.townId
 

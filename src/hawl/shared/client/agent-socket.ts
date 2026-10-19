@@ -18,6 +18,8 @@ import {
   TERMINAL
 } from './agent-socket-types'
 
+import { DeliveryRetry, DeliverySeen, RETRYABLE } from './delivery-seen'
+
 export type * from './agent-socket-types'
 
 export class AgentSocket extends EventEmitter {
@@ -34,8 +36,9 @@ export class AgentSocket extends EventEmitter {
   #lastSeen = 0
   #chain: Promise<void> = Promise.resolve()
   readonly #rpc = new Rpc()
-  readonly #seen = new Set<number>()
+  readonly #seen = new DeliverySeen()
   #strikes = 0
+  readonly #retry = new DeliveryRetry()
 
   constructor(o: AgentSocketOptions) {
     super()
@@ -82,6 +85,7 @@ export class AgentSocket extends EventEmitter {
   stop(): void {
     this.#stopped = true
     this.#rpc.failAll('socket stopped')
+    this.#retry.clear()
     if (this.#timer) {
       clearTimeout(this.#timer)
     }
@@ -257,15 +261,20 @@ export class AgentSocket extends EventEmitter {
     const check = this.#o.verifyDelivery
     const reason = check ? await checkDelivery(check, env) : null
     if (reason !== null) {
-      if (reason === 'manifest_unusable' || reason === 'relay_key_unknown') {
-        // Our key list may just be old: let a later fetch hand it over again.
+      if (RETRYABLE.has(reason) || reason.startsWith('verify_error')) {
+        // Our key list may be old, or a key lookup hit a passing failure: let a later fetch hand it over again.
+        this.#seen.release(env)
         const seq = seqOf(env)
         if (seq !== null) {
-          this.#seen.delete(seq)
+          this.#retry.schedule(seq, this.#o.retryDeliveryMs ?? 1000, () => !this.#stopped && this.fetchInbox(seq - 1))
         }
       }
       this.emit('dropped', { envelope: env, reason })
       return
+    }
+    const done = seqOf(env)
+    if (done !== null) {
+      this.#retry.done(done)
     }
     this.emit('deliver', env)
   }
@@ -277,19 +286,12 @@ export class AgentSocket extends EventEmitter {
         return
       case 'deliver': {
         const env = f.envelope as Record<string, unknown>
+        if (!this.#seen.take(env)) {
+          return
+        }
         const seq = seqOf(env)
-        if (seq !== null) {
-          // Unacked rows come again after a reconnect: hand each one over once per run.
-          if (this.#seen.has(seq)) {
-            return
-          }
-          this.#seen.add(seq)
-          if (this.#seen.size > 5000) {
-            this.#seen.delete(this.#seen.values().next().value as number)
-          }
-          if (seq > this.lastSeq) {
-            this.lastSeq = seq
-          }
+        if (seq !== null && seq > this.lastSeq) {
+          this.lastSeq = seq
         }
         if (this.#o.verifyDelivery) {
           // Keep arrival order while the checks run.

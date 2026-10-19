@@ -3,7 +3,7 @@
 //   - every `deliver` is checked: schema, relay_sig, sender_sig, request_hash, view_sha256, recipient
 //   - the `ready` frame's relay_sig proves the socket really is the relay
 import { createHash, type KeyObject } from 'node:crypto'
-import { type FetchLike, type Jwk, jcs } from './core'
+import { type FetchLike, HawlApiError, type Jwk, jcs } from './core'
 import type { Hello, Ready } from './agent-socket-types'
 import {
   type AcceptResult,
@@ -22,18 +22,44 @@ export * from './manifest'
 
 // ---- sender keys --------------------------------------------------------------------------------
 
+/** null means the key does not exist (a permanent answer). */
 export type SenderKeyLookup = (kid: string, at: string) => Promise<KeyObject | null>
+
+/** The key lookup failed for a reason that may pass (5xx, network, rate limit). Not a verdict on the sender. */
+export class SenderKeyUnavailable extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SenderKeyUnavailable'
+  }
+}
+
+/** Only answers that say "no such key" or "not yours" are permanent; everything else may pass. */
+function permanentLookupFailure(e: unknown): boolean {
+  return (
+    e instanceof HawlApiError &&
+    (e.status === 404 || e.status === 403 || e.status === 410) &&
+    e.code !== 'network_error'
+  )
+}
 
 /**
  * Sender key for `sender_sig.kid` via `GET /v1/keys/{kid}` (agent plane). Retired keys still verify;
- * a key compromised at or before the message's receipt does not. Cached per kid.
+ * a key compromised at or before the message's receipt does not. Cached per kid for `ttlMs`
+ * (default 5 min), so a key marked compromised later stops verifying within that time. A failed
+ * lookup that may pass throws SenderKeyUnavailable and is not cached.
  */
 export function senderKeyFetcher(
-  getJson: (path: string) => Promise<unknown>
+  getJson: (path: string) => Promise<unknown>,
+  o: { ttlMs?: number; now?: () => number } = {}
 ): SenderKeyLookup {
-  const cache = new Map<string, { key: KeyObject; compromisedAt: number | null }>()
+  const cache = new Map<string, { key: KeyObject; compromisedAt: number | null; at: number }>()
+  const ttl = o.ttlMs ?? 300_000
+  const clock = o.now ?? Date.now
   return async (kid, at) => {
     let hit = cache.get(kid)
+    if (hit && clock() - hit.at > ttl) {
+      hit = undefined
+    }
     if (!hit) {
       try {
         const body = (await getJson(`/v1/keys/${encodeURIComponent(kid)}`)) as {
@@ -46,11 +72,16 @@ export function senderKeyFetcher(
         }
         hit = {
           key,
-          compromisedAt: body.compromised_at ? Date.parse(body.compromised_at) : null
+          compromisedAt: body.compromised_at ? Date.parse(body.compromised_at) : null,
+          at: clock()
         }
         cache.set(kid, hit)
-      } catch {
-        return null
+      } catch (e) {
+        if (permanentLookupFailure(e)) {
+          cache.delete(kid)
+          return null
+        }
+        throw new SenderKeyUnavailable(`sender key lookup failed: ${e instanceof Error ? e.message : String(e)}`)
       }
     }
     if (hit.compromisedAt !== null) {
@@ -70,6 +101,7 @@ export type DropReason =
   | 'manifest_unusable'
   | 'relay_key_unknown'
   | 'relay_sig'
+  | 'sender_key_unavailable'
   | 'sender_sig'
   | 'client_request_encoding'
   | 'request_hash'
@@ -158,7 +190,15 @@ export async function verifyEnvelope(env: unknown, ctx: VerifyContext): Promise<
     return 'client_request_encoding'
   }
   if (e.sender_sig) {
-    const sender = (await ctx.senderKey?.(e.sender_sig.kid, e.relay.received_at)) ?? null
+    let sender: KeyObject | null
+    try {
+      sender = (await ctx.senderKey?.(e.sender_sig.kid, e.relay.received_at)) ?? null
+    } catch (err) {
+      if (err instanceof SenderKeyUnavailable) {
+        return 'sender_key_unavailable'
+      }
+      throw err
+    }
     if (!sender || !verifyDetached('EdDSA', sender, bytes, e.sender_sig.sig)) {
       return 'sender_sig'
     }

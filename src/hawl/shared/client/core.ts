@@ -147,6 +147,26 @@ export function trimUrl(u: string): string {
   return u.replace(/\/+$/, '')
 }
 
+/** Loopback hosts may use plain http/ws (local stack). Anything else must be https/wss. */
+export function assertSecureRelayUrl(relayUrl: string): void {
+  let u: URL
+  try {
+    u = new URL(relayUrl)
+  } catch {
+    throw new HawlApiError(0, 'bad_relay_url', 'The relay URL is not a valid URL.')
+  }
+  const host = u.hostname.replace(/^\[|\]$/g, '')
+  const loopback = host === 'localhost' || host === '::1' || host.startsWith('127.')
+  if (u.protocol !== 'https:' && u.protocol !== 'wss:' && !loopback) {
+    throw new HawlApiError(
+      0,
+      'insecure_relay_url',
+      'Refusing to talk to a non-local relay over plain http. Use https.'
+    )
+  }
+}
+
 export function wsUrlFor(relayUrl: string, path: string): string {
+  assertSecureRelayUrl(relayUrl)
   return trimUrl(relayUrl).replace(/^http/i, 'ws') + path
 }

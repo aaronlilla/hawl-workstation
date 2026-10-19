@@ -62,6 +62,7 @@ export class FakeRelay {
   files = new Map<string, Buffer>()
   /** When set: the manifest, relay-signed `ready` frames and sender keys, like the real relay. */
   trust: TrustFixture | null = null
+  approvalCount = 1
   senderKeys = new Map<string, { public_jwk: Jwk; compromised_at?: string | null }>()
   manifestOverride: unknown = undefined
   signedSends: { tool: string; args: unknown; cr: Record<string, unknown>; sigOk: boolean }[] = []
@@ -470,7 +471,30 @@ export class FakeRelay {
       }
       if (m === 'GET' && path.endsWith('/approvals')) {
         return json(200, {
-          items: [{ approval_id: 'apr_1', state: url.searchParams.get('state') }]
+          items: Array.from({ length: this.approvalCount }, (_, i) => ({
+            approval_id: `apr_${i + 1}`,
+            state: url.searchParams.get('state')
+          }))
+        })
+      }
+      // Shapes from apps/relay/src/http/routes (channels.ts discuss, handoffs create, resume).
+      if (m === 'GET' && /\/channels\/[^/]+\/threads\/[^/]+$/.test(path)) {
+        return json(200, { root: { message_id: 'msg_1', text: 'hello' }, replies: [{ message_id: 'msg_2' }] })
+      }
+      if (m === 'POST' && /\/handoffs\/[^/]+\/discuss$/.test(path)) {
+        return json(200, { channel_id: 'chn_1', message_id: 'msg_1', handoff_id: 'hnd_1', created: true })
+      }
+      if (m === 'POST' && /\/handoffs\/[^/]+\/resume$/.test(path)) {
+        return json(200, { resumed: true })
+      }
+      if (m === 'POST' && path === `/v1/towns/${this.townId}/handoffs`) {
+        const b = body as { to: string }
+        return json(200, {
+          handoff_id: 'hnd_9',
+          number: 9,
+          state: 'asked',
+          assignee: b.to === 'auto' ? 'res_picked' : b.to,
+          routed: b.to === 'auto'
         })
       }
       if (m === 'POST' && path === '/v1/approvals/apr_1/approve') {

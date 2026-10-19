@@ -20,6 +20,8 @@ export type HandshakeHost = {
   replay(frames: Record<string, unknown>[]): void
 }
 
+const MAX_HELD = 2000
+
 export class Handshake {
   /** Set once a `ready` frame has been accepted. */
   ready = false
@@ -30,6 +32,7 @@ export class Handshake {
   #hello: Hello | null = null
   #nonce = ''
   #verifying = false
+  #overflow = false
 
   constructor(host: HandshakeHost) {
     this.#h = host
@@ -37,8 +40,15 @@ export class Handshake {
 
   feed(f: Record<string, unknown>): void {
     if (this.#verifying) {
-      if (this.#held.length < 2000) {
+      if (this.#held.length < MAX_HELD) {
         this.#held.push(f)
+      } else if (!this.#overflow) {
+        // Never drop quietly: close so the relay pushes the unacked rows again after the reconnect.
+        this.#overflow = true
+        this.#h.onError(
+          new HawlApiError(0, 'handshake_overflow', 'Too many frames arrived while the relay was being verified; reconnecting.')
+        )
+        this.#h.ws.close(1013, 'handshake overflow')
       }
       return
     }

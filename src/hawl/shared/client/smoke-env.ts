@@ -4,6 +4,7 @@
 //   web    HAWL_SMOKE_WEB     default http://localhost:3000
 // Read-only SQL finds a local site owner (email) in the two local databases; sign-in itself goes
 // through the real web app (emailed code read from the local e2e sink) and the real approve-device route.
+import { it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
@@ -227,4 +228,27 @@ export async function workerSignIn(
       trust: { roots: await localRoots() }
     })
   }
+}
+
+/**
+ * `it` for tests that upload files. The local relay caps uploads per hour for the whole site and every
+ * run shares it, so hitting the cap is the machine's state, not a client defect: the test is reported as
+ * skipped (visible in the run) unless HAWL_SMOKE_REQUIRE=1, where it fails.
+ */
+export const itUploads = (name: string, fn: () => Promise<void>, timeout?: number): void => {
+  it(
+    name,
+    async (ctx) => {
+      try {
+        await fn()
+      } catch (e) {
+        if (/Hourly upload limit/i.test(String((e as Error)?.message)) && process.env.HAWL_SMOKE_REQUIRE !== '1') {
+          console.warn(`[hawl-client smoke] "${name}" skipped: the site's hourly upload cap is used up`)
+          ctx.skip()
+        }
+        throw e
+      }
+    },
+    timeout
+  )
 }

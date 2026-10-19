@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { HawlClient, WebSession } from './index'
-import { findMember, findOwner, stackUp, until, webSignIn, workerSignIn } from './smoke-env'
+import { findMember, findOwner, stackUp, itUploads, until, webSignIn, workerSignIn } from './smoke-env'
 
 if (!stackUp && process.env.HAWL_SMOKE_REQUIRE === '1') {
   throw new Error('HAWL_SMOKE_REQUIRE=1 but no loopback relay and web answered')
@@ -204,7 +204,7 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
     expect(hist).toContain('cancel')
   })
 
-  it('a person gets a signed link for a file one of their workers received, and it serves the bytes', async () => {
+  itUploads('a person gets a signed link for a file one of their workers received, and it serves the bytes', async () => {
     const { owner, session, client: a } = await signedIn('client-link-a')
     const b = await workerSignIn(owner, session, 'client-link-b')
     workers.push(b.client)
@@ -270,7 +270,7 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
     }
   })
 
-  it('uploads: 3 MB of text goes through intact, an empty file is refused here, one over the plan limit is refused by the relay', async () => {
+  itUploads('uploads: 3 MB of text goes through intact, an empty file is refused here, one over the plan limit is refused by the relay', async () => {
     const { client: c } = await signedIn('client-bigfile')
     const big = new Uint8Array(3 * 1024 * 1024).fill(97)
     const up = await c.files.upload('big.txt', big, 'text/plain')
