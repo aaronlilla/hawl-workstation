@@ -73,7 +73,7 @@ describe('detectRepoIcon', () => {
     })
   })
 
-  it('uses a package homepage favicon when no local icon file exists', async () => {
+  it('does not look up a homepage favicon (Hawl: no Google favicon service)', async () => {
     const repoPath = await makeTempRepoDir()
     await writeFile(
       join(repoPath, 'package.json'),
@@ -82,12 +82,7 @@ describe('detectRepoIcon', () => {
 
     await expect(
       detectRepoIcon({ repoPath, kind: 'folder', executionHostId: 'local' })
-    ).resolves.toEqual({
-      type: 'image',
-      src: 'https://www.google.com/s2/favicons?domain=app.example.com&sz=64',
-      source: 'favicon',
-      label: 'Website favicon'
-    })
+    ).resolves.toBeUndefined()
   })
 
   it('resolves declared icon hrefs from project source files', async () => {

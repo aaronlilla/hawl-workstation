@@ -7,7 +7,7 @@ import path from 'node:path'
 
 const seconds = Number(process.argv[2] ?? 120)
 const out = process.argv[3] ?? 'net-capture.json'
-const exe = path.resolve('node_modules/electron/dist/electron.exe')
+const exe = process.env.HAWL_EXE ?? path.resolve('node_modules/electron/dist/electron.exe')
 
 function ps(cmd) {
   try {
