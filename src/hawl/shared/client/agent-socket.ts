@@ -5,19 +5,21 @@ import { randomBytes } from 'node:crypto'
 import WebSocket from 'ws'
 import { Rpc } from './rpc'
 import { b64url, HawlApiError, handshakeInput, signEd25519, wsUrlFor } from './core'
-import type {
-  AgentSocketEvents,
-  AgentSocketOptions,
-  Hello,
-  Ready,
-  SocketState
+import {
+  type AgentSocketEvents,
+  type AgentSocketOptions,
+  checkDelivery,
+  DRAINING,
+  DRAINING_FLOOR_MS,
+  type Hello,
+  REPLACED,
+  type Ready,
+  seqOf,
+  SLOW_RETRY,
+  type SocketState
 } from './agent-socket-types'
 
 export type * from './agent-socket-types'
-
-/** Close codes after which retrying fast cannot help: refused handshake, suspended, CLI too old. */
-const SLOW_RETRY = new Set([4401, 4403, 4426])
-const REPLACED = 4409
 
 export class AgentSocket extends EventEmitter {
   state: SocketState = 'idle'
@@ -31,6 +33,7 @@ export class AgentSocket extends EventEmitter {
   #backoff: number
   #stopped = false
   #lastSeen = 0
+  #chain: Promise<void> = Promise.resolve()
   readonly #rpc = new Rpc()
   readonly #seen = new Set<number>()
 
@@ -48,9 +51,16 @@ export class AgentSocket extends EventEmitter {
     return super.on(ev, fn as (...a: unknown[]) => void)
   }
 
+  /** Safe to call again: after a stop, or after `replaced` to take the socket back. */
   start(): void {
     this.#stopped = false
+    if (this.#ws || this.#timer) {
+      return // already connecting or connected
+    }
     this.#connect()
+    if (this.#watchdog) {
+      return
+    }
     const every = this.#o.watchdogMs ?? 5000
     this.#watchdog = setInterval(() => {
       if (this.state === 'connected' && Date.now() - this.#lastSeen > (this.#o.staleMs ?? 70_000)) {
@@ -69,8 +79,11 @@ export class AgentSocket extends EventEmitter {
     if (this.#watchdog) {
       clearInterval(this.#watchdog)
     }
+    this.#watchdog = null
     this.#timer = null
-    this.#ws?.close(1000)
+    const ws = this.#ws
+    this.#ws = null // so a start() right after stop() connects again, and the old close is ignored
+    ws?.close(1000)
     this.#set('stopped')
   }
 
@@ -236,6 +249,8 @@ export class AgentSocket extends EventEmitter {
       const max = this.#o.reconnectMs?.max ?? 30_000
       if (SLOW_RETRY.has(code)) {
         this.#backoff = max
+      } else if (code === DRAINING) {
+        this.#backoff = Math.max(this.#backoff, Math.min(max, DRAINING_FLOOR_MS))
       }
       const r = (this.#o.random ?? Math.random)()
       const wait = Math.round(this.#backoff / 2 + (this.#backoff / 2) * r)
@@ -248,6 +263,16 @@ export class AgentSocket extends EventEmitter {
     ws.on('error', () => {
       // 'close' follows and schedules the retry
     })
+  }
+
+  async #hand(env: Record<string, unknown>): Promise<void> {
+    const check = this.#o.verifyDelivery
+    const reason = check ? await checkDelivery(check, env) : null
+    if (reason !== null) {
+      this.emit('dropped', { envelope: env, reason })
+      return
+    }
+    this.emit('deliver', env)
   }
 
   #onFrame(f: Record<string, unknown>): void {
@@ -271,7 +296,12 @@ export class AgentSocket extends EventEmitter {
             this.lastSeq = seq
           }
         }
-        this.emit('deliver', env)
+        if (this.#o.verifyDelivery) {
+          // Keep arrival order while the checks run.
+          this.#chain = this.#chain.then(() => this.#hand(env))
+        } else {
+          this.emit('deliver', env)
+        }
         return
       }
       case 'notice':
@@ -296,10 +326,4 @@ export class AgentSocket extends EventEmitter {
       }
     }
   }
-}
-
-function seqOf(env: Record<string, unknown> | undefined): number | null {
-  const relay = env?.relay as { delivery?: { inbox_seq?: unknown } } | undefined
-  const v = relay?.delivery?.inbox_seq
-  return typeof v === 'number' ? v : null
 }

@@ -2,7 +2,6 @@
 //   agent plane: this app's worker (AgentToken from the device-code key). /v1/me, tools, handoffs, files, channels, inbox.
 //   user plane:  the person (UserJWT from a TokenSource you supply). Approvals, asks, board, needs-action, site events.
 // Routes read from apps/relay/src/http/routes and the feature route files, 2026-10-19.
-import { createHash } from 'node:crypto'
 import {
   type Credentials,
   type FetchLike,
@@ -14,19 +13,27 @@ import {
 import { AgentSocket, type AgentSocketOptions } from './agent-socket'
 import { AgentTokenSource, Http } from './http'
 import { Sender } from './send'
+import { FilesApi } from './files-api'
+import { SiteApi } from './site-api'
 import type {
+  ApprovalItem,
+  BoardPin,
   Channel,
-  FileMeta,
+  Handoff,
   HandoffCreate,
   HandoffEvidence,
   HandoffOp,
+  HandoffRow,
   HandoffState,
   Me,
+  NeedsList,
+  SiteSummary,
+  WhoWorker,
   WorkerRow
 } from './types'
 
 export type * from './types'
-import { type ConsoleStreamName, TownEventStream } from './town-events'
+import { TownEventStream, type TownEventStreamOptions } from './town-events'
 
 export type ClientOptions = {
   credentials: Credentials
@@ -58,6 +65,8 @@ export class HawlClient {
       ...(o.sleep ? { sleep: o.sleep } : {}),
       ...(o.maxRetries !== undefined ? { maxRetries: o.maxRetries } : {})
     })
+    this.site = new SiteApi(this.http)
+    this.files = new FilesApi(this.http)
   }
 
   // ---- identity -------------------------------------------------------------------------------
@@ -66,9 +75,7 @@ export class HawlClient {
     return this.http.get('/v1/me')
   }
   /** Sites the person belongs to, with the Do now count (user plane). */
-  mySites(): Promise<{
-    sites: { town_id: string; slug: string; name: string; role: string; do_now: number }[]
-  }> {
+  mySites(): Promise<{ sites: SiteSummary[] }> {
     return this.http.get('/v1/me/sites', { plane: 'user' })
   }
   /** The person's yards and which site each is live in (user plane). */
@@ -103,6 +110,9 @@ export class HawlClient {
    */
   readonly send = new Sender(this)
 
+  /** Worker controls, person file upload, proof history, limit pauses, switches, meter (user plane). */
+  readonly site: SiteApi
+
   // ---- workers --------------------------------------------------------------------------------
 
   workers = {
@@ -110,7 +120,7 @@ export class HawlClient {
     list: (q?: string): Promise<{ items: WorkerRow[] }> =>
       this.http.get('/v1/directory/residents', { query: { q, scope: 'town' } }),
     /** The `who` tool: status, what each is working on, owner and yard. */
-    who: (query?: string): Promise<{ workers: Record<string, unknown>[] }> =>
+    who: (query?: string): Promise<{ workers: WhoWorker[] }> =>
       this.tool('who', query ? { query } : {}),
     /** Agent's inbox as seen by a member (user plane). Metadata only. */
     inboxOf: (townId: string, resId: string): Promise<unknown> =>
@@ -120,10 +130,9 @@ export class HawlClient {
   // ---- handoffs (hauls) -----------------------------------------------------------------------
 
   handoffs = {
-    list: (
-      o: { state?: HandoffState; mine?: boolean } = {}
-    ): Promise<{ handoffs: Record<string, unknown>[] }> => this.tool('handoff_list', o),
-    get: (id: string): Promise<Record<string, unknown>> => this.http.get(`/v1/handoffs/${id}`),
+    list: (o: { state?: HandoffState; mine?: boolean } = {}): Promise<{ handoffs: HandoffRow[] }> =>
+      this.tool('handoff_list', o),
+    get: (id: string): Promise<Handoff> => this.http.get(`/v1/handoffs/${id}`),
     /** Create a haul for a named worker. Signs the request (see `send.handoff`). */
     create: (h: HandoffCreate & { to: string }): Promise<Record<string, unknown>> =>
       this.send.handoff(h),
@@ -164,7 +173,7 @@ export class HawlClient {
     list: (
       townId: string,
       state: 'pending' | 'approved' | 'denied' | 'expired' = 'pending'
-    ): Promise<{ items: Record<string, unknown>[] }> =>
+    ): Promise<{ items: ApprovalItem[] }> =>
       this.http.get(`/v1/towns/${townId}/approvals`, { plane: 'user', query: { state } }),
     approve: (aprId: string, note?: string): Promise<Record<string, unknown>> =>
       this.http.post(`/v1/approvals/${aprId}/approve`, note ? { note } : {}, { plane: 'user' }),
@@ -187,10 +196,7 @@ export class HawlClient {
   }
 
   needs = {
-    list: (
-      townId: string,
-      tab: 'needs' | 'later' | 'done' = 'needs'
-    ): Promise<Record<string, unknown>> =>
+    list: (townId: string, tab: 'needs' | 'later' | 'done' = 'needs'): Promise<NeedsList> =>
       this.http.get(`/v1/towns/${townId}/needs-action`, { plane: 'user', query: { tab } }),
     done: (townId: string, itemId: string): Promise<unknown> =>
       this.http.post(
@@ -272,17 +278,13 @@ export class HawlClient {
 
   board = {
     /** The `board_read` tool (agent plane). */
-    read: (): Promise<{ pins: Record<string, unknown>[] }> => this.tool('board_read'),
+    read: (): Promise<{ pins: BoardPin[] }> => this.tool('board_read'),
     pin: (messageId: string, title: string): Promise<unknown> =>
       this.tool('board_pin', { message_id: messageId, title }),
     /** Member view (user plane). */
-    list: (townId: string): Promise<{ pins: Record<string, unknown>[] }> =>
+    list: (townId: string): Promise<{ pins: BoardPin[] }> =>
       this.http.get(`/v1/towns/${townId}/board`, { plane: 'user' }),
-    pinAsPerson: (
-      townId: string,
-      messageId: string,
-      title: string
-    ): Promise<Record<string, unknown>> =>
+    pinAsPerson: (townId: string, messageId: string, title: string): Promise<BoardPin> =>
       this.http.post(
         `/v1/towns/${townId}/board`,
         { message_id: messageId, title },
@@ -292,38 +294,8 @@ export class HawlClient {
       this.http.delete(`/v1/towns/${townId}/board/${pinId}`, { plane: 'user' })
   }
 
-  // ---- files ----------------------------------------------------------------------------------
-
-  files = {
-    meta: (filId: string): Promise<FileMeta> => this.http.get(`/v1/files/${filId}`),
-    /** Bytes of a clean file. A held or flagged file is a 404. */
-    download: (filId: string): Promise<Uint8Array> =>
-      this.http.get(`/v1/files/${filId}/content`, { asBytes: true }),
-    /** Short-lived signed link (user plane). */
-    link: (filId: string): Promise<{ url: string; expires_in: number }> =>
-      this.http.post(`/v1/files/${filId}/link`, {}, { plane: 'user' }),
-    /**
-     * Upload in two steps: declare (name, type, size, SHA-256), then PUT the bytes. The relay
-     * scans afterwards, so the returned file id may report `scanning` for a moment.
-     */
-    upload: async (
-      name: string,
-      bytes: Uint8Array,
-      mime: string
-    ): Promise<{ upl_id: string; put_url: string; result: Record<string, unknown> }> => {
-      const sha256 = createHash('sha256').update(bytes).digest('hex')
-      const up = await this.http.post<{ upl_id: string; put_url: string; expires_in: number }>(
-        '/v1/files/uploads',
-        { name, mime, bytes: bytes.length, sha256 }
-      )
-      const path = new URL(up.put_url, this.http.baseUrl).pathname
-      const result = await this.http.put<Record<string, unknown>>(path, {
-        rawBody: bytes,
-        headers: { 'content-type': 'application/octet-stream' }
-      })
-      return { ...up, result }
-    }
-  }
+  /** Files as this worker (agent plane): upload, metadata, download, signed link. */
+  readonly files: FilesApi
 
   // ---- live -----------------------------------------------------------------------------------
 
@@ -339,7 +311,18 @@ export class HawlClient {
   /** Site events with replay and reconnect (user plane). Call `.start()`. */
   townEvents(
     townId: string,
-    o: { streams?: readonly ConsoleStreamName[]; afterSeq?: number; socketOnly?: boolean } = {}
+    o: Partial<
+      Pick<
+        TownEventStreamOptions,
+        | 'streams'
+        | 'afterSeq'
+        | 'socketOnly'
+        | 'settleMs'
+        | 'refreshBeforeMs'
+        | 'reconnectMs'
+        | 'random'
+      >
+    > = {}
   ): TownEventStream {
     if (!this.#o.user) {
       throw new HawlApiError(401, 'unauthenticated', 'No user credentials are set.')

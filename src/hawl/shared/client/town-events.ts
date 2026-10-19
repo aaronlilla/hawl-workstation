@@ -4,6 +4,7 @@ import { EventEmitter } from 'node:events'
 import WebSocket from 'ws'
 import { HawlApiError, type TokenSource, wsUrlFor } from './core'
 import type { Http } from './http'
+import { jwtExpiryMs } from './user-session'
 
 export const CONSOLE_STREAMS = [
   'feed',
@@ -39,6 +40,13 @@ export type TownEventStreamOptions = {
   random?: () => number
   /** Skip the REST replay and let the socket replay from `afterSeq`. */
   socketOnly?: boolean
+  /**
+   * The relay never confirms `auth`: it just keeps the socket open or closes it with 4401. A socket
+   * that stays open this long (or delivers a frame) counts as accepted; only then is the backoff reset.
+   */
+  settleMs?: number
+  /** Send a fresh `auth` this long before the JWT expires, so the socket outlives one token. Default 90 s. */
+  refreshBeforeMs?: number
 }
 
 export type TownEventStreamEvents = {
@@ -58,6 +66,8 @@ export class TownEventStream extends EventEmitter {
   readonly #o: TownEventStreamOptions
   #ws: WebSocket | null = null
   #timer: NodeJS.Timeout | null = null
+  #settle: NodeJS.Timeout | null = null
+  #refresh: NodeJS.Timeout | null = null
   #stopped = false
   #floor = 0
   #backoff: number
@@ -78,6 +88,9 @@ export class TownEventStream extends EventEmitter {
   }
 
   async start(): Promise<void> {
+    if (this.state === 'replaying' || this.state === 'connecting' || this.state === 'live') {
+      return // already running
+    }
     this.#stopped = false
     if (!this.#o.socketOnly) {
       this.#set('replaying')
@@ -99,7 +112,10 @@ export class TownEventStream extends EventEmitter {
       clearTimeout(this.#timer)
     }
     this.#timer = null
-    this.#ws?.close(1000)
+    this.#clearSocketTimers()
+    const ws = this.#ws
+    this.#ws = null
+    ws?.close(1000)
     this.#set('stopped')
   }
 
@@ -143,6 +159,54 @@ export class TownEventStream extends EventEmitter {
     return true
   }
 
+  #clearSocketTimers(): void {
+    if (this.#settle) {
+      clearTimeout(this.#settle)
+    }
+    if (this.#refresh) {
+      clearTimeout(this.#refresh)
+    }
+    this.#settle = null
+    this.#refresh = null
+  }
+
+  /** The relay kept the socket: reset the backoff and call it live. */
+  #accepted(ws: WebSocket): void {
+    if (this.#ws !== ws || ws.readyState !== WebSocket.OPEN) {
+      return
+    }
+    this.#backoff = this.#o.reconnectMs?.min ?? 1000
+    this.#set('live')
+  }
+
+  #scheduleRefresh(ws: WebSocket, jwt: string): void {
+    const exp = jwtExpiryMs(jwt)
+    if (exp === null) {
+      return
+    }
+    const lead = this.#o.refreshBeforeMs ?? 90_000
+    const delay = Math.max(250, exp - Date.now() - lead)
+    this.#refresh = setTimeout(() => {
+      void (async () => {
+        if (this.#ws !== ws || ws.readyState !== WebSocket.OPEN) {
+          return
+        }
+        try {
+          this.#o.user.invalidate()
+          const next = await this.#o.user.token()
+          if (this.#ws === ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ t: 'auth', jwt: next, town_id: this.#o.townId }))
+            this.#scheduleRefresh(ws, next)
+          }
+        } catch (e) {
+          // Without a new token the relay closes this socket at expiry; the reconnect path takes over.
+          this.emit('error', e as Error)
+        }
+      })()
+    }, delay)
+    this.#refresh.unref?.()
+  }
+
   #set(s: TownEventStream['state']): void {
     if (this.state === s) {
       return
@@ -174,8 +238,8 @@ export class TownEventStream extends EventEmitter {
               after_seq: Math.max(0, this.cursor - 1)
             })
           )
-          this.#backoff = this.#o.reconnectMs?.min ?? 1000
-          this.#set('live')
+          this.#settle = setTimeout(() => this.#accepted(ws), this.#o.settleMs ?? 1500)
+          this.#scheduleRefresh(ws, jwt)
         } catch (e) {
           this.emit('error', e as Error)
           ws.close(1011, 'no token')
@@ -197,6 +261,9 @@ export class TownEventStream extends EventEmitter {
         )
         return
       }
+      if (typeof f.seq === 'number') {
+        this.#accepted(ws) // a frame means the relay took the auth
+      }
       if (typeof f.seq !== 'number' || typeof f.t !== 'string' || f.seq <= this.#floor) {
         return
       }
@@ -211,6 +278,7 @@ export class TownEventStream extends EventEmitter {
         return
       }
       this.#ws = null
+      this.#clearSocketTimers()
       if (this.#stopped) {
         return
       }

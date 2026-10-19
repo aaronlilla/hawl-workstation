@@ -188,7 +188,7 @@ function ev(seq: number, streams?: string[]) {
 describe('town events', () => {
   const mk = (u: TokenSource = user(), o: { socketOnly?: boolean } = {}) => {
     const c = new HawlClient({ credentials: cred, user: u, webOrigin: relay.webOrigin })
-    const s = c.townEvents(relay.townId, o)
+    const s = c.townEvents(relay.townId, { settleMs: 30, ...o })
     stoppers.push(() => s.stop())
     return s
   }

@@ -48,6 +48,12 @@ export class FakeRelay {
   agentConns: WebSocket[] = []
   consoleConns: WebSocket[] = []
   consoleOrigins: (string | undefined)[] = []
+  /** Every `auth` frame the console socket got (the jwt strings), across connections. */
+  consoleAuths: string[] = []
+  /** Close every console socket with 4401 right after reading `auth`, like a revoked member. */
+  consoleRefuseAuth = false
+  /** Extra check on the console jwt (default: equals `userToken`). */
+  acceptJwt: ((jwt: string) => boolean) | null = null
   handshakes = 0
   eventPageSize = 2
   /** Close the console socket after sending this many frames per subscription (0 = never). */
@@ -400,6 +406,10 @@ export class FakeRelay {
         return this.#err(res, 401, 'unauthenticated', 'Invalid credentials.')
       }
       const b = body as { name: string; mime: string; bytes: number; sha256: string }
+      // The real relay takes the SHA-256 as 43 base64url characters (files/uploads.ts SHA_RE).
+      if (!/^[A-Za-z0-9_-]{43}$/.test(b.sha256)) {
+        return this.#err(res, 400, 'invalid_request', 'Bad sha256.')
+      }
       return json(200, {
         upl_id: 'upl_1',
         put_url: `${this.url}/v1/files/uploads/upl_1`,
@@ -415,7 +425,7 @@ export class FakeRelay {
       return json(200, {
         file_id: 'fil_1',
         state: 'scanning',
-        sha256: createHash('sha256').update(raw).digest('hex')
+        sha256: createHash('sha256').update(raw).digest('base64url')
       })
     }
     if (m === 'GET' && path === '/v1/files/fil_1/content') {
@@ -582,7 +592,9 @@ export class FakeRelay {
         after_seq?: number
       }
       if (f.t === 'auth') {
-        if (f.jwt !== this.userToken) {
+        this.consoleAuths.push(String(f.jwt))
+        const ok = this.acceptJwt ? this.acceptJwt(String(f.jwt)) : f.jwt === this.userToken
+        if (!ok || this.consoleRefuseAuth) {
           return void ws.close(4401, 'auth failed')
         }
         authed = true

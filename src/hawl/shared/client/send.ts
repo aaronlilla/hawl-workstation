@@ -1,6 +1,6 @@
 // Signed sends: build the request, sign its exact canonical bytes with this worker's key, post it.
-// Same shape packages/cli/src/mcp/server.ts builds. thread_reply is not here (it needs the stored
-// message to find its thread).
+// Same shape packages/cli/src/mcp/server.ts builds. `reply` reads the stored message first, as the
+// CLI daemon's resolve step does, to find the conversation and who to answer.
 import { randomUUID } from 'node:crypto'
 import { b64url, HawlApiError, jcs, signEd25519 } from './core'
 import type { HawlClient } from './client'
@@ -29,6 +29,35 @@ export class Sender {
       { handoff: terms },
       'request_action',
       to
+    )
+  }
+
+  /** `thread_reply`: answer a message this worker sent or received, in its conversation. */
+  async reply(messageId: string, text: string, o: { data?: unknown } = {}): Out {
+    const m = (await this.#c.messages.get(messageId)) as {
+      conversation_id?: string
+      from?: string
+      to?: string
+      role?: string
+    }
+    const peer = m.role === 'received' ? m.from : m.to
+    if (!m.conversation_id || !peer?.startsWith('res_')) {
+      throw new HawlApiError(
+        400,
+        'invalid_request',
+        'That message cannot be replied to as a direct reply.'
+      )
+    }
+    return this.#send(
+      'thread_reply',
+      { message_id: messageId, text, ...(o.data !== undefined ? { data: o.data } : {}) },
+      { kind: 'worker', resident_id: peer },
+      text,
+      o.data,
+      'reply',
+      undefined,
+      messageId,
+      m.conversation_id
     )
   }
 
@@ -115,12 +144,13 @@ export class Sender {
     data: unknown,
     intent: string,
     handle?: string,
-    replyTo?: string
+    replyTo?: string,
+    conversationId?: string
   ): Out {
     const c = this.#c.credentials
     // Handoffs go through the tool route (it also opens the haul). Plain messages go to
     // POST /v1/messages, the same accept path the CLI's `msg.send` frame ends in.
-    const viaTool = tool === 'handoff'
+    const viaTool = tool === 'handoff' || tool === 'thread_reply'
     const target: To =
       to.kind === 'worker' && handle
         ? { kind: 'worker', resident_id: await this.#residentOf(handle) }
@@ -134,7 +164,7 @@ export class Sender {
       sender_resident_id: c.residentId,
       kid: c.kid,
       idempotency_key: randomUUID(),
-      conversation_id: null,
+      conversation_id: conversationId ?? null,
       reply_to: replyTo ?? null,
       derived_from: [] as string[],
       to: target,

@@ -79,8 +79,12 @@ export class DeviceSignIn {
     if (res.status === 202) {
       return { state: 'pending' }
     }
-    if (res.status >= 500) {
-      throw new HawlApiError(res.status, 'relay_unavailable', 'The relay is not answering.')
+    // 408, 425, 429 and 5xx are the relay or the network being busy, not the code being dead.
+    if (res.status >= 500 || res.status === 408 || res.status === 425 || res.status === 429) {
+      const ra = Number(res.headers.get('retry-after'))
+      throw new HawlApiError(res.status, 'relay_unavailable', 'The relay is not answering.', {
+        retryAfter: ra > 0 ? ra : null
+      })
     }
     if (!res.ok) {
       throw new HawlApiError(
@@ -117,6 +121,7 @@ export class DeviceSignIn {
   async wait(o: { signal?: AbortSignal; onTick?: () => void } = {}): Promise<Credentials> {
     const sleep = this.#o.sleep ?? realSleep
     const now = this.#o.now ?? Date.now
+    let retryAfterMs = 0
     for (;;) {
       if (o.signal?.aborted) {
         throw new HawlApiError(0, 'cancelled', 'Sign-in cancelled.')
@@ -131,12 +136,15 @@ export class DeviceSignIn {
         if (!transient) {
           throw e
         }
+        retryAfterMs = e instanceof HawlApiError && e.retryAfter ? e.retryAfter * 1000 : 0
       }
       if (now() >= this.expiresAt) {
         throw new HawlApiError(0, 'timeout', 'Timed out waiting for approval. Start sign-in again.')
       }
       o.onTick?.()
-      await sleep(this.#o.pollMs ?? 5000)
+      // A rate-limited relay says how long to leave it alone.
+      await sleep(Math.max(this.#o.pollMs ?? 5000, retryAfterMs))
+      retryAfterMs = 0
     }
   }
 }
