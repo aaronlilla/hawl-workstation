@@ -1,4 +1,4 @@
 provider: github
 owner: aaronlilla
-repo: orca
-updaterCacheDirName: orca-updater
+repo: hawl-workstation
+updaterCacheDirName: hawl-workstation-updater

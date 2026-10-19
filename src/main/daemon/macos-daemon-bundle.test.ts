@@ -23,7 +23,7 @@ vi.mock('./daemon-mac-code-identity', () => ({ inspectMacProcessCodeIdentity: in
 
 import { materializeMacDaemonBundle } from './macos-daemon-bundle'
 
-const APP_REQUIREMENT = 'identifier "com.stablyai.orca" and anchor apple generic'
+const APP_REQUIREMENT = 'identifier "com.hawl.workstation" and anchor apple generic'
 const ok: ProcessResult = { code: 0, signal: null, stdout: '', stderr: '', timedOut: false }
 let root: string
 let source: string
@@ -40,7 +40,7 @@ const helperExecutable = (): string => join(helper, 'Contents', 'MacOS', 'orca-t
 beforeEach(async () => {
   root = await realpath(await mkdtemp(join(tmpdir(), 'orca-mac-runtime-')))
   // The running app was parked by an update; a new build already sits at the install path.
-  source = join(root, 'com.stablyai.orca.ShipIt.old', 'Orca.app')
+  source = join(root, 'com.hawl.workstation.ShipIt.old', 'Orca.app')
   helper = join(source, 'Contents', 'Helpers', 'Orca Terminal Host.app')
   copies = join(root, 'profile', 'daemon-host', 'macos')
   await mkdir(join(source, 'Contents', 'MacOS'), { recursive: true })

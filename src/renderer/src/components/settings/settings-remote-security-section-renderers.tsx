@@ -87,7 +87,7 @@ export function renderPrivacySettingsSection(context: SettingsRenderContext): Re
       title={translate('auto.components.settings.Settings.d7e3f62d70', 'Privacy & Telemetry')}
       description={translate(
         'auto.components.settings.Settings.c1b43dc4e2',
-        'Anonymous usage data and telemetry controls.'
+        'What Hawl Workstation sends, and to whom.'
       )}
       searchEntries={navigation.getSectionSearchEntries('privacy')}
     >
