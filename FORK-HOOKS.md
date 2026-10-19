@@ -92,3 +92,5 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 - Skill install points at `github.com/aaronlilla/hawl-workstation`, which does not exist until the repo is published; the pinned commit is the local one.
 - `mobile/` Expo app still points at Orca hosts (M6). Feature-wall onboarding GIFs show Orca's UI. Mac/Linux packaging art, `posthog-node` still listed in package.json (unused).
 - Packaged build (`build:win`) and installer not run.
+
+| `src/renderer/src/components/Landing.tsx` | D1 round 5: class `hawl-lit` on the Add project button (lit primary on the empty home). |

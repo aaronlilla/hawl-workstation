@@ -1,0 +1,114 @@
+/* D1-foundations, round 5: fixes for the critic's findings.
+   Settings nav is plain until active, switches get a real knob, selected chips stay readable (Orca's text-background
+   is clear in Hawl), no kicker labels, a calmer ground in light and dark, a lit primary on the empty home. */
+
+/* ═════ Settings and app nav: only the active row is lit; inactive rows are plain text, hover lifts an acrylic tile ═════ */
+html:root button[class*='hover:bg-worktree-sidebar-accent']:not([class~='bg-worktree-sidebar-accent']) {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: var(--ink-2);
+}
+html:root button[class*='hover:bg-worktree-sidebar-accent']:not([class~='bg-worktree-sidebar-accent']):hover {
+  border-radius: var(--r-sm);
+  background-image: var(--mat-acrylic);
+  box-shadow: var(--e0);
+  color: var(--ink);
+}
+/* The settings nav's active row carries a ring utility too; the lit slab already says "active" */
+html:root button[class~='bg-worktree-sidebar-accent'][class*='ring-1'] { --tw-ring-shadow: 0 0 #0000; }
+
+/* ═════ Switch: a lit orange track with a real knob (on), a cut well with a knob (off) ═════ */
+html:root [data-slot='switch'] {
+  height: 22px;
+  width: 38px;
+  border: 0;
+  padding: 2px;
+}
+html:root [data-slot='switch'][data-state='checked'] {
+  background-color: transparent;
+  background-image: var(--mat-orange);
+  box-shadow: inset 0 1px 2px rgba(110, 37, 3, 0.45), 0 0 0 1px rgba(110, 37, 3, 0.55), 0 0 12px rgba(242, 106, 27, 0.35);
+}
+html:root [data-slot='switch'][data-state='unchecked'] {
+  background-color: transparent;
+  background-image: var(--mat-well);
+  box-shadow: var(--well);
+}
+html:root [data-slot='switch-thumb'] {
+  width: 18px;
+  height: 18px;
+  background-color: transparent;
+  background-image: radial-gradient(circle at 35% 28%, #ffffff 0%, #fbf5e8 45%, #e4d8bd 100%);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.3), 0 2px 3px rgba(var(--shade), 0.4);
+  transition: transform 160ms var(--ease);
+}
+html:root [data-slot='switch'][data-state='checked'] > [data-slot='switch-thumb'] { transform: translateX(16px); }
+html:root [data-slot='switch'][data-state='unchecked'] > [data-slot='switch-thumb'] { transform: translateX(0); }
+
+/* ═════ Selected chips and count dots: Orca paints them bg-foreground + text-background, and --background is clear.
+   They become small lit orange parts with ink text. Floating hint tags (pointer-events-none) stay dark with light text. ═════ */
+html:root :is(button, span, div)[class~='text-background'][class*='bg-foreground']:not([class*='pointer-events-none']):not([class*='fixed']):not([class*='absolute']):not([data-slot='switch']) {
+  background-color: transparent;
+  background-image: var(--mat-orange);
+  color: var(--ink-on-orange);
+  border-color: transparent;
+  text-shadow: var(--tx-engrave-orange);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 0 0 1px rgba(110, 37, 3, 0.5), 0 0 8px rgba(242, 106, 27, 0.3);
+}
+html:root :is(button, span, div)[class~='text-background'][class*='bg-foreground']:not([data-slot='switch']) :is(svg, span) { color: inherit; }
+html:root .text-background { color: var(--ink-inverse); }
+html:root :is(button, span, div)[class~='text-background'][class*='bg-foreground']:not([class*='pointer-events-none']):not([class*='fixed']):not([class*='absolute']) { color: var(--ink-on-orange); }
+
+/* ═════ No kicker labels: small uppercase eyebrow lines become sentence-case section titles (pills like BETA stay) ═════ */
+html:root :is(p, div, span, h3, th):where(.uppercase):not([class*='rounded-full']):not([class*='rounded-sm']) {
+  text-transform: none;
+  letter-spacing: -0.004em;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-shadow: var(--tx-engrave);
+}
+html:root [data-sidebar-section-title] {
+  text-transform: none;
+  letter-spacing: -0.004em;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+/* A few Orca headers uppercase through a small-caps utility class on a wrapper; keep the pills, drop the rest */
+html:root th.uppercase, html:root [role='columnheader'].uppercase { text-transform: none; }
+
+/* ═════ The ground: one soft key light, no tilted band, no heavy beige pool ═════ */
+html:root {
+  --ground-lit:
+    radial-gradient(1700px 1200px at 2% -4%, #fffdf6 0%, rgba(255, 251, 236, 0.9) 20%, rgba(255, 244, 216, 0.5) 46%, rgba(255, 238, 205, 0) 76%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(125, 190, 240, 0.26), rgba(125, 190, 240, 0) 66%),
+    radial-gradient(1100px 800px at 92% 100%, rgba(255, 176, 118, 0.14), rgba(255, 176, 118, 0) 70%),
+    linear-gradient(180deg, #f7eedb 0%, #f2e6cc 55%, #ecdfc0 100%);
+}
+html.dark {
+  --ground-lit:
+    radial-gradient(1500px 1000px at 4% -6%, rgba(255, 150, 70, 0.16) 0%, rgba(255, 150, 70, 0.05) 42%, rgba(255, 150, 70, 0) 74%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(90, 140, 210, 0.14), rgba(90, 140, 210, 0) 66%),
+    radial-gradient(900px 560px at 52% 112%, rgba(255, 112, 40, 0.1), rgba(255, 112, 40, 0) 70%),
+    linear-gradient(180deg, #1a120c 0%, #150e09 55%, #120d09 100%);
+  --ground-grain: var(--ground-grain-dark, none);
+}
+/* Dark: lit parts keep their material (keycaps, buttons) and get a brighter rim so they read on the dark ground */
+html.dark :is(button, span)[class~='bg-worktree-sidebar-accent'],
+html.dark [data-slot='button'][data-variant='default'],
+html.dark .hawl-lit { text-shadow: var(--tx-engrave-orange); }
+html.dark [data-slot='button']:is([data-variant='secondary'], [data-variant='outline']),
+html.dark button[class*='bg-secondary/70']:not(.hawl-lit) {
+  color: var(--ink);
+  background-image: var(--mat-acrylic);
+}
+
+/* ═════ Empty home: the first action is the lit primary (Add project), the second an acrylic object ═════ */
+html:root button.hawl-lit[class*='bg-secondary/70'] {
+  border-color: transparent;
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  color: var(--ink-on-orange);
+}

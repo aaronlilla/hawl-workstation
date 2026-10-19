@@ -178,7 +178,7 @@ html:root [data-slot='switch'][data-state='unchecked'] { box-shadow: var(--well)
    Orca hand-writes many buttons with Tailwind classes. Their class names are stable, so they are matched by class. */
 
 /* Landing and other secondary buttons: same acrylic object as the secondary variant */
-html:root button[class*='bg-secondary/70'] {
+html:root button[class*='bg-secondary/70']:not(.hawl-lit) {
   color: var(--ink);
   border-color: transparent;
   border-radius: var(--r-sm);
@@ -189,12 +189,12 @@ html:root button[class*='bg-secondary/70'] {
   box-shadow: var(--e1);
   transition: box-shadow 160ms var(--ease), transform 140ms var(--ease);
 }
-html:root button[class*='bg-secondary/70']:hover {
+html:root button[class*='bg-secondary/70']:not(.hawl-lit):hover {
   background-image: var(--mat-acrylic), linear-gradient(0deg, rgba(255, 150, 70, 0.1), rgba(255, 150, 70, 0.1));
   box-shadow: var(--e2);
   transform: translateY(-1px);
 }
-html:root button[class*='bg-secondary/70']:active { transform: translateY(1px); box-shadow: var(--well); }
+html:root button[class*='bg-secondary/70']:not(.hawl-lit):active { transform: translateY(1px); box-shadow: var(--well); }
 
 /* Key caps built from spans (ShortcutKeyCombo) */
 html:root span[class*='min-w-6'][class*='bg-secondary/70'] {
@@ -214,7 +214,7 @@ html.dark span[class*='min-w-6'][class*='bg-secondary/70'] {
 }
 
 /* Sidebar rows: the selected row is a lit orange slab (H01); hover lifts an acrylic tile */
-html:root button[class*='bg-worktree-sidebar-accent'] {
+html:root button[class~='bg-worktree-sidebar-accent'] {
   color: var(--ink-on-orange);
   border-radius: var(--r-sm);
   background-color: transparent;
@@ -225,7 +225,7 @@ html:root button[class*='bg-worktree-sidebar-accent'] {
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.8), inset 2px 0 0 rgba(255,255,255,0.4), inset -1.5px -2px 0 rgba(120,40,0,0.35),
     0 0 0 1px rgba(110,37,3,0.55), 1px 3px 0 rgb(176, 66, 8), 0 8px 12px -6px rgba(255,128,40,0.5);
 }
-html:root button[class*='bg-worktree-sidebar-accent'] :is(svg, span) { color: inherit; }
+html:root button[class~='bg-worktree-sidebar-accent'] :is(svg, span) { color: inherit; }
 html:root button[class*='hover:bg-worktree-sidebar-foreground/8']:hover {
   border-radius: var(--r-sm);
   background-image: var(--mat-acrylic);
