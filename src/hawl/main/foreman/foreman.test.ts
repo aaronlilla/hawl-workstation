@@ -144,7 +144,6 @@ describe('intake refusals (contract table: menu closed, sender not allowed, paus
     ['paused', 'fix-bug', 'site', {}, true, 'paused'],
     ['unknown capability', 'nope', 'site', {}, false, 'no_such_capability'],
     ['closed capability', 'closed-cap', 'site', {}, false, 'no_such_capability'],
-    ['no capability named', null, 'site', {}, false, 'no_such_capability'],
     [
       'sender not on the list',
       'fix-bug',

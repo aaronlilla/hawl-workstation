@@ -15,8 +15,12 @@ export function buildBeat(c: ForemanCtx): Heartbeat {
     (j) => j.state === 'accepted' && (j.exec === 'queued' || j.exec === 'offered')
   ).length
   const waitingLines = jobs.filter((j) => j.line?.state === 'requested' && j.line.localOk === null)
+  // A job nobody in the yard would take also waits for the owner.
+  const unclaimed = (j: (typeof jobs)[number]): boolean =>
+    j.state === 'accepted' && j.exec === 'queued' && j.exhaustedNotified
   const needsHuman =
-    jobs.filter((j) => j.exec === 'held' || j.needsHuman).length + waitingLines.length
+    jobs.filter((j) => j.exec === 'held' || j.needsHuman || unclaimed(j)).length +
+    waitingLines.length
   let state: Heartbeat['state'] = 'online'
   if (c.paused) {
     state = 'paused'

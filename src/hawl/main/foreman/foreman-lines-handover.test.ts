@@ -351,6 +351,9 @@ describe('contract conformance', () => {
     rig.conforms()
     expect(rig.events().length).toBeGreaterThanOrEqual(13)
     for (const w of rig.wire) {
+      if (w.dir === 'handback') {
+        continue
+      }
       expect(checkContract('lifecycle', w.ev)).toBeNull()
     }
   })

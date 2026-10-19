@@ -48,7 +48,9 @@ export type ForemanTransport = {
   /**
    * A job leaves this yard and goes back to the Dispatcher to be routed again (S18, S20).
    * Not a gateway lifecycle event: the gateway state machine has no accepted -> reassigned move,
-   * so this travels as the m2 `foreman` op (decline or release) and the job is not cancelled.
+   * so this is the m2 route `POST /v1/handoffs/:id/foreman {op, reason?}` (m2-contract.md 3.4,
+   * ops decline and release) and the job is not cancelled. The body is checked against
+   * HAND_BACK_SCHEMA (m2-schemas.ts). The relay handler is another piece and is NOT exercised here.
    */
   handBack(back: HandBack): void
 }
@@ -76,6 +78,8 @@ export type AgentPort = {
 export type AgentOffer = {
   taskId: string
   epoch: number
+  /** S19: why this agent got the job (rule, pin, requester preference or least loaded). */
+  why: string
   capability: string | null
   acceptance: string[]
   deadline: string | null
@@ -119,6 +123,11 @@ export type ForemanConfig = {
   heartbeatMs?: number
   /** Who may send us work: yard slugs, or "site". Empty or missing means anyone. */
   acceptFrom?: string[]
+  /**
+   * What happens to an offer that names no capability (the contract makes it optional).
+   * Default "ask_owner": the owner sees the acceptance lines and decides. "auto" accepts it.
+   */
+  freeformApproval?: 'auto' | 'ask_owner'
   /** Global switch: false makes every job ask the owner. Default true. */
   autoAccept?: boolean
   dailyBudgetUsd?: number
@@ -182,6 +191,7 @@ export type HistoryKind =
   | 'send_back'
   | 'approve'
   | 'resume'
+  | 'reoffer'
 
 export type HistoryEntry = {
   at: number
@@ -190,6 +200,16 @@ export type HistoryEntry = {
   reason: string | null
   agentId: string | null
   toAgentId: string | null
+}
+
+/** S19: one routing decision to an inner agent, with the agents that were passed over. */
+export type RouteDecision = {
+  at: number
+  epoch: number
+  agentId: string
+  /** "rule rule_3", "pinned (sent back to the agent that did it)", "requester preference", "least loaded". */
+  via: string
+  skipped: { agentId: string; why: string }[]
 }
 
 export type LineState = 'requested' | 'open' | 'rejected' | 'closed'
@@ -213,7 +233,14 @@ export type Job = {
   qualityBar: string | null
   deadline: string | null
   requester: string
+  /** The requester's wish. A preference, not an order. */
   preferAgent: string | null
+  /** An explicit pick for this job: the agent that did the work (send-back) or the owner's reroute target. Beats rules. */
+  pinAgent: string | null
+  /** When the Dispatcher sent the current offer (ms). A later offer on a handed-back job is a new offer, not a duplicate. */
+  offerAt: number
+  /** The job was exported to the answering service; this foreman runs no timers on it until it is adopted back. */
+  transferred: boolean
   state: TaskState
   exec: ExecState | null
   receivedAt: number
@@ -223,6 +250,7 @@ export type Job = {
   claims: Claim[]
   tried: string[]
   history: HistoryEntry[]
+  routing: RouteDecision[]
   reroutes: number
   sendBacks: number
   needsHuman: boolean
@@ -267,6 +295,7 @@ export type JobView = {
   lastContactAt: number | null
   needsHuman: boolean
   history: HistoryEntry[]
+  routing: RouteDecision[]
   line: DirectLine | null
 }
 
@@ -279,7 +308,14 @@ export type QueueEntry = {
   preferAgent?: string
   /** True when the service already told the owner (S18), so we do not repeat it. */
   ownerNotified?: boolean
+  /** The job is not accepted yet: it waits for the owner's answer (ask-owner capability). */
+  held?: boolean
+  /** When the job first arrived, for a held job's expiry. */
+  receivedAt?: number
 }
+
+/** Compact record of a job that ended and was forgotten, so a late redelivery still reads as a duplicate (S21). */
+export type Tombstone = { taskId: string; state: TaskState; closedAt: number; offerAt: number }
 
 export type ForemanRule = {
   id: string

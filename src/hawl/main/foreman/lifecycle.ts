@@ -29,10 +29,11 @@ export function onLifecycle(c: ForemanCtx, ev: LifecycleEvent): void {
     job.sendBacks++
     job.exec = 'queued'
     job.tried = []
+    job.exhaustedNotified = false
     c.restartWait(job)
     const last = job.claims.findLast((cl) => cl.state === 'finished')
     if (last) {
-      job.preferAgent = last.agentId
+      job.pinAgent = last.agentId
     }
     c.history(job, 'send_back', 'dispatcher', ev.reason ?? null)
     if (job.sendBacks >= c.cfg.maxSendBacks) {
@@ -56,7 +57,7 @@ export function onLifecycle(c: ForemanCtx, ev: LifecycleEvent): void {
 
 /** The yard owner gives a job back. History is kept. */
 export function decline(c: ForemanCtx, taskId: string, by: string, reason: string): void {
-  const job = c.need(taskId)
+  const job = c.needLocal(taskId)
   if (job.state === 'asked') {
     c.drop('held_expire', taskId)
     declineAsked(c, job, reason, by)
@@ -103,7 +104,7 @@ export function reroute(
   taskId: string,
   opts: { toAgent: string; by: string; reason?: string; makeRule?: boolean }
 ): void {
-  const job = c.need(taskId)
+  const job = c.needLocal(taskId)
   if (job.state !== 'accepted' || job.exec === null || job.exec === 'held') {
     throw new ForemanError('bad_state', 'only an accepted job can be rerouted')
   }
@@ -136,7 +137,7 @@ export function reroute(
     job.needsHuman = true
     c.deps.transport.notifyOwner({ kind: 'needs_human', taskId: job.taskId })
   } else {
-    job.preferAgent = opts.toAgent
+    job.pinAgent = opts.toAgent
     job.tried = job.tried.filter((id) => id !== opts.toAgent)
     if (job.tried.length >= c.cfg.maxAgentsPerJob) {
       // The owner picked an agent on purpose: give the job a fresh round of tries.
@@ -156,7 +157,7 @@ function clearStop(job: Job): void {
   job.exhaustedNotified = false
 }
 
-/** A person looked at a stopped job and wants it tried again as it is. */
+/** A person looked at a stopped job (needs a person, or nobody in the yard took it) and wants it tried again as it is. */
 export function resolveNeedsHuman(
   c: ForemanCtx,
   taskId: string,
@@ -164,7 +165,7 @@ export function resolveNeedsHuman(
   reason?: string
 ): void {
   const job = c.need(taskId)
-  if (!job.needsHuman || job.state !== 'accepted') {
+  if ((!job.needsHuman && !job.exhaustedNotified) || job.state !== 'accepted') {
     throw new ForemanError('bad_state', 'job is not waiting for a person')
   }
   clearStop(job)

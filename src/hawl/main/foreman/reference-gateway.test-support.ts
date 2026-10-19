@@ -189,6 +189,20 @@ export class ReferenceGateway {
     return this.#tasks.get(taskId)
   }
 
+  /**
+   * The Dispatcher took a job back (m2 route POST /v1/handoffs/:id/foreman, op decline or release).
+   * The vendored gateway state machine has no accepted -> reassigned move, so this is a model of the
+   * relay side, not something the contract itself defines. It lets a later re-offer be replayed.
+   */
+  handedBack(taskId: string): void {
+    const cur = this.#tasks.get(taskId)
+    if (cur !== 'accepted' && cur !== 'asked') {
+      throw new ContractError(`hand back: nothing to hand back from ${cur ?? 'no task'}`)
+    }
+    this.#tasks.set(taskId, 'reassigned')
+    this.#lines.delete(taskId)
+  }
+
   /** Apply one lifecycle event and return the task state afterwards. */
   apply(raw: unknown): TaskState {
     const ev = roundTrip<LifecycleEvent>('lifecycle', raw)

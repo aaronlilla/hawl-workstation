@@ -1,6 +1,6 @@
 // The task queue runner. Nothing here sets a timer: due work waits in ctx.tasks and runs
 // when due() is called, so a lapsed lease is always revoked before any later call is read.
-import { delegate } from './claims'
+import { agentStatus, delegate } from './claims'
 import { beatIfDue } from './heartbeat'
 import { declineAsked } from './intake'
 import type { ForemanCtx } from './state'
@@ -74,6 +74,10 @@ function run(c: ForemanCtx, task: ForemanTask): void {
   if (!job) {
     return
   }
+  if (job.transferred) {
+    // The answering service owns this job's clocks until it is adopted back (S15).
+    return
+  }
   const now = c.now()
   switch (task.kind) {
     case 'delegate':
@@ -115,19 +119,33 @@ function run(c: ForemanCtx, task: ForemanTask): void {
       if (!waitStarted(job, task) || job.state !== 'accepted' || job.exec === 'running') {
         return
       }
-      if (c.anyOnline()) {
-        // Agents are up, just busy: not offline. Look again later in case they all go.
+      const status = agentStatus(c, job)
+      if (status === 'available') {
+        // Someone is up, just busy: not stuck. Look again later in case they all go.
         c.schedule('hold_check', job.taskId, `${job.waitingSince}:${now}`, now + RECHECK_MS)
       } else if (!job.holdNotified) {
         job.holdNotified = true
-        c.deps.transport.notifyOwner({ kind: 'job_held_offline', taskId: job.taskId })
+        if (status === 'none_online') {
+          c.deps.transport.notifyOwner({ kind: 'job_held_offline', taskId: job.taskId })
+        } else if (!job.exhaustedNotified) {
+          // Agents are up, but every one of them already turned the job down or let it lapse.
+          job.exhaustedNotified = true
+          c.deps.transport.notifyOwner({ kind: 'job_unclaimed', taskId: job.taskId })
+        }
       }
       return
     }
     case 'release_check':
       if (waitStarted(job, task) && job.state === 'accepted' && job.exec !== 'running') {
+        const status = agentStatus(c, job)
+        const reason =
+          status === 'none_online'
+            ? 'yard_offline'
+            : status === 'all_tried'
+              ? 'no_agent_took_it'
+              : 'yard_busy'
         c.history(job, 'release', 'foreman', 'release time passed')
-        c.handBack(job, 'release', 'yard_offline')
+        c.handBack(job, 'release', reason)
         c.deps.transport.notifyOwner({ kind: 'job_released', taskId: job.taskId })
       }
       return

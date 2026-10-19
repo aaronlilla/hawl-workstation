@@ -1,5 +1,6 @@
 // The yard's menu (S11, S12, S48): edit a draft, publish it as a gateway-contract menu.
 import { checkContract, type Capability, type Menu } from '../../shared/gateway-contract/contract'
+import { checkExtendedMenu } from './m2-schemas'
 import type { ForemanCtx } from './state'
 import { ForemanError, MINUTE_MS, type CapabilityConfig, type DirectLinePolicy } from './types'
 
@@ -60,9 +61,14 @@ export function publishMenu(c: ForemanCtx): {
   const extended: ExtendedMenu = {
     ...menu,
     capabilities: c.draft.map(toExtendedCapability),
-    hold_minutes: c.cfg.holdMs / MINUTE_MS,
-    release_minutes: c.cfg.releaseMs / MINUTE_MS,
+    // The menu counts whole minutes; a shorter time (only used in tests) shows as 1.
+    hold_minutes: Math.max(1, Math.ceil(c.cfg.holdMs / MINUTE_MS)),
+    release_minutes: Math.max(1, Math.ceil(c.cfg.releaseMs / MINUTE_MS)),
     direct_lines: c.cfg.directLines ?? 'ask_owner'
+  }
+  const extErr = checkExtendedMenu(extended)
+  if (extErr) {
+    throw new ForemanError('bad_menu', extErr)
   }
   c.published = c.draft.map((cap) => ({ ...cap }))
   c.menuRevision++

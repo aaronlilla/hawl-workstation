@@ -13,17 +13,75 @@ function load(c: ForemanCtx, agentId: string): number {
   return n
 }
 
-/** Rule first, then the requester's preference, then the least loaded agent by id. */
-function pick(c: ForemanCtx, job: Job): AgentInfo | undefined {
+/** Why this agent cannot take the job right now, or null when it can. */
+function whyNot(c: ForemanCtx, job: Job, a: AgentInfo): string | null {
   const allowed = c.cap(job)?.agents
-  let candidates = [...c.agents.values()].filter(
-    (a) => a.online && !a.away && !job.tried.includes(a.id) && load(c, a.id) < a.capacity
-  )
-  if (allowed && allowed.length > 0) {
-    candidates = candidates.filter((a) => allowed.includes(a.id))
+  if (allowed && allowed.length > 0 && !allowed.includes(a.id)) {
+    return 'not allowed for this capability'
+  }
+  if (!a.online) {
+    return 'offline'
+  }
+  if (a.away) {
+    return 'away'
+  }
+  if (job.tried.includes(a.id)) {
+    return 'already tried'
+  }
+  if (load(c, a.id) >= a.capacity) {
+    return 'busy'
+  }
+  return null
+}
+
+/**
+ * Can anyone in this yard still take the job?
+ * none_online: no agent allowed for it is up (the yard is offline for this job).
+ * all_tried: agents are up but each one has already turned it down or let it lapse.
+ * available: someone untried is up, free or just busy right now.
+ */
+export function agentStatus(c: ForemanCtx, job: Job): 'none_online' | 'all_tried' | 'available' {
+  const usable = [...c.agents.values()].filter((a) => {
+    const why = whyNot(c, job, a)
+    return why === null || why === 'busy' || why === 'already tried'
+  })
+  if (usable.length === 0) {
+    return 'none_online'
+  }
+  return usable.some((a) => whyNot(c, job, a) !== 'already tried') ? 'available' : 'all_tried'
+}
+
+type Pick = { agent: AgentInfo; via: string; skipped: { agentId: string; why: string }[] }
+
+/**
+ * An explicit pick for this job (the agent that did the work, or the owner's reroute target),
+ * then the newest matching rule, then the requester's preference, then the least loaded by id.
+ */
+function pick(c: ForemanCtx, job: Job): Pick | undefined {
+  const all = [...c.agents.values()].sort((a, b) => (a.id < b.id ? -1 : 1))
+  const skipped: { agentId: string; why: string }[] = []
+  const candidates: AgentInfo[] = []
+  for (const a of all) {
+    const why = whyNot(c, job, a)
+    if (why) {
+      skipped.push({ agentId: a.id, why })
+    } else {
+      candidates.push(a)
+    }
   }
   if (candidates.length === 0) {
     return undefined
+  }
+  const done = (agent: AgentInfo, via: string): Pick => ({
+    agent,
+    via,
+    skipped: skipped.concat(
+      candidates.filter((a) => a.id !== agent.id).map((a) => ({ agentId: a.id, why: 'not chosen' }))
+    )
+  })
+  const pinned = job.pinAgent ? candidates.find((a) => a.id === job.pinAgent) : undefined
+  if (pinned) {
+    return done(pinned, `pinned: ${job.pinAgent} (sent back to, or picked by the owner)`)
   }
   // The newest matching rule wins; if its agent cannot take the job, an older match may.
   for (const r of c.rules.toReversed()) {
@@ -32,19 +90,25 @@ function pick(c: ForemanCtx, job: Job): AgentInfo | undefined {
       (r.match.fromYard === undefined || r.match.fromYard === job.requester)
     const byRule = matches ? candidates.find((a) => a.id === r.action.agentId) : undefined
     if (byRule) {
-      return byRule
+      return done(byRule, `rule ${r.id} (${r.source})`)
     }
   }
   const byPref = job.preferAgent ? candidates.find((a) => a.id === job.preferAgent) : undefined
   if (byPref) {
-    return byPref
+    return done(byPref, 'requester preference')
   }
-  return candidates.sort((a, b) => load(c, a.id) - load(c, b.id) || (a.id < b.id ? -1 : 1))[0]
+  const least = candidates.sort(
+    (a, b) => load(c, a.id) - load(c, b.id) || (a.id < b.id ? -1 : 1)
+  )[0]
+  return done(least, 'least loaded')
 }
 
 /** Offer a queued job to one agent. With none free it stays queued: no promise of running. */
 export function delegate(c: ForemanCtx, job: Job): void {
   if (job.state !== 'accepted' || job.exec !== 'queued' || job.needsHuman || c.paused) {
+    return
+  }
+  if (job.transferred) {
     return
   }
   if (job.tried.length >= c.cfg.maxAgentsPerJob) {
@@ -54,10 +118,11 @@ export function delegate(c: ForemanCtx, job: Job): void {
     }
     return
   }
-  const agent = pick(c, job)
-  if (!agent) {
+  const chosen = pick(c, job)
+  if (!chosen) {
     return
   }
+  const { agent } = chosen
   const epoch = job.claimEpoch + 1
   const offerExpiresAt = c.now() + c.cfg.offerMs
   job.claimEpoch = epoch
@@ -70,11 +135,19 @@ export function delegate(c: ForemanCtx, job: Job): void {
     endedAt: null,
     endReason: null
   })
+  job.routing.push({
+    at: c.now(),
+    epoch,
+    agentId: agent.id,
+    via: chosen.via,
+    skipped: chosen.skipped
+  })
   job.exec = 'offered'
   c.schedule('claim_timeout', job.taskId, String(epoch), offerExpiresAt)
   c.deps.agents.offer(agent.id, {
     taskId: job.taskId,
     epoch,
+    why: chosen.via,
     capability: job.capability,
     acceptance: [...job.acceptance],
     deadline: job.deadline,

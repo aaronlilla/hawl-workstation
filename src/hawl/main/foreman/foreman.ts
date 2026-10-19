@@ -36,7 +36,8 @@ import type {
   IntakeResult,
   Job,
   JobView,
-  QueueEntry
+  QueueEntry,
+  Tombstone
 } from './types'
 
 export type ForemanSnapshot = {
@@ -53,6 +54,11 @@ export type ForemanSnapshot = {
   paused: boolean
   autoAccept: boolean
   cards: ReturnType<CardBook['snapshot']>
+  /** Known inner agents. They restore as offline: a restarted app must hear from each terminal again. */
+  agents: AgentInfo[]
+  tombs: Tombstone[]
+  lastBeatAt: number | null
+  lastBeatSig: string
 }
 
 export class Foreman {
@@ -136,6 +142,8 @@ export class Foreman {
         lastSeenAt: now
       })
       c.lastContactAt = now
+      // Back after a lapse or a missed offer: queued jobs may be offered to it again.
+      c.forgetTried(id)
       c.delegateAll()
     })
   }
@@ -158,6 +166,7 @@ export class Foreman {
       if (a) {
         a.away = away
         if (!away) {
+          c.forgetTried(id)
           c.delegateAll()
         }
       }
@@ -321,7 +330,11 @@ export class Foreman {
       lastContactAt: c.lastContactAt,
       paused: c.paused,
       autoAccept: c.autoAccept,
-      cards: c.cards.snapshot()
+      cards: c.cards.snapshot(),
+      agents: [...c.agents.values()],
+      tombs: [...c.tombs.values()],
+      lastBeatAt: c.lastBeatAt,
+      lastBeatSig: c.lastBeatSig
     })
   }
 
@@ -332,6 +345,8 @@ export class Foreman {
     c.tasks.clear()
     c.rules.length = 0
     c.spent.clear()
+    c.agents.clear()
+    c.tombs.clear()
     for (const j of snap.jobs) {
       c.jobs.set(j.taskId, j)
     }
@@ -351,5 +366,21 @@ export class Foreman {
     c.paused = snap.paused
     c.autoAccept = snap.autoAccept
     c.cards.restore(snap.cards)
+    for (const j of snap.jobs) {
+      // Snapshots from before these fields existed.
+      j.pinAgent ??= null
+      j.routing ??= []
+      j.offerAt ??= j.receivedAt
+      j.transferred ??= false
+    }
+    for (const a of snap.agents ?? []) {
+      // The terminals died with the old process: known, but offline until they announce themselves.
+      c.agents.set(a.id, { ...a, online: false, away: false })
+    }
+    for (const t of snap.tombs ?? []) {
+      c.tombs.set(t.taskId, t)
+    }
+    c.lastBeatAt = snap.lastBeatAt ?? null
+    c.lastBeatSig = snap.lastBeatSig ?? ''
   }
 }

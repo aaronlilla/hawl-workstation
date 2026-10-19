@@ -1,6 +1,6 @@
 // Read-only views of a foreman's jobs (S15 status text, S16 holder, S19/S20 history).
 import { iso, type ForemanCtx } from './state'
-import type { Claim, JobView } from './types'
+import type { Claim, JobView, Tombstone } from './types'
 
 export function jobView(c: ForemanCtx, taskId: string): JobView {
   const job = c.need(taskId)
@@ -39,6 +39,7 @@ export function jobView(c: ForemanCtx, taskId: string): JobView {
     lastContactAt: c.lastContactAt,
     needsHuman: job.needsHuman,
     history: job.history.map((h) => ({ ...h })),
+    routing: job.routing.map((r) => ({ ...r, skipped: r.skipped.map((x) => ({ ...x })) })),
     line: job.line ? { ...job.line } : null
   }
 }
@@ -58,4 +59,23 @@ export function busyAgentIds(c: ForemanCtx): string[] {
     }
   }
   return [...ids]
+}
+
+/** What is left of a job that ended and was forgotten: enough to answer a redelivered offer. */
+export function tombView(t: Tombstone): JobView {
+  return {
+    taskId: t.taskId,
+    state: t.state,
+    exec: null,
+    holder: 'foreman',
+    claim: null,
+    eta: null,
+    statusText: `${t.state} (details forgotten after the retention time)`,
+    queuedNotRunning: false,
+    lastContactAt: null,
+    needsHuman: false,
+    history: [],
+    routing: [],
+    line: null
+  }
 }

@@ -7,6 +7,7 @@ import {
   type LifecycleEventName
 } from '../../shared/gateway-contract/contract'
 import { CardBook } from './cards'
+import { checkHandBack } from './m2-schemas'
 import {
   ForemanError,
   HOUR_MS,
@@ -20,7 +21,8 @@ import {
   type ForemanTask,
   type FullTaskKind,
   type HistoryKind,
-  type Job
+  type Job,
+  type Tombstone
 } from './types'
 
 export const DEFAULTS = {
@@ -38,6 +40,8 @@ export const DEFAULTS = {
 
 export type ResolvedConfig = ForemanConfig & typeof DEFAULTS
 
+const MAX_TOMBSTONES = 100_000
+
 export const iso = (ms: number): string => new Date(ms).toISOString()
 
 export function stripUndefined<T extends object>(o: T): T {
@@ -53,6 +57,8 @@ export class ForemanCtx {
   readonly tasks = new Map<string, ForemanTask>()
   readonly rules: ForemanRule[] = []
   readonly spent = new Map<string, number>()
+  /** Ended jobs that were forgotten: a redelivery of their offer is still a duplicate (S21), whatever the retention. */
+  readonly tombs = new Map<string, Tombstone>()
   published: CapabilityConfig[] = []
   draft: CapabilityConfig[] = []
   menuRevision = 0
@@ -84,6 +90,15 @@ export class ForemanCtx {
     const job = this.jobs.get(taskId)
     if (!job) {
       throw new ForemanError('unknown_task', `no task ${taskId}`)
+    }
+    return job
+  }
+
+  /** Like need(), but refuses a job that was handed to the answering service and not adopted back. */
+  needLocal(taskId: string): Job {
+    const job = this.need(taskId)
+    if (job.transferred) {
+      throw new ForemanError('bad_state', 'this job is with the answering service')
     }
     return job
   }
@@ -249,19 +264,51 @@ export class ForemanCtx {
 
   /** The job goes back to the Dispatcher to be routed again (S18 release, S20 decline). It is not cancelled. */
   handBack(job: Job, op: 'decline' | 'release', reason: string): void {
+    const body = reason.slice(0, 500) || op
+    const err = checkHandBack(op, body)
+    if (err) {
+      throw new ForemanError('bad_event', `hand back: ${err}`)
+    }
     this.revokeLive(job, 'job_closed')
     job.state = 'reassigned'
-    this.deps.transport.handBack({ taskId: job.taskId, op, reason: reason.slice(0, 500) })
+    this.deps.transport.handBack({ taskId: job.taskId, op, reason: body })
     this.finish(job, reason)
   }
 
-  /** Forget jobs that ended longer ago than the retention time. */
+  /** Forget jobs that ended longer ago than the retention time, leaving a small tombstone (S21). */
   prune(): void {
     const cutoff = this.now() - this.cfg.retentionMs
     for (const [id, j] of this.jobs) {
-      if (j.closedAt !== null && j.exec === null && j.closedAt <= cutoff) {
+      if (j.closedAt !== null && j.exec === null && !j.transferred && j.closedAt <= cutoff) {
         this.jobs.delete(id)
+        this.tombs.set(id, { taskId: id, state: j.state, closedAt: j.closedAt, offerAt: j.offerAt })
       }
+    }
+    // A tombstone is a few bytes; the cap only stops a runaway file. Oldest go first.
+    while (this.tombs.size > MAX_TOMBSTONES) {
+      const first = this.tombs.keys().next().value
+      if (first === undefined) {
+        break
+      }
+      this.tombs.delete(first)
+    }
+  }
+
+  /**
+   * An agent showed up again (restart, back from away). Agents that lapsed or let an offer expire
+   * get another chance on queued jobs; an agent that said "no" to a job stays out of that job.
+   */
+  forgetTried(agentId: string): void {
+    for (const j of this.jobs.values()) {
+      if (j.state !== 'accepted' || j.exec !== 'queued' || !j.tried.includes(agentId)) {
+        continue
+      }
+      const last = j.claims.findLast((cl) => cl.agentId === agentId)
+      if (last?.endReason === 'declined') {
+        continue
+      }
+      j.tried = j.tried.filter((id) => id !== agentId)
+      j.exhaustedNotified = false
     }
   }
 

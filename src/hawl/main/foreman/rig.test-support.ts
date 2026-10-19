@@ -27,7 +27,7 @@ export const CAPS: CapabilityConfig[] = [
   { id: 'closed-cap', description: 'Not taking this', open: false }
 ]
 
-type Wire = { dir: 'in' | 'out'; ev: LifecycleEvent }
+type Wire = { dir: 'in' | 'out'; ev: LifecycleEvent } | { dir: 'handback'; taskId: string }
 
 export type Rig = ReturnType<typeof makeRig>
 
@@ -57,6 +57,7 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
         handBack: (back) => {
           calls.push(`handback:${back.op}:${back.taskId}`)
           handBacks.push(back)
+          wire.push({ dir: 'handback', taskId: back.taskId })
         },
         notifyRequester: (n) => {
           calls.push(`notify-requester:${n.kind}:${n.taskId}`)
@@ -115,6 +116,10 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
     publish() {
       return foreman.publishMenu()
     },
+    /** Replace the draft menu (not published until publish()). */
+    setCaps(next: CapabilityConfig[]): void {
+      foreman.setCapabilities(next)
+    },
     offerEvent(
       taskId: string,
       capability: string | null = 'fix-bug',
@@ -165,13 +170,17 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
       return o.offer.epoch
     },
     events(name?: string): LifecycleEvent[] {
-      return wire.filter((w) => w.dir === 'out' && (!name || w.ev.event === name)).map((w) => w.ev)
+      return wire.flatMap((w) => (w.dir === 'out' && (!name || w.ev.event === name) ? [w.ev] : []))
     },
     /** Replay everything on the wire through the contract's reference gateway. Throws when illegal. */
     conforms(): void {
       const gw = new ReferenceGateway(menus.at(-1)?.menu)
       for (const w of wire) {
-        gw.apply(w.ev)
+        if (w.dir === 'handback') {
+          gw.handedBack(w.taskId)
+        } else {
+          gw.apply(w.ev)
+        }
       }
     }
   }
