@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { awayVector, distanceToRect, lightFalloff, LIGHT_RANGE } from './light-engine'
+import { awayVector, distanceBetweenRects, distanceToRect, lightFalloff, LIGHT_RANGE } from './light-engine'
 
 describe('light engine maths', () => {
   it('falls off from 1 at the edge to 0 at range, faster than linear', () => {
@@ -24,5 +24,12 @@ describe('light engine maths', () => {
     expect(distanceToRect(15, 15, r)).toBe(0)
     expect(distanceToRect(0, 15, r)).toBe(10)
     expect(distanceToRect(33, 24, r)).toBe(Math.hypot(3, 4))
+  })
+
+  it('measures the gap between two rects edge to edge', () => {
+    const a = { left: 0, top: 0, width: 100, height: 40 }
+    expect(distanceBetweenRects(a, { left: 108, top: 0, width: 100, height: 40 })).toBe(8)
+    expect(distanceBetweenRects(a, { left: 50, top: 10, width: 10, height: 10 })).toBe(0)
+    expect(distanceBetweenRects(a, { left: 103, top: 44, width: 5, height: 5 })).toBe(5)
   })
 })

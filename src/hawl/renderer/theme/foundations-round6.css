@@ -1,0 +1,162 @@
+/* D1-foundations, round 6: the Hawl Claude Design look on the shell, CSS only.
+   Coloured light fields on the ground, glass pill search, lit pill for the active row, orb status lights, light that lands
+   on every neighbouring control (see light-engine.ts), and no boxes where the direction says to delete them.
+   Later than every other theme file, so it wins ties. */
+
+/* ═════ Ground: layered light fields (H01 / F00): warm key top left, sky-teal field top right, orange pools below ═════ */
+html:root {
+  --ground-lit:
+    radial-gradient(1500px 1050px at -6% -10%, #fffef8 0%, rgba(255, 251, 236, 0.94) 22%, rgba(255, 244, 214, 0.5) 50%, rgba(255, 238, 205, 0) 78%),
+    radial-gradient(1250px 860px at 106% -8%, rgba(86, 170, 226, 0.62) 0%, rgba(120, 190, 226, 0.34) 36%, rgba(150, 200, 214, 0.12) 58%, rgba(150, 200, 214, 0) 74%),
+    radial-gradient(900px 640px at 98% 102%, rgba(255, 138, 64, 0.42), rgba(255, 138, 64, 0) 68%),
+    radial-gradient(1000px 700px at 6% 104%, rgba(255, 190, 120, 0.5), rgba(255, 190, 120, 0) 70%),
+    radial-gradient(760px 520px at 46% 62%, rgba(255, 214, 160, 0.34), rgba(255, 214, 160, 0) 72%),
+    linear-gradient(180deg, #f6ebd0 0%, #efdfba 52%, #e8d4a8 100%);
+}
+html.dark {
+  --ground-lit:
+    radial-gradient(1400px 980px at -6% -10%, rgba(255, 140, 56, 0.34) 0%, rgba(255, 140, 56, 0.12) 42%, rgba(255, 140, 56, 0) 76%),
+    radial-gradient(1200px 820px at 106% -8%, rgba(60, 130, 200, 0.4) 0%, rgba(60, 130, 200, 0.14) 46%, rgba(60, 130, 200, 0) 74%),
+    radial-gradient(900px 620px at 96% 104%, rgba(255, 96, 28, 0.26), rgba(255, 96, 28, 0) 68%),
+    radial-gradient(900px 640px at 10% 106%, rgba(255, 150, 70, 0.18), rgba(255, 150, 70, 0) 70%),
+    radial-gradient(700px 500px at 46% 60%, rgba(255, 120, 40, 0.1), rgba(255, 120, 40, 0) 72%),
+    linear-gradient(180deg, #221710 0%, #1a110b 55%, #140d08 100%);
+}
+
+/* Side sheets keep a lighter, bluer-white glass so there is a visible step from sheet to ground */
+html:root .bg-worktree-sidebar {
+  background-color: rgba(255, 253, 246, 0.56);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.14) 34%, rgba(255, 236, 206, 0.22) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset -1px 0 0 rgba(var(--shade), 0.14), inset 0 1px 0 #fff, 14px 0 34px -12px rgba(var(--shade), 0.32);
+}
+html.dark .bg-worktree-sidebar {
+  background-color: rgba(58, 38, 26, 0.6);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.14) 0%, rgba(255, 190, 130, 0.03) 34%, rgba(0, 0, 0, 0.12) 100%);
+}
+
+/* ═════ Sidebar: breathing room, bigger rows, glass pill search, lit pill for the active row ═════ */
+html:root .bg-worktree-sidebar div[class*='flex-col'][class*='gap-0.5'][class*='px-2'][class*='pt-2'] { gap: 6px; padding: 14px 12px 6px; }
+html:root .bg-worktree-sidebar :is(button, [role='button'])[class*='py-1.5'] { min-height: 38px; font-size: 14px; }
+html:root .bg-worktree-sidebar button[class*='bg-worktree-sidebar-foreground/5'] {
+  border-radius: var(--r-pill);
+  min-height: 40px;
+  padding: 0 14px;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  background-color: rgba(255, 255, 255, 0.58);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1));
+  box-shadow: inset 0 2px 5px rgba(var(--shade), 0.18), inset 1px 1px 2px rgba(var(--shade), 0.12), 0 1px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.22), 0 6px 14px -8px rgba(var(--shade), 0.4);
+}
+html.dark .bg-worktree-sidebar button[class*='bg-worktree-sidebar-foreground/5'] {
+  background-color: rgba(255, 220, 190, 0.08);
+  background-image: none;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 226, 190, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+/* The active row is a lit orange pill with a stacked wall, the counter-style bevel of H01 */
+html:root .bg-worktree-sidebar button[class~='bg-worktree-sidebar-accent'] {
+  border-radius: var(--r-md);
+  min-height: 40px;
+  font-size: 14.5px;
+  font-weight: 750;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85), inset 2px 0 0 rgba(255, 255, 255, 0.45), inset -1.5px -2px 0 rgba(120, 40, 0, 0.35),
+    inset -4px -7px 10px -3px rgba(120, 40, 0, 0.28), 0 0 0 1px rgba(110, 37, 3, 0.55), var(--wall-orange),
+    0 12px 16px -8px rgba(242, 106, 27, 0.55), 0 0 22px rgba(242, 106, 27, 0.28);
+}
+html.dark .bg-worktree-sidebar button[class~='bg-worktree-sidebar-accent'] { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset -1.5px -2px 0 rgba(120, 40, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.6), var(--wall-orange), 0 0 28px rgba(255, 122, 42, 0.38); }
+
+/* ═════ Orb status lights: every small round dot is a glossy lamp ═════ */
+html:root :is(span, div)[class*='rounded-full'][class*='size-1.5'],
+html:root :is(span, div)[class*='rounded-full'][class*='size-2']:not([class*='size-2.5']),
+html:root :is(span, div)[class*='rounded-full'][class*='h-2'][class*='w-2'] {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  background-image: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 30%, rgba(255, 255, 255, 0) 56%), linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0.18));
+  box-shadow: inset 0 -1.5px 1.5px rgba(var(--shade), 0.35), 0 0 0 1px rgba(var(--shade), 0.4), 0 1px 2px rgba(var(--shade), 0.35);
+}
+html.dark :is(span, div)[class*='rounded-full'][class*='size-1.5'],
+html.dark :is(span, div)[class*='rounded-full'][class*='size-2']:not([class*='size-2.5']) { box-shadow: inset 0 -1.5px 1.5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 8px currentColor; }
+
+/* ═════ No boxes: trays, section cards, nested rows and icon plates become open layout with hairlines ═════ */
+/* Tasks and lists: the bordered tray and the filter bar */
+html:root div[class*='rounded-md'][class*='rounded-t-none'][class*='border-t-0'][class*='bg-background'],
+html:root div[class*='rounded-md'][class*='rounded-b-none'][class*='bg-muted/35'] {
+  border-color: transparent;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+/* Settings: section card, nested source rows, collapsible cards and their icon plates */
+html:root div[class*='rounded-xl'][class*='border-border/50'][class*='bg-card/50'] {
+  border-color: transparent;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+html:root div[class*='overflow-hidden'][class*='rounded-xl'][class*='border'][class*='bg-card']:not([data-slot]) {
+  border-color: transparent;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  border-bottom: 1px solid rgba(var(--shade), 0.14);
+}
+html:root div[class*='overflow-hidden'][class*='rounded-lg'][class*='border-border'][class*='bg-muted/30'] {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+html:root div[class*='overflow-hidden'][class*='rounded-lg'][class*='border-border'][class*='bg-muted/30'] > * + * { border-top: 1px solid rgba(var(--shade), 0.12); }
+html:root button[class*='gap-3.5'][class*='px-4'] > span:first-child:not([class*='min-w-0']) {
+  border-color: transparent;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  width: auto;
+  height: auto;
+}
+/* Settings titles are big navy display type (F15) */
+html:root .settings-view-shell h2[class*='text-2xl'] {
+  font-size: 34px;
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+}
+
+/* ═════ Light that lands on neighbours (F17) ═════
+   light-engine.ts writes --la --ox --oy --lrgb on every control near a lit one. A lit rim draws on the facing side of
+   any such control through a pseudo-element, so no control needs its own box-shadow rule. Inputs use apply.css. */
+html:root :is(button, [role='tab'], [role='button'], a)[style*='--la']:not(.absolute):not(.fixed):not(.sticky):not([data-slot]) { position: relative; }
+html:root :is(button, [role='tab'], [role='button'], a)[style*='--la']:not(.absolute):not(.fixed):not([data-slot])::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset calc(var(--ox, 0) * -3px) calc(var(--oy, 0) * -3px) 0 rgba(var(--lrgb, 255, 128, 40), calc(var(--la, 0) * 1.2)),
+    inset calc(var(--ox, 0) * -14px) calc(var(--oy, 0) * -14px) 18px -6px rgba(var(--lrgb, 255, 128, 40), calc(var(--la, 0) * 0.85)),
+    calc(var(--ox, 0) * 6px) calc(var(--oy, 0) * 5px + 2px) 12px -3px rgba(var(--lrgb-d, 140, 50, 6), calc(var(--la, 0) * 0.5));
+  transition: box-shadow 90ms linear;
+}
+/* The ground itself takes the lamp: a soft pool of the lamp's colour under the cursor-lit control */
+@property --lamp-a { syntax: '<number>'; inherits: true; initial-value: 0; }
+html:root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(circle 460px at var(--lamp-x, 50%) var(--lamp-y, 50%), rgba(var(--lrgb, 255, 128, 40), calc(var(--lamp-a) * 0.3)) 0%, rgba(var(--lrgb, 255, 128, 40), calc(var(--lamp-a) * 0.1)) 46%, rgba(var(--lrgb, 255, 128, 40), 0) 72%);
+  mix-blend-mode: soft-light;
+  transition: --lamp-a 220ms var(--ease);
+}
+html.dark:root::after { mix-blend-mode: screen; background: radial-gradient(circle 460px at var(--lamp-x, 50%) var(--lamp-y, 50%), rgba(var(--lrgb, 255, 128, 40), calc(var(--lamp-a) * 0.18)) 0%, rgba(var(--lrgb, 255, 128, 40), 0) 70%); }
+@media (prefers-reduced-motion: reduce) { html:root::after { transition: none; } }

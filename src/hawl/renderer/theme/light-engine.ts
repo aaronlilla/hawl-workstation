@@ -11,7 +11,8 @@
 
 export const LIGHT_RANGE = 280
 const SOURCE = ".hawl-lit,[data-hawl-light],[data-slot='button'][data-variant='default']"
-const RECEIVER = ".hawl-catch,[data-hawl-catch],[data-slot='button']:not([data-variant='default']),[data-slot='input']"
+const RECEIVER =
+  ".hawl-catch,[data-hawl-catch],button,[role='tab'],[data-slot='input']"
 const MAX_RECEIVERS = 60
 
 /** 1 at the source edge, 0 at `range`; a lamp falls off faster than linear. */
@@ -48,6 +49,13 @@ export function distanceToRect(px: number, py: number, r: Rect): number {
   return Math.hypot(dx, dy)
 }
 
+/** Gap between two rects (0 when they touch or overlap): how far the lit edge is from the receiver's edge. */
+export function distanceBetweenRects(a: Rect, b: Rect): number {
+  const dx = Math.max(a.left - (b.left + b.width), 0, b.left - (a.left + a.width))
+  const dy = Math.max(a.top - (b.top + b.height), 0, b.top - (a.top + a.height))
+  return Math.hypot(dx, dy)
+}
+
 function lampColour(el: HTMLElement): string | null {
   const v = getComputedStyle(el).getPropertyValue('--lrgb').trim()
   return v || null
@@ -80,7 +88,10 @@ export function installHawlLight(): () => void {
     touched = []
   }
 
+  const root = document.documentElement
   const leave = (): void => {
+    root.style.removeProperty('--lamp-a')
+    root.style.removeProperty('--lrgb')
     if (current) {
       current.style.removeProperty('--hot')
       current.style.removeProperty('--mx')
@@ -96,6 +107,10 @@ export function installHawlLight(): () => void {
     rect = el.getBoundingClientRect()
     el.style.setProperty('--hot', '1')
     const rgb = lampColour(el)
+    root.style.setProperty('--lamp-a', '1')
+    if (rgb) {
+      root.style.setProperty('--lrgb', rgb)
+    }
     const cx = rect.left + rect.width / 2
     const cy = rect.top + rect.height / 2
     const list = document.querySelectorAll<HTMLElement>(RECEIVER)
@@ -105,7 +120,10 @@ export function installHawlLight(): () => void {
         continue
       }
       const rr = r.getBoundingClientRect()
-      const d = distanceToRect(cx, cy, rr)
+      if (rr.width === 0 || rr.height === 0) {
+        continue
+      }
+      const d = distanceBetweenRects(rect, rr)
       const amount = lightFalloff(d)
       if (amount <= 0) {
         continue
@@ -130,6 +148,8 @@ export function installHawlLight(): () => void {
     const my = Math.min(100, Math.max(0, ((py - rect.top) / Math.max(rect.height, 1)) * 100))
     current.style.setProperty('--mx', `${mx.toFixed(1)}%`)
     current.style.setProperty('--my', `${my.toFixed(1)}%`)
+    root.style.setProperty('--lamp-x', `${px}px`)
+    root.style.setProperty('--lamp-y', `${py}px`)
   }
 
   const onMove = (e: PointerEvent): void => {
