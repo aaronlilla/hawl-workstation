@@ -1,0 +1,279 @@
+// Types for the self-hosted foreman. The core is pure: time, ids and every outside
+// effect come in through the interfaces below.
+import type {
+  Capability,
+  Heartbeat,
+  LifecycleEvent,
+  Menu,
+  TaskState,
+  Visibility
+} from '../../shared/gateway-contract/contract'
+
+export type Clock = { now(): number }
+
+export type ForemanErrorCode =
+  | 'bad_offer'
+  | 'bad_menu'
+  | 'bad_event'
+  | 'wrong_yard'
+  | 'unknown_task'
+  | 'bad_state'
+  | 'claim_revoked'
+  | 'claim_taken'
+  | 'unknown_card'
+  | 'bad_card'
+  | 'bad_line'
+
+export class ForemanError extends Error {
+  readonly code: ForemanErrorCode
+  constructor(code: ForemanErrorCode, message: string) {
+    super(message)
+    this.name = 'ForemanError'
+    this.code = code
+  }
+}
+
+/** Where the foreman speaks to the Dispatcher (relay). Fire and forget; the adapter retries. */
+export type ForemanTransport = {
+  sendMenu(menu: Menu, revision: number): void
+  sendHeartbeat(hb: Heartbeat): void
+  sendLifecycle(ev: LifecycleEvent): void
+  /** Structured only: a kind and a reference, never free text. */
+  notifyOwner(notice: OwnerNotice): void
+}
+
+export type OwnerNoticeKind =
+  | 'job_held_offline' // S18: nobody came online within the hold time
+  | 'job_needs_approval' // ask-owner capability, paused auto-accept or budget reached
+  | 'job_unclaimed' // three agents tried, none took it
+  | 'job_released' // S18: release time passed, job went back to the Dispatcher
+  | 'line_request' // S10: a direct line waits for the owner
+  | 'needs_human' // reroute or send-back limit reached
+
+export type OwnerNotice = { kind: OwnerNoticeKind; taskId: string }
+
+/** Where the foreman speaks to inner agents (Orca terminals). */
+export type AgentPort = {
+  offer(agentId: string, offer: AgentOffer): void
+  /** The claim is revoked: the agent must stop. */
+  revoke(agentId: string, revoke: AgentRevoke): void
+}
+
+export type AgentOffer = {
+  taskId: string
+  epoch: number
+  capability: string | null
+  acceptance: string[]
+  deadline: string | null
+  offerExpiresAt: number
+}
+
+export type AgentRevoke = { taskId: string; epoch: number; reason: string }
+
+export type ForemanDeps = {
+  clock: Clock
+  transport: ForemanTransport
+  agents: AgentPort
+  /** Ids for cards. Default is a counter. */
+  newId?: () => string
+}
+
+export type DirectLinePolicy = 'job_parties' | 'ask_owner' | 'never'
+
+export const HOUR_MS = 60 * 60 * 1000
+export const MINUTE_MS = 60 * 1000
+
+export type ForemanConfig = {
+  /** Yard slug, as in the menu. */
+  yard: string
+  owner: string
+  displayName: string
+  visibility?: Visibility
+  /** S18 defaults: 4 h and 24 h. */
+  holdMs?: number
+  releaseMs?: number
+  /** Claim lease, renewed by activity. Default 30 min (handoffs/leases.ts:7). */
+  leaseMs?: number
+  /** How long an agent has to answer an offer. Default 10 min. */
+  offerMs?: number
+  /** Agents tried per job before the owner is told. Default 3. */
+  maxAgentsPerJob?: number
+  /** Reroutes before a job goes to a person (S20). Default 3. */
+  maxReroutes?: number
+  /** Send-backs before a job goes to the requester (S35). Default 3. */
+  maxSendBacks?: number
+  heartbeatMs?: number
+  /** Who may send us work: yard slugs, or "site". Empty or missing means anyone. */
+  acceptFrom?: string[]
+  /** Global switch: false makes every job ask the owner. Default true. */
+  autoAccept?: boolean
+  dailyBudgetUsd?: number
+  directLines?: DirectLinePolicy
+}
+
+/** A capability plus the foreman-only policy that the gateway menu cannot carry. */
+export type CapabilityConfig = Capability & {
+  /** "auto" accepts at once; "ask_owner" holds the job for the owner. Default auto. */
+  approval?: 'auto' | 'ask_owner'
+  /** false hides the capability from the published menu. Default true. */
+  open?: boolean
+  /** Per-capability sender allow list; overrides the menu-wide one. */
+  acceptFrom?: string[]
+  /** false declines when no agent is online. Default true. */
+  acceptWhenOffline?: boolean
+  /** If set, only these agents may take this capability. */
+  agents?: string[]
+}
+
+export type AgentInfo = {
+  id: string
+  label: string
+  online: boolean
+  away: boolean
+  /** Jobs it may run at once. Default 1. */
+  capacity: number
+  lastSeenAt: number | null
+}
+
+export type ExecState = 'queued' | 'offered' | 'running' | 'held'
+
+export type ClaimState = 'offered' | 'active' | 'released' | 'revoked' | 'finished'
+
+export type Claim = {
+  agentId: string
+  epoch: number
+  state: ClaimState
+  offerExpiresAt: number | null
+  leaseExpiresAt: number | null
+  endedAt: number | null
+  endReason: string | null
+}
+
+export type HistoryKind =
+  | 'decline'
+  | 'reroute'
+  | 'revoke'
+  | 'timeout'
+  | 'release'
+  | 'send_back'
+  | 'approve'
+
+export type HistoryEntry = {
+  at: number
+  kind: HistoryKind
+  by: string
+  reason: string | null
+  agentId: string | null
+  toAgentId: string | null
+}
+
+export type LineState = 'requested' | 'open' | 'rejected' | 'closed'
+
+export type DirectLine = {
+  state: LineState
+  fromInner: string
+  toVillage: string
+  purpose: string
+  ttlMs: number
+  localOk: boolean | null
+  remoteOk: boolean | null
+  expiresAt: number | null
+  closeReason: string | null
+}
+
+export type Job = {
+  taskId: string
+  capability: string | null
+  acceptance: string[]
+  qualityBar: string | null
+  deadline: string | null
+  requester: string
+  preferAgent: string | null
+  state: TaskState
+  exec: ExecState | null
+  receivedAt: number
+  acceptedAt: number | null
+  eta: number | null
+  claimEpoch: number
+  claims: Claim[]
+  tried: string[]
+  history: HistoryEntry[]
+  reroutes: number
+  sendBacks: number
+  needsHuman: boolean
+  holdNotified: boolean
+  exhaustedNotified: boolean
+  line: DirectLine | null
+  closedReason: string | null
+  seq: number
+}
+
+export type IntakeInput = {
+  /** The lifecycle "offer" event from the Dispatcher. */
+  offer: LifecycleEvent
+  /** Slug of the requesting yard, or "site" for a person on the site. */
+  requester: string
+  /** Handle of the agent the requester would like (a preference, not an order). */
+  preferAgent?: string
+}
+
+export type IntakeOutcome = 'accepted' | 'held' | 'declined' | 'duplicate'
+
+export type IntakeResult = {
+  outcome: IntakeOutcome
+  reason: string | null
+  view: JobView
+}
+
+export type JobView = {
+  taskId: string
+  state: TaskState
+  exec: ExecState | null
+  holder: 'foreman' | string
+  claim: { agentId: string; epoch: number; state: ClaimState; leaseExpiresAt: number | null } | null
+  eta: number | null
+  /** S15: "queued, not running (last contact ...)" while no agent holds the job. */
+  statusText: string
+  queuedNotRunning: boolean
+  lastContactAt: number | null
+  needsHuman: boolean
+  history: HistoryEntry[]
+  line: DirectLine | null
+}
+
+/** A job the offline answering service accepted and queued, handed over on reconnect. */
+export type QueueEntry = {
+  offer: LifecycleEvent
+  requester: string
+  /** When the answering service accepted it; hold and release times count from here. */
+  acceptedAt: number
+  preferAgent?: string
+  /** True when the service already told the owner (S18), so we do not repeat it. */
+  ownerNotified?: boolean
+}
+
+export type ForemanRule = {
+  id: string
+  match: { capability?: string; fromYard?: string }
+  action: { agentId: string }
+  source: 'owner' | 'correction'
+}
+
+export type FullTaskKind =
+  | 'delegate'
+  | 'claim_timeout'
+  | 'lease_check'
+  | 'hold_check'
+  | 'release_check'
+  | 'held_expire'
+  | 'line_expire'
+
+export type ForemanTask = {
+  key: string
+  kind: FullTaskKind
+  ref: string
+  idem: string
+  runAfter: number
+  seq: number
+  done: boolean
+}

@@ -1,0 +1,61 @@
+// Read-only views of a foreman's jobs (S15 status text, S16 holder, S19/S20 history).
+import { iso, type ForemanCtx } from './state'
+import type { Claim, JobView } from './types'
+
+export function jobView(c: ForemanCtx, taskId: string): JobView {
+  const job = c.need(taskId)
+  const live = c.liveClaim(job)
+  const queuedNotRunning =
+    job.state === 'accepted' && (job.exec === 'queued' || job.exec === 'offered')
+  const contact = c.lastContactAt === null ? 'never' : iso(c.lastContactAt)
+  let statusText: string
+  if (queuedNotRunning && job.exec === 'offered') {
+    statusText = `offered, not running (last contact ${contact})`
+  } else if (queuedNotRunning) {
+    statusText = `queued, not running (last contact ${contact})`
+  } else if (job.exec === 'running') {
+    statusText = 'running'
+  } else if (job.exec === 'held') {
+    statusText = 'waiting for the owner'
+  } else {
+    statusText = job.closedReason ? `${job.state}: ${job.closedReason}` : job.state
+  }
+  return {
+    taskId: job.taskId,
+    state: job.state,
+    exec: job.exec,
+    holder: live?.state === 'active' ? live.agentId : 'foreman',
+    claim: live
+      ? {
+          agentId: live.agentId,
+          epoch: live.epoch,
+          state: live.state,
+          leaseExpiresAt: live.leaseExpiresAt
+        }
+      : null,
+    eta: job.eta,
+    statusText,
+    queuedNotRunning,
+    lastContactAt: c.lastContactAt,
+    needsHuman: job.needsHuman,
+    history: job.history.map((h) => ({ ...h })),
+    line: job.line ? { ...job.line } : null
+  }
+}
+
+/** Every claim ever made on a job, oldest first. */
+export function claimsOf(c: ForemanCtx, taskId: string): Claim[] {
+  return c.need(taskId).claims.map((cl) => ({ ...cl }))
+}
+
+/** Agents with an active claim: used for "busy, untitled" cards (S24) and the heartbeat. */
+export function busyAgentIds(c: ForemanCtx): string[] {
+  const ids = new Set<string>()
+  for (const j of c.jobs.values()) {
+    const live = c.liveClaim(j)
+    if (live?.state === 'active') {
+      ids.add(live.agentId)
+    }
+  }
+  return [...ids]
+}
