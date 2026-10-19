@@ -25,7 +25,8 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 ## Theme, terminal, art
 | File | Hook |
 |---|---|
-| `src/renderer/src/assets/main.css` | one `@import` of `src/hawl/renderer/hawl-theme.css` (overrides use `html:root` / `html.dark`) |
+| `src/renderer/src/assets/main.css` | one `@import` of `src/hawl/renderer/theme/index.css` (one line per design piece; overrides use `html:root` / `html.dark`) |
+| `src/renderer/src/main.tsx` | `import { installHawlLight }` and one call: the light engine (`src/hawl/renderer/theme/light-engine.ts`, D1-foundations) |
 | `src/shared/terminal-themes/index.ts` | adds `HAWL_TERMINAL_THEMES` to the catalog |
 | `src/shared/default-global-settings.ts`, `src/shared/terminal-theme-selection.ts` | default terminal themes `Hawl Ember` / `Hawl Daylight`, divider colours |
 | `resources/logo.svg`, `icon.png`, `icon-dev.png`, `build/icon.{png,ico,icns}`, `app-icons/orca-blue.png`, `app-icons/orca-watercolor.png`, `tray/orca-menu-barTemplate*.png`, `icon-source/icon.icon/Assets/logo.svg` | replaced with Hawl art (file names kept so no code changes). Not replaced yet: `resources/onboarding/feature-wall/*` (Orca UI recordings), Mac/Linux packaging art. |

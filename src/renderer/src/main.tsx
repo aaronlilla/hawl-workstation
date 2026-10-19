@@ -5,6 +5,7 @@
 import './lib/react-devtools-commit-hook-shim'
 import './lib/react-commit-cascade-observer'
 import './assets/main.css'
+import { installHawlLight } from '../../hawl/renderer/theme/light-engine'
 
 import { StrictMode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -31,6 +32,7 @@ import.meta.hot?.dispose(disposeOsFileDropGuard)
 recordRendererCrashBreadcrumb('renderer_bootstrap_started', { dev: import.meta.env.DEV })
 installRendererCrashDiagnostics()
 installTypingLatencyDiagnostic()
+installHawlLight()
 installAutomationHostDiagnostic()
 
 if (
