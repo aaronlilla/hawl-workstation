@@ -66,3 +66,9 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 - Orca-named internals: CLI `orca`, `orca-dev`, Windows NSIS script, `%LOCALAPPDATA%\Orca` paths, macOS bundle ids in main-process helpers.
 - Feature-wall onboarding GIFs show Orca's UI.
 - Existing unit tests that assert the old defaults (terminal theme names, bundled plugin ids, feed URLs) are not updated yet.
+
+## D1-foundations (theme)
+| File | Hook |
+|---|---|
+| `src/renderer/src/assets/main.css`, `src/renderer/src/main.tsx` | import `src/hawl/renderer/theme/index.css` and start the light engine |
+| `src/renderer/src/components/crash-report/CrashReportDialogSurface.tsx` | "Orca" in the crash dialog text becomes "Hawl" |
