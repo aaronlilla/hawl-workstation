@@ -18,3 +18,5 @@ From a checkout: `pnpm install --frozen-lockfile`, `pnpm run build:electron-vite
 - Open: product and repo name (placeholder "Hawl Workstation"); retire or keep the Tauri command center; mobile distribution; relay changes (yards read route, push registration).
 
 - 2026-10-19 P1-rebrand (M0): rebranded on branch `hawl/P1-rebrand`: identity, Hawl theme and terminal palettes, icons, About credit, updater feed, vendor services and telemetry off. See FORK-HOOKS.md.
+
+- 2026-10-19 P1-rebrand round 2: critic fixes (logo colour, Inter default font, light default, own profile folder, hawl:// parsing, telemetry code deleted, vendor feeds removed, Orca account pane hidden, version 0.1.0). Leftovers in FORK-HOOKS.md.

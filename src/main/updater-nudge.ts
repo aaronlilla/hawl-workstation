@@ -1,6 +1,4 @@
-import { net } from 'electron'
-import { HAWL_VENDOR_SERVICES_ENABLED } from '../hawl/shared/brand'
-import { compareVersions, isValidVersion } from './updater-fallback'
+import { compareVersions } from './updater-fallback'
 
 export type NudgeConfig = {
   id: string
@@ -8,60 +6,9 @@ export type NudgeConfig = {
   maxVersion?: string
 }
 
+/** Hawl Workstation: the hosted update-nudge feed is removed, so there is never a nudge. */
 export async function fetchNudge(): Promise<NudgeConfig | null> {
-  if (!HAWL_VENDOR_SERVICES_ENABLED) {
-    return null
-  }
-  try {
-    const res = await net.fetch('https://onorca.dev/whats-new/nudge.json', {
-      signal: AbortSignal.timeout(5000)
-    })
-    if (!res.ok) {
-      return null
-    }
-
-    const json: unknown = await res.json()
-    if (!json || typeof json !== 'object' || Array.isArray(json)) {
-      return null
-    }
-
-    const { id, minVersion, maxVersion } = json as Record<string, unknown>
-    if (typeof id !== 'string' || !id.trim()) {
-      return null
-    }
-
-    if (minVersion === undefined && maxVersion === undefined) {
-      return null
-    }
-
-    if (minVersion !== undefined && typeof minVersion !== 'string') {
-      return null
-    }
-    if (maxVersion !== undefined && typeof maxVersion !== 'string') {
-      return null
-    }
-    if (minVersion !== undefined && !isValidVersion(minVersion)) {
-      return null
-    }
-    if (maxVersion !== undefined && !isValidVersion(maxVersion)) {
-      return null
-    }
-    if (
-      minVersion !== undefined &&
-      maxVersion !== undefined &&
-      compareVersions(minVersion, maxVersion) > 0
-    ) {
-      return null
-    }
-
-    return {
-      id: id.trim(),
-      minVersion,
-      maxVersion
-    }
-  } catch {
-    return null
-  }
+  return null
 }
 
 export function versionMatchesRange(

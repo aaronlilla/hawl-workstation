@@ -22,6 +22,16 @@ describe('pairing offer', () => {
     expect(decoded).toEqual(offer)
   })
 
+  it('accepts the hawl:// scheme as well as orca://', () => {
+    const url = encodePairingOffer(offer).replace('orca://', 'hawl://')
+    expect(url).toMatch(/^hawl:\/\/pair\?code=/)
+    expect(decodePairingOffer(url)).toEqual(offer)
+    expect(parsePairingCode(url)).toEqual(offer)
+    expect(() => decodePairingOffer(url.replace('hawl://pair', 'hawl://pairing'))).toThrow(
+      'Invalid pairing URL'
+    )
+  })
+
   it('decodes in browser runtimes without Buffer', () => {
     const url = encodePairingOffer(offer)
     const nodeBuffer = Buffer

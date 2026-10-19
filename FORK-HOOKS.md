@@ -72,9 +72,23 @@ CSS: `hawl-theme.css` imports `hawl-pieces.css` (one `@import` per piece; `d4-sh
 | `src/renderer/src/components/settings/GeneralPane.tsx` | (P1 hook) the About section is now laid out by `HawlAboutSection` (art, wordmark, lit links) |
 | `config/tsconfig.tc.web.json` | `include` gains `../src/hawl/**/*` (without it `tc:web` fails TS6307 on every import of src/hawl) |
 
+## Round 2 (critic fixes, from P1-rebrand)
+| File | Hook |
+|---|---|
+| `src/main/startup/configure-process.ts`, `src/cli/runtime/metadata.ts`, `src/cli/runtime/launch-user-data-path.ts`, `src/cli/handlers/orchestration/runtime-compatibility.ts` | profile folder is `hawl-workstation` (dev `hawl-workstation-dev`), never stock Orca's `orca`/`orca-dev`; the CLI finds the same folder |
+| `config/electron-builder.config.cjs` | `extraMetadata` name `hawl-workstation` / productName; NSIS artifact `hawl-workstation-windows-setup.exe` |
+| `config/nsis/orca-installer-hooks.nsh`, `src/main/daemon/daemon-host-relocation.ts` | ProgIDs `Hawl.Markdown`/`Hawl.Tabular`; daemon host root `%LOCALAPPDATA%\Hawl`; uninstall no longer kills `orca-terminal-daemon.exe` (stock Orca's) |
+| `src/shared/pairing.ts`, `src/shared/skill-share-link.ts` | `hawl://` accepted next to `orca://` |
+| `src/main/telemetry/client.ts` | PostHog transport deleted, no-op stub with the same exports (its 3 transport tests and harness removed, plus 2 usage tests that only asserted telemetry events) |
+| `src/main/updater-nudge.ts`, `src/main/updater-changelog.ts` | hosted feeds removed (no fetch code) |
+| `src/main/artifacts/artifact-cloud-config.ts`, `plugin-kill-list-service.ts`, `src/main/ipc/feedback-request.ts` | vendor URLs removed (feedback points at an `.invalid` host and is gated off) |
+| `src/renderer/src/hooks/settings-navigation-capability-sections.ts`, `settings-setup-workflow-section-renderers.tsx` | Orca account pane hidden |
+| `src/shared/constants.ts`, `src/main/ipc/worktree-logic.ts`, `src/main/ipc/repos/repo-creation-handlers.ts`, `create-project-defaults.ts`, `terminal-preview-content.ts` | default dirs `~/hawl/workspaces`, `~/hawl/projects`; theme default `light` (`default-global-settings.ts`); UI font default `Hawl Inter` |
+| `src/renderer/src/assets/main.css`, `settings/orca-logo-settings-icon.tsx` | no logo invert (orange mark in both themes) |
+| `package.json` | version 0.1.0 |
+
 ## Known leftovers (not changed)
-- `mobile/` Expo app still points at Orca hosts (M6).
-- `hawl://` is registered with the OS but only `orca://` links are parsed in code.
-- Orca-named internals: CLI `orca`, `orca-dev`, Windows NSIS script, `%LOCALAPPDATA%\Orca` paths, macOS bundle ids in main-process helpers.
-- Feature-wall onboarding GIFs show Orca's UI.
-- Existing unit tests that assert the old defaults (terminal theme names, bundled plugin ids, feed URLs) are not updated yet.
+- CLI and skills are still named `orca` (`orca.cmd`, `orca account add`, `orca emulator`, skill `orca-linear`), plus `ORCA_*` env vars, `~/.orca` (shared with stock Orca: keybindings, agent hooks, credentials) and the dev launcher `Orca Devin\orca-dev.cmd`. Renaming touches the CLI, installers and hundreds of tests; planned as its own piece.
+- Skill install points at `github.com/aaronlilla/hawl-workstation`, which does not exist until the repo is published; the pinned commit is the local one.
+- `mobile/` Expo app still points at Orca hosts (M6). Feature-wall onboarding GIFs show Orca's UI. Mac/Linux packaging art, `posthog-node` still listed in package.json (unused).
+- Packaged build (`build:win`) and installer not run.
