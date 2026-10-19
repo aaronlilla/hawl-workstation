@@ -90,7 +90,7 @@ describe('daemon-host profile isolation under a shared LOCALAPPDATA', () => {
     const buildB = materializedBuild()
 
     expect(rootA).not.toBe(rootB)
-    expect(dirname(rootA)).toBe(join(localAppData, 'Orca', 'daemon-host-profiles'))
+    expect(dirname(rootA)).toBe(join(localAppData, 'Hawl', 'daemon-host-profiles'))
     expect(dirname(dirname(buildA))).toBe(rootA)
     expect(dirname(dirname(buildB))).toBe(rootB)
     // The same profile spelled differently must not fork a second mirror.
@@ -145,7 +145,7 @@ describe('daemon-host profile isolation under a shared LOCALAPPDATA', () => {
   })
 
   it('keeps legacy unscoped mirrors that older daemons may still run from', () => {
-    const legacyRoot = join(localAppData, 'Orca', 'daemon-host')
+    const legacyRoot = join(localAppData, 'Hawl', 'daemon-host')
     const legacyCurrent = seedDir(join(legacyRoot, '9.9.9', 'build-legacy-000000000000'), 'cur')
     const legacyStaging = seedDir(
       join(legacyRoot, '9.9.9', daemonHostStagingName(DEAD_WRITER_PID, '000000000000')),

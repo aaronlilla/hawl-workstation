@@ -1,3 +1,4 @@
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../../../../hawl/shared/brand'
 import { SessionHistorySettingsPane } from './SessionHistorySettingsPane'
 import { ArtifactsSettingsPane } from './ArtifactsSettingsPane'
 import { AutomationsSettingsPane } from './AutomationsSettingsPane'
@@ -15,7 +16,7 @@ export function renderOrcaAccountSettingsSection(
   context: SettingsRenderContext
 ): React.JSX.Element | null {
   const { model, navigation, view } = context
-  return model.showDesktopOnlySettings ? (
+  return model.showDesktopOnlySettings && HAWL_VENDOR_SERVICES_ENABLED ? (
     <SettingsSection
       id="orca-account"
       title={translate('auto.components.settings.orcaAccount.title', 'Orca Account')}

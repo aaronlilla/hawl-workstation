@@ -10,6 +10,9 @@ export const HAWL_RELEASE_OWNER = 'aaronlilla'
 export const HAWL_RELEASE_REPO = 'hawl-workstation'
 export const HAWL_REPO_URL = `https://github.com/${HAWL_RELEASE_OWNER}/${HAWL_RELEASE_REPO}`
 export const HAWL_SITE_URL = 'https://hawl.ai'
+/** Profile folders under %APPDATA% (Windows) or the platform equivalent. Never `orca`/`orca-dev`, which stock Orca owns. */
+export const HAWL_USER_DATA_DIR = 'hawl-workstation'
+export const HAWL_DEV_USER_DATA_DIR = 'hawl-workstation-dev'
 export const ORCA_UPSTREAM_URL = 'https://github.com/stablyai/orca'
 export const ORCA_UPSTREAM_LICENSE = 'MIT'
 

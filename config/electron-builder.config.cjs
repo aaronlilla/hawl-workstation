@@ -242,11 +242,17 @@ module.exports = {
   productName: 'Hawl Workstation',
   protocols: [{ name: 'Hawl Workstation', schemes: ['hawl'] }],
   toolsets: { appimage: '1.0.3' },
-  ...(devChannelBuildVersion
-    ? { extraMetadata: { version: devChannelBuildVersion } }
-    : localBuildVersion
-      ? { extraMetadata: { version: localBuildVersion } }
-      : {}),
+  // Hawl: app.getName() must not be stock Orca's `orca`, or userData, the single-instance lock and
+  // safeStorage collide with an installed Orca.
+  extraMetadata: {
+    name: 'hawl-workstation',
+    productName: 'Hawl Workstation',
+    ...(devChannelBuildVersion
+      ? { version: devChannelBuildVersion }
+      : localBuildVersion
+        ? { version: localBuildVersion }
+        : {})
+  },
   directories: {
     buildResources: 'resources/build'
   },
@@ -596,7 +602,7 @@ module.exports = {
     ]
   },
   nsis: {
-    artifactName: 'orca-windows-setup.${ext}',
+    artifactName: 'hawl-workstation-windows-setup.${ext}',
     shortcutName: '${productName}',
     uninstallDisplayName: '${productName}',
     createDesktopShortcut: 'always',

@@ -1,3 +1,4 @@
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../../../hawl/shared/brand'
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents-search'
@@ -128,7 +129,8 @@ export function buildSetupSettingsSections({
 }: SettingsNavigationBuildOptions): SettingsNavSection[] {
   const showDesktopOnlySettings = !isWebClient
   return [
-    ...(showDesktopOnlySettings
+    // Hawl: the Orca cloud account pane is off (vendor services are not part of the fork).
+    ...(showDesktopOnlySettings && HAWL_VENDOR_SERVICES_ENABLED
       ? [
           {
             id: 'orca-account',
