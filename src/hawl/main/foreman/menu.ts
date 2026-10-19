@@ -1,7 +1,29 @@
 // The yard's menu (S11, S12, S48): edit a draft, publish it as a gateway-contract menu.
 import { checkContract, type Capability, type Menu } from '../../shared/gateway-contract/contract'
 import type { ForemanCtx } from './state'
-import { ForemanError, type CapabilityConfig } from './types'
+import { ForemanError, MINUTE_MS, type CapabilityConfig, type DirectLinePolicy } from './types'
+
+/**
+ * The m2 menu: the gateway-contract menu plus the policy the ledger shows (m2-contract 3.1).
+ * The strict gateway schema allows no extras, so this travels beside the strict menu, never in it.
+ * `open` is carried so the ledger can show closed capabilities; it is not in the m2 field list.
+ */
+export type ExtendedCapability = Capability & {
+  open: boolean
+  approval: 'auto' | 'ask_owner'
+  accept_when_offline: boolean
+  accept_from?: string[]
+  keywords?: string[]
+  stations?: string[]
+  next?: string[]
+}
+
+export type ExtendedMenu = Omit<Menu, 'capabilities'> & {
+  capabilities: ExtendedCapability[]
+  hold_minutes: number
+  release_minutes: number
+  direct_lines: DirectLinePolicy
+}
 
 /** Edit the draft. Nothing routes on a draft until publishMenu (S12). */
 export function setCapabilities(c: ForemanCtx, caps: CapabilityConfig[]): void {
@@ -9,7 +31,11 @@ export function setCapabilities(c: ForemanCtx, caps: CapabilityConfig[]): void {
 }
 
 /** Publish the draft: validated against the gateway contract, then sent. */
-export function publishMenu(c: ForemanCtx): { menu: Menu; revision: number } {
+export function publishMenu(c: ForemanCtx): {
+  menu: Menu
+  extended: ExtendedMenu
+  revision: number
+} {
   const open = c.draft.filter((cap) => cap.open !== false)
   const policy: NonNullable<Menu['routing_policy']> = {}
   if (c.cfg.acceptFrom) {
@@ -31,10 +57,39 @@ export function publishMenu(c: ForemanCtx): { menu: Menu; revision: number } {
   if (err) {
     throw new ForemanError('bad_menu', err)
   }
+  const extended: ExtendedMenu = {
+    ...menu,
+    capabilities: c.draft.map(toExtendedCapability),
+    hold_minutes: c.cfg.holdMs / MINUTE_MS,
+    release_minutes: c.cfg.releaseMs / MINUTE_MS,
+    direct_lines: c.cfg.directLines ?? 'ask_owner'
+  }
   c.published = c.draft.map((cap) => ({ ...cap }))
   c.menuRevision++
-  c.deps.transport.sendMenu(menu, c.menuRevision)
-  return { menu, revision: c.menuRevision }
+  c.deps.transport.sendMenu(menu, c.menuRevision, extended)
+  return { menu, extended, revision: c.menuRevision }
+}
+
+function toExtendedCapability(cap: CapabilityConfig): ExtendedCapability {
+  const out: ExtendedCapability = {
+    ...toContractCapability(cap),
+    open: cap.open !== false,
+    approval: cap.approval ?? 'auto',
+    accept_when_offline: cap.acceptWhenOffline !== false
+  }
+  if (cap.acceptFrom) {
+    out.accept_from = [...cap.acceptFrom]
+  }
+  if (cap.keywords) {
+    out.keywords = [...cap.keywords]
+  }
+  if (cap.stations) {
+    out.stations = [...cap.stations]
+  }
+  if (cap.next) {
+    out.next = [...cap.next]
+  }
+  return out
 }
 
 /** Drop the foreman-only policy fields: the contract schema allows no extras. */

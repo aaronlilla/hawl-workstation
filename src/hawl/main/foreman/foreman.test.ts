@@ -431,12 +431,14 @@ describe('S18 hold and release', () => {
     rig.adv(1)
     expect(rig.notices).toEqual([{ kind: 'job_held_offline', taskId: 'j1' }])
     rig.adv(20 * HOUR_MS - 1)
-    expect(rig.events('cancel')).toHaveLength(0)
+    expect(rig.handBacks).toHaveLength(0)
     expect(rig.foreman.jobView('j1').exec).toBe('queued')
     rig.adv(1)
-    expect(rig.events('cancel')).toMatchObject([{ reason: 'released: yard_offline' }])
+    // The job goes back to the Dispatcher to be routed again; it is not cancelled.
+    expect(rig.handBacks).toEqual([{ taskId: 'j1', op: 'release', reason: 'yard_offline' }])
+    expect(rig.events('cancel')).toHaveLength(0)
     expect(rig.notices.map((n) => n.kind)).toEqual(['job_held_offline', 'job_released'])
-    expect(rig.foreman.jobView('j1')).toMatchObject({ state: 'cancelled', exec: null })
+    expect(rig.foreman.jobView('j1')).toMatchObject({ state: 'reassigned', exec: null })
     rig.conforms()
   })
 
@@ -449,7 +451,7 @@ describe('S18 hold and release', () => {
     rig.adv(hold)
     expect(rig.notices.map((n) => n.kind)).toEqual(['job_held_offline'])
     rig.adv(release - hold)
-    expect(rig.events('cancel')).toHaveLength(1)
+    expect(rig.handBacks).toHaveLength(1)
   })
 
   it('S18: the owner is told once, even if the job sits queued for hours', () => {
@@ -465,7 +467,7 @@ describe('S18 hold and release', () => {
     rig.claim('j1', 'a1')
     rig.adv(30 * HOUR_MS)
     expect(rig.notices).toEqual([])
-    expect(rig.events('cancel')).toHaveLength(0)
+    expect(rig.handBacks).toHaveLength(0)
     expect(rig.foreman.jobView('j1').exec).toBe('running')
   })
 
@@ -473,17 +475,21 @@ describe('S18 hold and release', () => {
     const rig = ready({ offerMs: 100 * HOUR_MS }, ['a1'])
     rig.send('j1')
     rig.adv(24 * HOUR_MS)
-    expect(rig.calls.indexOf('revoke:a1:j1:e1')).toBeLessThan(rig.calls.indexOf('out:cancel:j1'))
+    expect(rig.calls.indexOf('revoke:a1:j1:e1')).toBeLessThan(
+      rig.calls.indexOf('handback:release:j1')
+    )
   })
 })
 
 describe('S19 / S20 decline, reroute and history', () => {
-  it('S20: the owner declines an accepted job; it leaves as a cancel that says why, and history is kept', () => {
+  it('S20: the owner declines an accepted job; it goes back to the Dispatcher with the reason, and history is kept', () => {
     const rig = ready({}, ['a1'])
     rig.send('j1')
     rig.claim('j1', 'a1')
     rig.foreman.decline('j1', 'usr_aaron', 'wrong yard for this')
-    expect(rig.events('cancel')).toMatchObject([{ reason: 'declined: wrong yard for this' }])
+    expect(rig.handBacks).toEqual([{ taskId: 'j1', op: 'decline', reason: 'wrong yard for this' }])
+    expect(rig.events('cancel')).toHaveLength(0)
+    expect(rig.foreman.jobView('j1')).toMatchObject({ state: 'reassigned', exec: null })
     expect(rig.revokes[0].revoke.reason).toBe('job_closed')
     expect(rig.foreman.jobView('j1').history).toMatchObject([
       { kind: 'decline', by: 'usr_aaron', reason: 'wrong yard for this' }
@@ -681,7 +687,11 @@ describe('closing a job', () => {
     }
     expect(rig.offers.map((o) => o.agentId)).toEqual(['a1', 'a1', 'a1'])
     expect(rig.foreman.jobView('j1')).toMatchObject({ state: 'accepted', needsHuman: true })
-    expect(rig.notices.at(-1)).toEqual({ kind: 'needs_human', taskId: 'j1' })
+    // S35: the third send-back goes to the requester, not the yard owner.
+    expect(rig.requesterNotices).toEqual([
+      { kind: 'send_back_limit', taskId: 'j1', requester: 'site' }
+    ])
+    expect(rig.notices.filter((n) => n.kind === 'needs_human')).toEqual([])
     rig.conforms()
   })
 

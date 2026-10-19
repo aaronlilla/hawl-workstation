@@ -6,7 +6,7 @@ import { HOUR_MS, MINUTE_MS, T0, code, makeRig, ready, type Rig } from './rig.te
 
 describe('S10 direct lines', () => {
   function lineRig(policy: 'job_parties' | 'ask_owner' | 'never') {
-    const rig = ready({ directLines: policy }, ['a1'])
+    const rig = ready({ directLines: policy, leaseMs: 100 * HOUR_MS }, ['a1'])
     rig.send('j1')
     rig.claim('j1', 'a1')
     return rig
@@ -235,7 +235,7 @@ describe('S15 decision: offline answering service hands its queue over', () => {
       const rig = ready()
       rig.foreman.adoptQueue([entry('jA', age, { ownerNotified: told })])
       expect(rig.notices.map((n) => n.kind)).toEqual(notices)
-      expect(rig.events('cancel').length === 1).toBe(released)
+      expect(rig.handBacks.length === 1).toBe(released)
     }
   )
 
@@ -349,7 +349,7 @@ describe('contract conformance', () => {
     rig.foreman.openLine('j7', { fromInner: 'a1', toVillage: 'qa', purpose: 'ask', ttlMinutes: 30 })
     rig.foreman.decideLine('j7', true)
     rig.conforms()
-    expect(rig.events().length).toBeGreaterThanOrEqual(15)
+    expect(rig.events().length).toBeGreaterThanOrEqual(13)
     for (const w of rig.wire) {
       expect(checkContract('lifecycle', w.ev)).toBeNull()
     }

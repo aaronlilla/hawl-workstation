@@ -1,14 +1,17 @@
 // Test rig: fake clock, recording transport and agent port. Test support only.
 import type { Heartbeat, LifecycleEvent, Menu } from '../../shared/gateway-contract/contract'
 import { Foreman } from './foreman'
+import type { ExtendedMenu } from './menu'
 import { ForemanError, HOUR_MS, MINUTE_MS } from './types'
 import type {
   AgentOffer,
   AgentRevoke,
   CapabilityConfig,
   ForemanConfig,
+  HandBack,
   IntakeResult,
-  OwnerNotice
+  OwnerNotice,
+  RequesterNotice
 } from './types'
 import { ReferenceGateway } from './reference-gateway.test-support'
 
@@ -34,7 +37,9 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
   /** Every effect in the order it happened, for ordering proofs. */
   const calls: string[] = []
   const wire: Wire[] = []
-  const menus: { menu: Menu; revision: number }[] = []
+  const menus: { menu: Menu; revision: number; extended: ExtendedMenu }[] = []
+  const handBacks: HandBack[] = []
+  const requesterNotices: RequesterNotice[] = []
   const beats: Heartbeat[] = []
   const notices: OwnerNotice[] = []
   const offers: { agentId: string; offer: AgentOffer }[] = []
@@ -45,9 +50,17 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
     {
       clock,
       transport: {
-        sendMenu: (menu, revision) => {
+        sendMenu: (menu, revision, extended) => {
           calls.push(`menu:${revision}`)
-          menus.push({ menu, revision })
+          menus.push({ menu, revision, extended })
+        },
+        handBack: (back) => {
+          calls.push(`handback:${back.op}:${back.taskId}`)
+          handBacks.push(back)
+        },
+        notifyRequester: (n) => {
+          calls.push(`notify-requester:${n.kind}:${n.taskId}`)
+          requesterNotices.push(n)
         },
         sendHeartbeat: (hb) => {
           calls.push(`beat:${hb.state}`)
@@ -85,6 +98,8 @@ export function makeRig(cfg: Partial<ForemanConfig> = {}, caps: CapabilityConfig
     menus,
     beats,
     notices,
+    handBacks,
+    requesterNotices,
     offers,
     revokes,
     now: () => t,

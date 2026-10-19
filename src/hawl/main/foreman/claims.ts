@@ -25,14 +25,15 @@ function pick(c: ForemanCtx, job: Job): AgentInfo | undefined {
   if (candidates.length === 0) {
     return undefined
   }
-  const rule = c.rules.find(
-    (r) =>
+  // The newest matching rule wins; if its agent cannot take the job, an older match may.
+  for (const r of c.rules.toReversed()) {
+    const matches =
       (r.match.capability === undefined || r.match.capability === job.capability) &&
       (r.match.fromYard === undefined || r.match.fromYard === job.requester)
-  )
-  const byRule = rule && candidates.find((a) => a.id === rule.action.agentId)
-  if (byRule) {
-    return byRule
+    const byRule = matches ? candidates.find((a) => a.id === r.action.agentId) : undefined
+    if (byRule) {
+      return byRule
+    }
   }
   const byPref = job.preferAgent ? candidates.find((a) => a.id === job.preferAgent) : undefined
   if (byPref) {

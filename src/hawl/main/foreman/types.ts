@@ -1,5 +1,6 @@
 // Types for the self-hosted foreman. The core is pure: time, ids and every outside
 // effect come in through the interfaces below.
+import type { ExtendedMenu } from './menu'
 import type {
   Capability,
   Heartbeat,
@@ -23,6 +24,7 @@ export type ForemanErrorCode =
   | 'unknown_card'
   | 'bad_card'
   | 'bad_line'
+  | 'bad_rule'
 
 export class ForemanError extends Error {
   readonly code: ForemanErrorCode
@@ -35,12 +37,24 @@ export class ForemanError extends Error {
 
 /** Where the foreman speaks to the Dispatcher (relay). Fire and forget; the adapter retries. */
 export type ForemanTransport = {
-  sendMenu(menu: Menu, revision: number): void
+  /** `menu` is the strict gateway-contract menu; `extended` adds the m2 policy fields for the ledger. */
+  sendMenu(menu: Menu, revision: number, extended: ExtendedMenu): void
   sendHeartbeat(hb: Heartbeat): void
   sendLifecycle(ev: LifecycleEvent): void
   /** Structured only: a kind and a reference, never free text. */
   notifyOwner(notice: OwnerNotice): void
+  /** Structured only: tells the requester a job stopped on their side (S35). */
+  notifyRequester(notice: RequesterNotice): void
+  /**
+   * A job leaves this yard and goes back to the Dispatcher to be routed again (S18, S20).
+   * Not a gateway lifecycle event: the gateway state machine has no accepted -> reassigned move,
+   * so this travels as the m2 `foreman` op (decline or release) and the job is not cancelled.
+   */
+  handBack(back: HandBack): void
 }
+
+export type HandBack = { taskId: string; op: 'decline' | 'release'; reason: string }
+export type RequesterNotice = { kind: 'send_back_limit'; taskId: string; requester: string }
 
 export type OwnerNoticeKind =
   | 'job_held_offline' // S18: nobody came online within the hold time
@@ -109,6 +123,10 @@ export type ForemanConfig = {
   autoAccept?: boolean
   dailyBudgetUsd?: number
   directLines?: DirectLinePolicy
+  /** IANA zone the daily budget resets in (the owner's day). Default UTC. */
+  timeZone?: string
+  /** How long a finished job is kept for duplicate detection and history. Default 30 days. */
+  retentionMs?: number
 }
 
 /** A capability plus the foreman-only policy that the gateway menu cannot carry. */
@@ -123,6 +141,12 @@ export type CapabilityConfig = Capability & {
   acceptWhenOffline?: boolean
   /** If set, only these agents may take this capability. */
   agents?: string[]
+  /** Shown in the ledger and used by the Dispatcher to match free text. */
+  keywords?: string[]
+  /** Station ids (vil_...) that take this capability. */
+  stations?: string[]
+  /** Capability ids that usually follow this one. */
+  next?: string[]
 }
 
 export type AgentInfo = {
@@ -157,6 +181,7 @@ export type HistoryKind =
   | 'release'
   | 'send_back'
   | 'approve'
+  | 'resume'
 
 export type HistoryEntry = {
   at: number
@@ -205,6 +230,9 @@ export type Job = {
   exhaustedNotified: boolean
   line: DirectLine | null
   closedReason: string | null
+  closedAt: number | null
+  /** When the S18 hold and release clocks started: accept time, or the last time it stopped running. */
+  waitingSince: number | null
   seq: number
 }
 
@@ -229,7 +257,8 @@ export type JobView = {
   taskId: string
   state: TaskState
   exec: ExecState | null
-  holder: 'foreman' | string
+  /** 'foreman' or the agent id holding the job. */
+  holder: string
   claim: { agentId: string; epoch: number; state: ClaimState; leaseExpiresAt: number | null } | null
   eta: number | null
   /** S15: "queued, not running (last contact ...)" while no agent holds the job. */

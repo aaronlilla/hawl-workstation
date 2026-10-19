@@ -30,6 +30,8 @@ function blankJob(c: ForemanCtx, ev: LifecycleEvent, requester: string): Job {
     exhaustedNotified: false,
     line: null,
     closedReason: null,
+    closedAt: null,
+    waitingSince: null,
     seq: ++c.seq
   }
 }
@@ -63,7 +65,7 @@ function needsOwner(c: ForemanCtx, job: Job): boolean {
     return true
   }
   const budget = c.cfg.dailyBudgetUsd
-  return budget !== undefined && (c.spent.get(iso(c.now()).slice(0, 10)) ?? 0) >= budget
+  return budget !== undefined && (c.spent.get(c.dayKey()) ?? 0) >= budget
 }
 
 export function declineAsked(c: ForemanCtx, job: Job, reason: string, by: string): void {
@@ -71,6 +73,7 @@ export function declineAsked(c: ForemanCtx, job: Job, reason: string, by: string
   c.emit(job, 'decline', { reason: reason.slice(0, 500) })
   job.exec = null
   job.closedReason = reason
+  job.closedAt = c.now()
 }
 
 /** Accept now, whether or not any agent is online (S15), and start the hold and release clocks. */
@@ -78,6 +81,7 @@ export function acceptJob(c: ForemanCtx, job: Job): void {
   const now = c.now()
   c.emit(job, 'accept', {})
   job.acceptedAt = now
+  job.waitingSince = now
   job.exec = 'queued'
   const minutes = c.cap(job)?.typical_minutes
   job.eta = minutes !== undefined && c.anyOnline() ? now + minutes * MINUTE_MS : null
@@ -197,6 +201,7 @@ export function adoptQueue(
     job.exec = 'queued'
     job.receivedAt = e.acceptedAt
     job.acceptedAt = e.acceptedAt
+    job.waitingSince = e.acceptedAt
     job.holdNotified = e.ownerNotified ?? false
     c.jobs.set(job.taskId, job)
     c.scheduleTimers(job)

@@ -7,7 +7,7 @@ import {
 import { declineAsked } from './intake'
 import type { ForemanCtx } from './state'
 import { ForemanError } from './types'
-import type { ForemanRule } from './types'
+import type { ForemanRule, Job } from './types'
 
 /** Verify, cancel and expire events from the Dispatcher. */
 export function onLifecycle(c: ForemanCtx, ev: LifecycleEvent): void {
@@ -29,14 +29,20 @@ export function onLifecycle(c: ForemanCtx, ev: LifecycleEvent): void {
     job.sendBacks++
     job.exec = 'queued'
     job.tried = []
+    c.restartWait(job)
     const last = job.claims.findLast((cl) => cl.state === 'finished')
     if (last) {
       job.preferAgent = last.agentId
     }
     c.history(job, 'send_back', 'dispatcher', ev.reason ?? null)
     if (job.sendBacks >= c.cfg.maxSendBacks) {
+      // S35: the third send-back stops the job and goes to the requester, not the yard owner.
       job.needsHuman = true
-      c.deps.transport.notifyOwner({ kind: 'needs_human', taskId: job.taskId })
+      c.deps.transport.notifyRequester({
+        kind: 'send_back_limit',
+        taskId: job.taskId,
+        requester: job.requester
+      })
     } else {
       c.schedule('delegate', job.taskId, '', c.now())
     }
@@ -56,11 +62,8 @@ export function decline(c: ForemanCtx, taskId: string, by: string, reason: strin
     declineAsked(c, job, reason, by)
   } else if (job.state === 'accepted') {
     c.history(job, 'decline', by, reason)
-    c.revokeLive(job, 'job_closed')
-    // The contract has no "accepted back to asked" move, so the job leaves as a cancel
-    // whose reason says why; the Dispatcher reads the prefix and reroutes.
-    c.emit(job, 'cancel', { reason: `declined: ${reason}`.slice(0, 500) })
-    c.finish(job, `declined: ${reason}`)
+    // S20: the job goes back to the Dispatcher to be routed again; it is not cancelled.
+    c.handBack(job, 'decline', reason)
   } else {
     throw new ForemanError('bad_state', `cannot decline from ${job.state}`)
   }
@@ -72,8 +75,20 @@ export function addRule(
   action: ForemanRule['action'],
   source: ForemanRule['source'] = 'owner'
 ): string {
+  const clean = Object.fromEntries(
+    Object.entries(match).filter(([, v]) => v !== undefined)
+  ) as ForemanRule['match']
+  if (Object.keys(clean).length === 0) {
+    throw new ForemanError('bad_rule', 'a rule needs a capability or a requester to match')
+  }
+  // One rule per match: saving a second correction replaces the first.
+  const same = (r: ForemanRule): boolean =>
+    r.match.capability === clean.capability && r.match.fromYard === clean.fromYard
+  const at = c.rules.findIndex(same)
+  if (at !== -1) {
+    c.rules.splice(at, 1)
+  }
   const id = `rule_${++c.ids}`
-  const clean = Object.fromEntries(Object.entries(match).filter(([, v]) => v !== undefined))
   c.rules.push({ id, match: clean, action: { ...action }, source })
   return id
 }
@@ -92,9 +107,19 @@ export function reroute(
   if (job.state !== 'accepted' || job.exec === null || job.exec === 'held') {
     throw new ForemanError('bad_state', 'only an accepted job can be rerouted')
   }
+  if (opts.makeRule && !job.capability) {
+    throw new ForemanError('bad_rule', 'a job with no capability cannot become a rule')
+  }
+  if (job.needsHuman) {
+    // A person is acting on a stopped job: that is the answer it was waiting for.
+    clearStop(job)
+  }
   const old = c.liveClaim(job)
   if (old) {
     c.revokeClaim(job, old, 'rerouted')
+    if (old.state === 'revoked' && old.leaseExpiresAt !== null) {
+      c.restartWait(job)
+    }
   }
   job.reroutes++
   job.exec = 'queued'
@@ -113,6 +138,36 @@ export function reroute(
   } else {
     job.preferAgent = opts.toAgent
     job.tried = job.tried.filter((id) => id !== opts.toAgent)
+    if (job.tried.length >= c.cfg.maxAgentsPerJob) {
+      // The owner picked an agent on purpose: give the job a fresh round of tries.
+      job.tried = []
+      job.exhaustedNotified = false
+    }
     c.schedule('delegate', job.taskId, '', c.now())
   }
+}
+
+/** Forget what stopped the job: counters, tried agents and the "nobody took it" notice. */
+function clearStop(job: Job): void {
+  job.needsHuman = false
+  job.reroutes = 0
+  job.sendBacks = 0
+  job.tried = []
+  job.exhaustedNotified = false
+}
+
+/** A person looked at a stopped job and wants it tried again as it is. */
+export function resolveNeedsHuman(
+  c: ForemanCtx,
+  taskId: string,
+  by: string,
+  reason?: string
+): void {
+  const job = c.need(taskId)
+  if (!job.needsHuman || job.state !== 'accepted') {
+    throw new ForemanError('bad_state', 'job is not waiting for a person')
+  }
+  clearStop(job)
+  c.history(job, 'resume', by, reason ?? null)
+  c.schedule('delegate', taskId, '', c.now())
 }

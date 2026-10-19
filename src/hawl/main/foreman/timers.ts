@@ -4,7 +4,10 @@ import { delegate } from './claims'
 import { beatIfDue } from './heartbeat'
 import { declineAsked } from './intake'
 import type { ForemanCtx } from './state'
-import type { ForemanTask } from './types'
+import { MINUTE_MS, type ForemanTask, type Job } from './types'
+
+/** How often a hold check looks again while agents are online but busy. */
+const RECHECK_MS = 30 * MINUTE_MS
 
 /** Run everything due, oldest first, then send a heartbeat if one is due. Re-entrancy safe. */
 export function due(c: ForemanCtx): void {
@@ -43,6 +46,7 @@ export function due(c: ForemanCtx): void {
         c.tasks.delete(k)
       }
     }
+    c.prune()
     beatIfDue(c)
   } finally {
     c.running = false
@@ -58,6 +62,11 @@ export function nextDueAt(c: ForemanCtx): number {
     }
   }
   return min
+}
+
+/** A hold or release check belongs to the wait that is current; a restarted wait makes older checks stale. */
+function waitStarted(job: Job, task: ForemanTask): boolean {
+  return Number(task.idem.split(':')[0]) === job.waitingSince
 }
 
 function run(c: ForemanCtx, task: ForemanTask): void {
@@ -98,21 +107,27 @@ function run(c: ForemanCtx, task: ForemanTask): void {
       c.revokeClaim(job, claim, 'lease_lapsed')
       c.history(job, 'revoke', 'foreman', 'lease lapsed', claim.agentId)
       job.exec = 'queued'
+      c.restartWait(job)
       delegate(c, job)
       return
     }
-    case 'hold_check':
-      if (job.state === 'accepted' && job.exec !== 'running' && !job.holdNotified) {
+    case 'hold_check': {
+      if (!waitStarted(job, task) || job.state !== 'accepted' || job.exec === 'running') {
+        return
+      }
+      if (c.anyOnline()) {
+        // Agents are up, just busy: not offline. Look again later in case they all go.
+        c.schedule('hold_check', job.taskId, `${job.waitingSince}:${now}`, now + RECHECK_MS)
+      } else if (!job.holdNotified) {
         job.holdNotified = true
         c.deps.transport.notifyOwner({ kind: 'job_held_offline', taskId: job.taskId })
       }
       return
+    }
     case 'release_check':
-      if (job.state === 'accepted' && job.exec !== 'running') {
+      if (waitStarted(job, task) && job.state === 'accepted' && job.exec !== 'running') {
         c.history(job, 'release', 'foreman', 'release time passed')
-        c.revokeLive(job, 'job_closed')
-        c.emit(job, 'cancel', { reason: 'released: yard_offline' })
-        c.finish(job, 'released: yard_offline')
+        c.handBack(job, 'release', 'yard_offline')
         c.deps.transport.notifyOwner({ kind: 'job_released', taskId: job.taskId })
       }
       return

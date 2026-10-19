@@ -31,7 +31,9 @@ export const DEFAULTS = {
   maxAgentsPerJob: 3,
   maxReroutes: 3,
   maxSendBacks: 3,
-  heartbeatMs: 30_000
+  heartbeatMs: 30_000,
+  retentionMs: 30 * 24 * HOUR_MS,
+  timeZone: 'UTC'
 }
 
 export type ResolvedConfig = ForemanConfig & typeof DEFAULTS
@@ -84,6 +86,16 @@ export class ForemanCtx {
       throw new ForemanError('unknown_task', `no task ${taskId}`)
     }
     return job
+  }
+
+  /** The owner's calendar day (YYYY-MM-DD) in the configured zone, for the daily budget. */
+  dayKey(): string {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: this.cfg.timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(this.now())
   }
 
   /** A sign of life from an agent. */
@@ -164,6 +176,16 @@ export class ForemanCtx {
     claim.endReason = reason
     job.claimEpoch = Math.max(job.claimEpoch, claim.epoch) + 1
     job.tried.push(claim.agentId)
+    // S10: a line belongs to the agent that asked for it; a new holder needs its own.
+    const line = job.line
+    if (
+      line &&
+      (line.state === 'open' || line.state === 'requested') &&
+      line.fromInner === claim.agentId
+    ) {
+      line.state = 'closed'
+      line.closeReason = 'claim_revoked'
+    }
     this.deps.agents.revoke(claim.agentId, { taskId: job.taskId, epoch: claim.epoch, reason })
   }
 
@@ -179,6 +201,7 @@ export class ForemanCtx {
     this.revokeLive(job, 'job_closed')
     job.exec = null
     job.closedReason = reason
+    job.closedAt = this.now()
     if (job.line && (job.line.state === 'open' || job.line.state === 'requested')) {
       job.line.state = 'closed'
       job.line.closeReason = 'job_closed'
@@ -210,10 +233,36 @@ export class ForemanCtx {
     }
   }
 
+  /** Hold and release clocks (S18). The idem is the start time, so a restarted clock never meets a stale check. */
   scheduleTimers(job: Job): void {
-    const at = job.acceptedAt ?? job.receivedAt
-    this.schedule('hold_check', job.taskId, '', at + this.cfg.holdMs)
-    this.schedule('release_check', job.taskId, '', at + this.cfg.releaseMs)
+    const at = job.waitingSince ?? job.acceptedAt ?? job.receivedAt
+    this.schedule('hold_check', job.taskId, String(at), at + this.cfg.holdMs)
+    this.schedule('release_check', job.taskId, String(at), at + this.cfg.releaseMs)
+  }
+
+  /** A job that was running is waiting again (lease lapsed, rerouted, sent back): the S18 clocks start over. */
+  restartWait(job: Job): void {
+    job.waitingSince = this.now()
+    job.holdNotified = false
+    this.scheduleTimers(job)
+  }
+
+  /** The job goes back to the Dispatcher to be routed again (S18 release, S20 decline). It is not cancelled. */
+  handBack(job: Job, op: 'decline' | 'release', reason: string): void {
+    this.revokeLive(job, 'job_closed')
+    job.state = 'reassigned'
+    this.deps.transport.handBack({ taskId: job.taskId, op, reason: reason.slice(0, 500) })
+    this.finish(job, reason)
+  }
+
+  /** Forget jobs that ended longer ago than the retention time. */
+  prune(): void {
+    const cutoff = this.now() - this.cfg.retentionMs
+    for (const [id, j] of this.jobs) {
+      if (j.closedAt !== null && j.exec === null && j.closedAt <= cutoff) {
+        this.jobs.delete(id)
+      }
+    }
   }
 
   /** Ask every waiting job to look for an agent, oldest first. */

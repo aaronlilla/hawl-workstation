@@ -16,11 +16,12 @@ import type { DoneReport } from './claims'
 import type { CardBook } from './cards'
 import { buildBeat } from './heartbeat'
 import { adoptQueue, exportQueue, intake, ownerDecision } from './intake'
-import { addRule, decline, onLifecycle, reroute } from './lifecycle'
+import { addRule, decline, onLifecycle, reroute, resolveNeedsHuman } from './lifecycle'
 import { decideLine, lineAllows, openLine, remoteLineDecision } from './lines'
 import type { LineRequest } from './lines'
 import { publishMenu, setCapabilities } from './menu'
-import { ForemanCtx, iso } from './state'
+import type { ExtendedMenu } from './menu'
+import { ForemanCtx } from './state'
 import { due, nextDueAt } from './timers'
 import { busyAgentIds, claimsOf, jobView } from './views'
 import type {
@@ -47,6 +48,7 @@ export type ForemanSnapshot = {
   draft: CapabilityConfig[]
   spent: [string, number][]
   seq: number
+  ids: number
   lastContactAt: number | null
   paused: boolean
   autoAccept: boolean
@@ -79,7 +81,7 @@ export class Foreman {
     setCapabilities(this.#c, caps)
   }
 
-  publishMenu(): { menu: Menu; revision: number } {
+  publishMenu(): { menu: Menu; extended: ExtendedMenu; revision: number } {
     return publishMenu(this.#c)
   }
 
@@ -112,8 +114,11 @@ export class Foreman {
 
   /** Cost reported by agents; the daily budget in the menu policy holds new jobs once reached. */
   recordCost(usd: number): void {
-    const day = iso(this.#c.now()).slice(0, 10)
-    this.#c.spent.set(day, (this.#c.spent.get(day) ?? 0) + usd)
+    const day = this.#c.dayKey()
+    const total = (this.#c.spent.get(day) ?? 0) + usd
+    // Only today's spend matters to the budget; older days are dropped.
+    this.#c.spent.clear()
+    this.#c.spent.set(day, total)
   }
 
   // ---- agents
@@ -221,6 +226,11 @@ export class Foreman {
     this.#do((c) => reroute(c, taskId, opts))
   }
 
+  /** A person looked at a job that stopped (3 reroutes or 3 send-backs) and wants it tried again. */
+  resolveNeedsHuman(taskId: string, by: string, reason?: string): void {
+    this.#do((c) => resolveNeedsHuman(c, taskId, by, reason))
+  }
+
   addRule(
     match: ForemanRule['match'],
     action: ForemanRule['action'],
@@ -307,6 +317,7 @@ export class Foreman {
       draft: c.draft,
       spent: [...c.spent],
       seq: c.seq,
+      ids: c.ids,
       lastContactAt: c.lastContactAt,
       paused: c.paused,
       autoAccept: c.autoAccept,
@@ -335,6 +346,7 @@ export class Foreman {
       c.spent.set(k, v)
     }
     c.seq = snap.seq
+    c.ids = snap.ids
     c.lastContactAt = snap.lastContactAt
     c.paused = snap.paused
     c.autoAccept = snap.autoAccept
