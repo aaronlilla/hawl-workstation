@@ -67,6 +67,7 @@ function CommandDialog({
     <DialogPrimitive.Root {...props}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
+          data-slot="command-dialog-overlay"
           // Why: matches the DialogOverlay recipe — deeper scrim + 2px backdrop
           // blur so the dark canvas lifts off the command palette. A flat
           // bg-black/50 disappears in dark mode.
@@ -76,6 +77,7 @@ function CommandDialog({
           )}
         />
         <DialogPrimitive.Content
+          data-slot="command-dialog-content"
           // Why: matches the DialogContent recipe — translucent surface, solid
           // 14% border, dual shadow, and 2xl backdrop blur. bg-popover equals
           // the canvas in dark mode (#171717 vs #0a0a0a) and the previous

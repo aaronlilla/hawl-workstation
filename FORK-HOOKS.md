@@ -65,3 +65,10 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 - Orca-named internals: CLI `orca`, `orca-dev`, Windows NSIS script, `%LOCALAPPDATA%\Orca` paths, macOS bundle ids in main-process helpers.
 - Feature-wall onboarding GIFs show Orca's UI.
 - Existing unit tests that assert the old defaults (terminal theme names, bundled plugin ids, feed URLs) are not updated yet.
+
+## D3-surfaces (glass surfaces, menus, command menu, toasts, dialogs, drawers, cards)
+All styling lives in `src/hawl/renderer/d3-surfaces.css`, imported through `src/hawl/renderer/hawl-pieces.css` (single hook, one `@import` per piece), which `hawl-theme.css` imports first. It targets Orca's own `data-slot` / Radix / cmdk / sonner attributes, so no component is restyled in TSX.
+| File | Hook |
+|---|---|
+| `src/hawl/renderer/hawl-theme.css` | one `@import './hawl-pieces.css'` at the top |
+| `src/renderer/src/components/ui/command.tsx` | `data-slot="command-dialog-overlay"` and `data-slot="command-dialog-content"` on `CommandDialog` (it had no slot, so the Jump palette could not be reached by CSS) |
