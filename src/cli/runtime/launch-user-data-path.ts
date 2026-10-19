@@ -1,3 +1,4 @@
+import { HAWL_DEV_USER_DATA_DIR } from '../../hawl/shared/brand'
 import { dirname, join, resolve } from 'node:path'
 import { SERVE_USER_DATA_PATH_ENV } from '../../shared/serve-user-data-path'
 import { getPlatformUserDataPath } from './metadata'
@@ -16,9 +17,10 @@ export function resolveLaunchUserDataPath(env: NodeJS.ProcessEnv = process.env):
     return resolve(env.ORCA_USER_DATA_PATH)
   }
   if (launchesDevApp(env)) {
-    // Mirrors the dev app's own default (`<appData>/orca-dev`).
+    // Mirrors the dev app's own default (`<appData>/hawl-workstation-dev`).
     return resolve(
-      env.ORCA_DEV_USER_DATA_PATH || join(dirname(getPlatformUserDataPath()), 'orca-dev')
+      env.ORCA_DEV_USER_DATA_PATH ||
+        join(dirname(getPlatformUserDataPath()), HAWL_DEV_USER_DATA_DIR)
     )
   }
   return getPlatformUserDataPath()
