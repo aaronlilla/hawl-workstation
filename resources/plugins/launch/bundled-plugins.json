@@ -2,9 +2,9 @@
   "version": 1,
   "plugins": [
     {
-      "pluginKey": "stablyai.orca-navigation-shortcuts",
-      "path": "stablyai.orca-navigation-shortcuts",
-      "contentHash": "ce3a146bae9e121a18cb86a710973422be749a25da5a1c21a8911e2e98cc3a77"
+      "pluginKey": "aaronlilla.hawl-navigation-shortcuts",
+      "path": "aaronlilla.hawl-navigation-shortcuts",
+      "contentHash": "28afc50e1a80bc5b4ab6e6267a5e94cd37c00b2cf129c48177bddb403a29cbaf"
     }
   ]
 }

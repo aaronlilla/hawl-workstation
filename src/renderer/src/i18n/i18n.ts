@@ -7,6 +7,7 @@ import i18next, {
 import { initReactI18next } from 'react-i18next'
 
 import enRuntimeRequired from './en-runtime-required.json'
+import { hawlBrandPostProcessor } from '../../../hawl/shared/brand'
 import { isPseudoLocalizationLocale, pseudoLocalizeString } from './pseudo-localization'
 import { DEFAULT_LOCALE, resolveUiLocale } from './supported-languages'
 import type { SupportedUiLocale } from '../../../shared/ui-locale'
@@ -53,7 +54,9 @@ const lazyLocaleBackend: BackendModule = {
 void i18n
   .use(lazyLocaleBackend)
   .use(initReactI18next)
+  .use(hawlBrandPostProcessor)
   .init({
+    postProcess: ['hawl-brand'],
     fallbackLng: DEFAULT_LOCALE,
     lng: DEFAULT_LOCALE,
     // Why: `resources` seeds the eager English catalog while

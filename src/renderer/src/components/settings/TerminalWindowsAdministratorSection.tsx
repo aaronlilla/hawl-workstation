@@ -237,9 +237,7 @@ export function TerminalWindowsAdministratorSection(): React.JSX.Element {
                 variant="link"
                 size="sm"
                 onClick={() =>
-                  void window.api.shell.openUrl(
-                    'https://www.onorca.dev/docs/terminal#windows-administrator-mode'
-                  )
+                  void window.api.shell.openUrl('https://hawl.ai/docs#windows-administrator-mode')
                 }
               >
                 {translate(

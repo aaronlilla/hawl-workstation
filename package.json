@@ -1,9 +1,9 @@
 {
   "name": "orca",
   "version": "1.4.214",
-  "description": "Next-gen IDE for parallel agentic development",
-  "homepage": "https://github.com/stablyai/orca",
-  "author": "stablyai",
+  "description": "Hawl Workstation: the agentic IDE for Hawl. Built on Orca (MIT).",
+  "homepage": "https://github.com/aaronlilla/hawl-workstation",
+  "author": "Aaron Lilla",
   "bin": {
     "orca": "./out/cli/index.js",
     "orca-dev": "./config/scripts/orca-dev.mjs"

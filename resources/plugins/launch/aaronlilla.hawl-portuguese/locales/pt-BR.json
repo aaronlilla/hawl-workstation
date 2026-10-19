@@ -3,7 +3,7 @@
     "appearance": {
       "language": {
         "title": "Idioma",
-        "description": "Escolha o idioma usado na interface do Orca.",
+        "description": "Escolha o idioma usado na interface do Hawl.",
         "system": "Sistema",
         "english": "Inglês",
         "chinese": "Chinês simplificado",
@@ -27,10 +27,10 @@
     "paste": "Colar"
   },
   "tray": {
-    "openOrca": "Abrir o Orca",
+    "openHawl": "Abrir o Hawl",
     "quit": "Encerrar",
     "minimizeNotice": {
-      "body": "O Orca continua em execução na bandeja do sistema"
+      "body": "O Hawl continua em execução na bandeja do sistema"
     }
   }
 }

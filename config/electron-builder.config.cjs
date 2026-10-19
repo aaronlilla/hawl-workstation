@@ -103,13 +103,13 @@ const devChannelBuildVersion = isHourlyChannel
 // or a once-a-day cut cannot be picked up by someone who only meant to ride
 // main's hourlies.
 const devChannelRepo = isHourlyChannel
-  ? 'orca-hourly'
+  ? 'hawl-workstation-hourly'
   : isDailyChannel
-    ? 'orca-daily'
+    ? 'hawl-workstation-daily'
     : isAdhocChannel
-      ? 'orca-adhoc'
+      ? 'hawl-workstation-adhoc'
       : null
-const appId = 'com.stablyai.orca'
+const appId = 'com.hawl.workstation'
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
   to: 'onboarding/feature-wall'
@@ -239,8 +239,8 @@ const ORCA_MAC_TEAM_ID = '6CX3WHS9HZ'
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId,
-  productName: 'Orca',
-  protocols: [{ name: 'Orca', schemes: ['orca'] }],
+  productName: 'Hawl Workstation',
+  protocols: [{ name: 'Hawl Workstation', schemes: ['hawl'] }],
   toolsets: { appimage: '1.0.3' },
   ...(devChannelBuildVersion
     ? { extraMetadata: { version: devChannelBuildVersion } }
@@ -741,7 +741,7 @@ module.exports = {
     ],
     // Keep local artifacts aligned with the release pipeline.
     target: ['AppImage', 'deb', 'rpm'],
-    maintainer: 'stablyai',
+    maintainer: 'Aaron Lilla',
     category: 'Utility'
   },
   appImage: {
@@ -801,8 +801,8 @@ module.exports = {
   npmRebuild: true,
   publish: {
     provider: 'github',
-    owner: 'stablyai',
-    repo: devChannelRepo ?? 'orca',
+    owner: 'aaronlilla',
+    repo: devChannelRepo ?? 'hawl-workstation',
     // Why draft on the main repo: `--publish always` otherwise creates a
     // public GitHub release as soon as the first platform uploads, and
     // /releases/latest serves a missing Windows exe. release-cut undrafts

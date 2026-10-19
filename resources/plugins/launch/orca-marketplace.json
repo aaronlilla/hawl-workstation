@@ -1,35 +1,35 @@
 {
-  "name": "Orca Official Plugins",
-  "owner": "stablyai",
+  "name": "Hawl Official Plugins",
+  "owner": "aaronlilla",
   "plugins": [
     {
-      "id": "stablyai.orca-portuguese",
+      "id": "aaronlilla.hawl-portuguese",
       "source": {
         "kind": "git",
-        "url": "https://github.com/stablyai/orca-portuguese.git",
+        "url": "https://github.com/aaronlilla/hawl-portuguese.git",
         "ref": "v1.0.0"
       },
-      "description": "Brazilian Portuguese translations for common Orca navigation.",
+      "description": "Brazilian Portuguese translations for common Hawl navigation.",
       "categories": ["languages", "official"]
     },
     {
-      "id": "stablyai.orca-multipass-recipes",
+      "id": "aaronlilla.hawl-multipass-recipes",
       "source": {
         "kind": "git",
-        "url": "https://github.com/stablyai/orca-multipass-recipes.git",
+        "url": "https://github.com/aaronlilla/hawl-multipass-recipes.git",
         "ref": "v1.0.0"
       },
       "description": "A reviewed starter lifecycle for disposable Multipass workspaces.",
       "categories": ["vm-recipes", "official"]
     },
     {
-      "id": "stablyai.orca-navigation-shortcuts",
+      "id": "aaronlilla.hawl-navigation-shortcuts",
       "source": {
         "kind": "git",
-        "url": "https://github.com/stablyai/orca-navigation-shortcuts.git",
+        "url": "https://github.com/aaronlilla/hawl-navigation-shortcuts.git",
         "ref": "v1.0.0"
       },
-      "description": "Command aliases and optional shortcuts for frequent Orca views.",
+      "description": "Command aliases and optional shortcuts for frequent Hawl views.",
       "categories": ["keybindings", "official"]
     }
   ]

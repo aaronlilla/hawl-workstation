@@ -1,6 +1,7 @@
 import { net } from 'electron'
 import type { ChangelogData } from '../shared/update-status-types'
 import { compareVersions } from './updater-fallback'
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../hawl/shared/brand'
 
 type ChangelogEntry = {
   version: string
@@ -10,7 +11,7 @@ type ChangelogEntry = {
   releaseNotesUrl: string
 }
 
-const CHANGELOG_URL = 'https://onorca.dev/changelog'
+const CHANGELOG_URL = 'https://github.com/aaronlilla/hawl-workstation/releases'
 
 function isValidEntry(entry: ChangelogEntry): boolean {
   return (
@@ -42,6 +43,9 @@ export async function fetchChangelog(
   incomingVersion: string,
   localVersion: string
 ): Promise<ChangelogData | null> {
+  if (!HAWL_VENDOR_SERVICES_ENABLED) {
+    return null
+  }
   const res = await net.fetch('https://onorca.dev/whats-new/changelog.json', {
     signal: AbortSignal.timeout(5000)
   })

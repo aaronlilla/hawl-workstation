@@ -5,7 +5,7 @@ import { Button } from './ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 
-const ORCA_REPO_URL = 'https://github.com/stablyai/orca'
+const ORCA_REPO_URL = 'https://github.com/aaronlilla/hawl-workstation'
 type StarNagMode = 'gh' | 'web'
 
 /**

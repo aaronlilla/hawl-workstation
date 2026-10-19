@@ -1,5 +1,5 @@
 import { ghExecFileAsync, acquire, release } from '../../gh-utils'
-export const ORCA_REPO = 'stablyai/orca'
+export const ORCA_REPO = 'aaronlilla/hawl-workstation'
 
 /**
  * Deadline for the two star-nag gh calls.

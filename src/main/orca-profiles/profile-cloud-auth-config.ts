@@ -3,6 +3,7 @@ import {
   cleanCloudServiceUrl as cleanUrl,
   cleanCloudServiceOrigin as cleanOrigin
 } from '../../shared/cloud-service-url'
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../../hawl/shared/brand'
 import { resolvePushGatewayOrigin } from '../runtime/push/push-gateway-origin'
 
 export type OrcaCloudAuthConfig = {
@@ -21,9 +22,10 @@ export type OrcaCloudAuthConfig = {
 }
 
 const DEFAULT_SCOPE = 'openid profile email offline_access'
-const PRODUCTION_API_BASE_URL = 'https://login.onorca.dev'
-const PRODUCTION_CLIENT_ID = 'orca-desktop'
-const PRODUCTION_RELAY_DIRECTOR_URL = 'https://relay.onorca.dev'
+// Hawl fork: Orca's hosted login and relay are not used; Hawl sign-in lands in M1.
+const PRODUCTION_API_BASE_URL = HAWL_VENDOR_SERVICES_ENABLED ? 'https://login.onorca.dev' : ''
+const PRODUCTION_CLIENT_ID = HAWL_VENDOR_SERVICES_ENABLED ? 'orca-desktop' : ''
+const PRODUCTION_RELAY_DIRECTOR_URL = HAWL_VENDOR_SERVICES_ENABLED ? 'https://relay.onorca.dev' : ''
 
 // Why: packaged main bundles never define NODE_ENV, so packaged-ness is the
 // only reliable production signal for gating dev-only auth escape hatches.

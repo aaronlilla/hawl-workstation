@@ -9,6 +9,7 @@
 @import './terminal.css';
 @import './mobile-page.css';
 @import '../../../shared/styles/scrollbar-sleek.css';
+@import '../../../hawl/renderer/hawl-theme.css';
 
 @font-face {
   font-family: 'Geist';

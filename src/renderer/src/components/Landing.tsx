@@ -13,6 +13,7 @@ import { ShortcutKeyCombo } from './ShortcutKeyCombo'
 import { useShortcutKeyDetails, type ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import logo from '../../../../resources/logo.svg'
+import { HAWL_STAR_NAG_ENABLED } from '../../../hawl/shared/brand'
 import { translate } from '@/i18n/i18n'
 import { hasGitHubBackedProject, type PreflightIssue } from './landing-preflight-issues'
 import { useLandingPreflightRuntime } from './landing-preflight-runtime'
@@ -25,7 +26,7 @@ type ShortcutItem = {
 }
 
 // Do not deep-link to /stargazers: GitHub 404s that page for users without repo write access.
-const ORCA_GITHUB_URL = 'https://github.com/stablyai/orca'
+const ORCA_GITHUB_URL = 'https://github.com/aaronlilla/hawl-workstation'
 
 type StarButtonProps = {
   hasRepos: boolean
@@ -230,7 +231,8 @@ export default function Landing(): React.JSX.Element {
     repos.length > 0 && repos.every((repo) => isGitRepoKind(repo)) ? 'Worktree' : 'Workspace'
   const hasProjects = repos.length > 0
   const hasGitHubProject = useMemo(() => hasGitHubBackedProject(repos), [repos])
-  const showGitHubSupportFooter = repos.length === 0 || hasGitHubProject
+  // Hawl fork: no star-on-GitHub prompt (HAWL_STAR_NAG_ENABLED is false).
+  const showGitHubSupportFooter = HAWL_STAR_NAG_ENABLED && (repos.length === 0 || hasGitHubProject)
 
   // Why: the runtime-aware slice probes the active remote host instead of the renderer host.
   const { preflightIssues } = useLandingPreflightRuntime()

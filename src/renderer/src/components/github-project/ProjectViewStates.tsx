@@ -9,7 +9,7 @@ import { isRenderableProjectViewLayout } from '../../../../shared/github/project
 import type { GitHubProjectViewSummary } from '../../../../shared/github/project-types'
 import type { GitHubProjectViewError } from '../../../../shared/github/project-result-types'
 
-const ORCA_FEATURE_REQUEST_URL = 'https://github.com/stablyai/orca/issues/new'
+const ORCA_FEATURE_REQUEST_URL = 'https://github.com/aaronlilla/hawl-workstation/issues/new'
 
 export function ProjectViewTabStrip({
   views,

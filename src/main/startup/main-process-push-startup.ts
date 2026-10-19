@@ -1,3 +1,4 @@
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../../hawl/shared/brand'
 import { getOrcaPushGatewayUrl } from '../orca-profiles/profile-cloud-auth-config'
 import { DesktopPushService } from '../runtime/push/desktop-push-service'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -10,6 +11,10 @@ import { mainProcessState as state } from './main-process-state'
 // modes have already stored it there; threading it as a parameter would push the
 // launch module past its line budget for no gain.
 export function startDesktopPushService(runtimeRpc: OrcaRuntimeRpcServer): void {
+  // Hawl fork: Orca's push gateway is off until Hawl push exists (M6).
+  if (!HAWL_VENDOR_SERVICES_ENABLED) {
+    return
+  }
   const runtime: OrcaRuntimeService | null = state.runtime
   if (!runtime) {
     console.warn('[push] Background push startup skipped: runtime not started')

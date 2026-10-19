@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../../hawl/shared/brand'
 
 const PRODUCTION_ARTIFACTS_API_URL = 'https://share.onorca.dev'
 
@@ -16,6 +17,9 @@ export function resolveArtifactCloudApiUrl(
   packaged = isPackaged()
 ): string {
   const candidate = override?.trim() || env.ORCA_ARTIFACTS_API_URL?.trim()
+  if (!candidate && !HAWL_VENDOR_SERVICES_ENABLED) {
+    throw new Error('Artifact sharing is not available in Hawl Workstation yet.')
+  }
   const url = new URL(candidate || PRODUCTION_ARTIFACTS_API_URL)
   const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)
   const firstParty = url.hostname === 'onorca.dev' || url.hostname.endsWith('.onorca.dev')

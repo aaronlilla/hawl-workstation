@@ -1,4 +1,5 @@
 import { net } from 'electron'
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../hawl/shared/brand'
 import { compareVersions, isValidVersion } from './updater-fallback'
 
 export type NudgeConfig = {
@@ -8,6 +9,9 @@ export type NudgeConfig = {
 }
 
 export async function fetchNudge(): Promise<NudgeConfig | null> {
+  if (!HAWL_VENDOR_SERVICES_ENABLED) {
+    return null
+  }
   try {
     const res = await net.fetch('https://onorca.dev/whats-new/nudge.json', {
       signal: AbortSignal.timeout(5000)

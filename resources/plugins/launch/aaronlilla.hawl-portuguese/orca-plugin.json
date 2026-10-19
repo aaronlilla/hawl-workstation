@@ -1,11 +1,11 @@
 {
   "manifestVersion": 1,
-  "id": "orca-portuguese",
-  "publisher": "stablyai",
+  "id": "hawl-portuguese",
+  "publisher": "aaronlilla",
   "name": "Português do Brasil",
   "version": "1.0.0",
-  "description": "Brazilian Portuguese translations for common Orca navigation.",
-  "repository": "https://github.com/stablyai/orca-portuguese",
+  "description": "Brazilian Portuguese translations for common Hawl navigation.",
+  "repository": "https://github.com/aaronlilla/hawl-portuguese",
   "engines": { "orca": ">=1.4.0" },
   "pluginApi": 1,
   "contributes": {

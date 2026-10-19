@@ -1,4 +1,5 @@
 import { net } from 'electron'
+import { HAWL_VENDOR_SERVICES_ENABLED } from '../../hawl/shared/brand'
 import { appendFeedbackImagesToFormData } from './feedback-image-attachments'
 import type {
   FeedbackImageAttachment,
@@ -42,6 +43,9 @@ export async function postFeedback(
   timeoutMs = FEEDBACK_REQUEST_TIMEOUT_MS,
   readResponse?: (response: Response) => Promise<void>
 ): Promise<Response> {
+  if (!HAWL_VENDOR_SERVICES_ENABLED) {
+    throw new Error('Feedback goes to GitHub issues in Hawl Workstation.')
+  }
   const controller = new AbortController()
   // Why: a silent endpoint must not leave feedback IPC pending forever.
   const timeout = setTimeout(() => controller.abort(), timeoutMs)

@@ -8,8 +8,8 @@ import type { TerminalOscColorQueryReplyColors } from './terminal-osc-color-repl
 import { TERMINAL_THEME_CATALOG } from './terminal-themes'
 import type { TerminalThemeMap } from './terminal-themes/types'
 
-export const DEFAULT_TERMINAL_THEME_DARK = 'Ghostty Default Style Dark'
-export const DEFAULT_TERMINAL_THEME_LIGHT = 'Builtin Tango Light'
+export const DEFAULT_TERMINAL_THEME_DARK = 'Hawl Ember'
+export const DEFAULT_TERMINAL_THEME_LIGHT = 'Hawl Daylight'
 
 export type TerminalThemeSelectionSettings = Pick<
   GlobalSettings,

@@ -1,11 +1,11 @@
 {
   "manifestVersion": 1,
-  "id": "orca-navigation-shortcuts",
-  "publisher": "stablyai",
-  "name": "Orca Navigation Shortcuts",
+  "id": "hawl-navigation-shortcuts",
+  "publisher": "aaronlilla",
+  "name": "Hawl Navigation Shortcuts",
   "version": "1.0.0",
-  "description": "Command aliases and optional shortcuts for frequent Orca views.",
-  "repository": "https://github.com/stablyai/orca-navigation-shortcuts",
+  "description": "Command aliases and optional shortcuts for frequent Hawl views.",
+  "repository": "https://github.com/aaronlilla/hawl-navigation-shortcuts",
   "engines": { "orca": ">=1.4.0" },
   "pluginApi": 1,
   "contributes": {
