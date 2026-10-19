@@ -10,8 +10,8 @@
 // control is entered (never per move). Nothing runs until the cursor is over a lit control.
 
 export const LIGHT_RANGE = 280
-const SOURCE = '.hawl-lit,[data-hawl-light]'
-const RECEIVER = '.hawl-catch,[data-hawl-catch]'
+const SOURCE = ".hawl-lit,[data-hawl-light],[data-slot='button'][data-variant='default']"
+const RECEIVER = ".hawl-catch,[data-hawl-catch],[data-slot='button']:not([data-variant='default']),[data-slot='input']"
 const MAX_RECEIVERS = 60
 
 /** 1 at the source edge, 0 at `range`; a lamp falls off faster than linear. */

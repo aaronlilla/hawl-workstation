@@ -425,7 +425,8 @@ html:root {
 /* A lit control: a real lamp behind soft-touch plastic. The hot spot sits upper left at rest and slides to the cursor
    (--mx --my, written by light-engine.ts); --hot opens the lamp. The glow is a tight spill, never a halo.
    Colour variants set --lrgb so receivers near it take the same light. */
-.hawl-lit {
+.hawl-lit,
+html :where([data-slot='button'][data-variant='default']) {
   --lrgb: 255, 128, 40;
   --lrgb-d: 140, 50, 6;
   --lit-body: var(--mat-orange);
@@ -446,19 +447,22 @@ html:root {
     0 0 calc(14px + 12px * var(--hot)) rgba(var(--lrgb), calc(0.25 + 0.3 * var(--hot))),
     calc(var(--cast-x) * 12px) calc(var(--cast-y) * 20px) 24px -6px rgba(var(--shade), 0.42);
 }
-.hawl-lit:active, .hawl-lit.is-pressed {
+.hawl-lit:active, .hawl-lit.is-pressed,
+html :where([data-slot='button'][data-variant='default']):active {
   transform: translateY(2px);
   box-shadow:
     inset 0 3px 6px rgba(90,26,0,0.45), inset 0 -1px 0 rgba(255,214,170,0.5),
     0 0 0 1px rgba(110,37,3,0.6), 0 1px 0 rgba(255,255,255,0.5),
     0 0 10px rgba(var(--lrgb), 0.25);
 }
-.hawl-lit[disabled], .hawl-lit.is-disabled, .hawl-lit[aria-disabled='true'] {
+.hawl-lit[disabled], .hawl-lit.is-disabled, .hawl-lit[aria-disabled='true'],
+html :where([data-slot='button'][data-variant='default']):disabled {
   --lit-body: linear-gradient(180deg, #e7dfce, #dcd2be);
   color: var(--ink-4); text-shadow: 0 1px 0 #fff; background: var(--lit-body);
   box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.25), 0 1px 2px rgba(var(--shade), 0.2);
 }
-html.dark .hawl-lit[disabled], html.dark .hawl-lit.is-disabled, html.dark .hawl-lit[aria-disabled='true'] {
+html.dark .hawl-lit[disabled], html.dark .hawl-lit.is-disabled, html.dark .hawl-lit[aria-disabled='true'],
+html.dark :where([data-slot='button'][data-variant='default']):disabled {
   --lit-body: linear-gradient(180deg, #2a1f19, #221812);
   text-shadow: 0 -1px 0 #000;
   box-shadow: inset 0 1px 0 rgba(255,226,190,0.1), 0 0 0 1px rgba(0,0,0,0.5);

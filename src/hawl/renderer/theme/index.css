@@ -1,3 +1,4 @@
 /* The single CSS hook for the Hawl theme (imported once from src/renderer/src/assets/main.css).
    One file per design piece, in this order. Add a piece by adding its line here. */
 @import './foundations.css';
+@import './apply.css';
