@@ -59,17 +59,20 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 |---|---|
 | `src/renderer/src/components/settings/GeneralPane.tsx` | renders `HawlAboutSection` (in `src/hawl/renderer/`) in place of the Orca "Support" section; the credit "Built on Orca (MIT)" lives there |
 
-## Shell redesign (piece D4-shell; Hawl code in `src/hawl/renderer/`)
-CSS: `hawl-theme.css` imports `hawl-pieces.css` (one `@import` per piece; `d4-shell.css` is this piece). Light theme only, every rule scoped `html:not(.dark)`; dark gets plain fallbacks. Marked slots (`HawlSlot`, `registerHawlSlot` in `shell/HawlSlots.tsx`): `site-switcher`, `topbar-live`, `topbar-actions` (top bar), `yard-tree`, `foreman-strip` (sidebar).
+## Shell redesign (piece D4-shell, round 2; Hawl code in `src/hawl/renderer/`)
+CSS: `hawl-theme.css` imports `hawl-pieces.css` (one `@import` per piece; `d4-shell.css` is this piece and imports `d4-shell-panels.css` and `d4-shell-pages.css`). Light theme only, every rule scoped `html:not(.dark)`; dark gets plain fallbacks. Code in `src/hawl/renderer/shell/`: `HawlNav` (sidebar navigation: Needs you, Work, Activity, Chat, Map, Agents, Files, then Automations and Phone), `HawlTopBar` (site switcher, search, Live lamp, Invite, account disc), `HawlSheet` + `hawl-lens.ts` (glass menus with a real refraction lens, built when a menu opens), `HawlLanding` + `HawlNeeds` (the Needs you home: real rows from local agents that wait on you or finished unseen, plus relay items), `HawlAbout` (About screen), `hawl-session.ts` (what sign-in M1 fills: user, sites, Live, relay items, row lamps; also `window.__hawlSession.set(...)`), `hawl-light.ts` (cursor-follow light on lit objects). Marked slots (`HawlSlot`, `registerHawlSlot` in `shell/HawlSlots.tsx`): `site-switcher`, `topbar-live`, `topbar-actions` (top bar), `yard-tree`, `foreman-strip` (sidebar).
 | File | Hook |
 |---|---|
 | `src/renderer/src/app-shell/AppWorkspaceShell.tsx` | renders `<HawlTopBar />` at the top of the page column; class `hawl-page-column` on that column and `hawl-page-slab` on the content area |
-| `src/renderer/src/components/sidebar/index.tsx` | class `hawl-sidebar`; renders `<HawlSidebarBrand />` above the nav, `<HawlSlot name="yard-tree" />` under it, `<HawlSlot name="foreman-strip" />` above the footer |
+| `src/renderer/src/app-shell/use-app-chrome-layout.ts` | Activity keeps the sidebar (only Settings and Space hide it), because the Hawl navigation lives there |
+| `src/renderer/src/components/sidebar/index.tsx` | class `hawl-sidebar`; renders `<HawlSidebarBrand />`, then `<HawlNav />` in place of `SidebarNav`, `<HawlSlot name="yard-tree" />`, and above the footer `<HawlSlot name="foreman-strip" />` and `<HawlGetSetUp />` |
+| `src/renderer/src/components/sidebar/SetupGuideSidebarEntry.tsx` | H01 "Get set up  N of M" row (flag icon, label, count) instead of the progress ring and "Onboarding checklist"; its test follows |
+| `src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx` | Discord and X items removed, "About Hawl Workstation" item opens the About screen |
 | `src/renderer/src/components/sidebar/SidebarToolbar.tsx` | class `hawl-sidebar-footer` (CSS turns Settings and Help into labelled rows) |
 | `src/renderer/src/components/status-bar/StatusBarSurface.tsx` | class `hawl-statusbar` |
 | `src/renderer/src/components/right-sidebar/index.tsx` | class `hawl-right-panel` |
-| `src/renderer/src/components/Landing.tsx` | empty home renders `HawlLanding`; Orca markup, logo import and unused imports removed |
-| `src/renderer/src/components/settings/GeneralPane.tsx` | (P1 hook) the About section is now laid out by `HawlAboutSection` (art, wordmark, lit links) |
+| `src/renderer/src/components/Landing.tsx` | empty home renders `HawlLanding` (the Needs you page); wrapper class `hawl-home-wrap`; Orca markup, logo import and unused imports removed |
+| `src/renderer/src/components/settings/GeneralPane.tsx` | (P1 hook) renders `HawlAboutSection`, now one row that opens the About screen |
 | `config/tsconfig.tc.web.json` | `include` gains `../src/hawl/**/*` (without it `tc:web` fails TS6307 on every import of src/hawl) |
 
 ## Round 2 (critic fixes, from P1-rebrand)

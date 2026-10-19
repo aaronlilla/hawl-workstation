@@ -5,7 +5,7 @@ import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
 import type { ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import restingHelper from '../art/empty-quiet.webp'
 import { useHawlLight } from './hawl-light'
-import { useHawlSession } from './hawl-session'
+import { HawlNeedsRow, useHawlNeeds } from './HawlNeeds'
 
 export type HawlLandingShortcut = {
   id: string
@@ -22,7 +22,12 @@ const LANES: { id: Lane; label: string }[] = [
   { id: 'done', label: 'Done' }
 ]
 
-const GROUPS: { id: Exclude<Lane, 'done'>; label: string; tone: 'orange' | 'lime' | 'stone'; sort: string }[] = [
+const GROUPS: {
+  id: Exclude<Lane, 'done'>
+  label: string
+  tone: 'orange' | 'lime' | 'stone'
+  sort: string
+}[] = [
   { id: 'now', label: 'Do now', tone: 'orange', sort: 'Oldest first' },
   { id: 'fyi', label: 'FYI', tone: 'lime', sort: 'Newest first' },
   { id: 'later', label: 'Later', tone: 'stone', sort: 'Snoozed items return here' }
@@ -50,23 +55,38 @@ export function HawlLanding({
   onCreate: () => void
 }): React.JSX.Element {
   useHawlLight()
-  const session = useHawlSession()
+  const needs = useHawlNeeds()
   const [lane, setLane] = useState<Lane>('now')
-  const counts: Record<Lane, number> = { now: session.needsYou, fyi: 0, later: 0, done: 0 }
+  const counts: Record<Lane, number> = {
+    now: needs.filter((n) => n.lane === 'now').length,
+    fyi: needs.filter((n) => n.lane === 'fyi').length,
+    later: needs.filter((n) => n.lane === 'later').length,
+    done: 0
+  }
   const visible = lane === 'done' ? [] : GROUPS.filter((g) => g.id === lane || lane === 'now')
   return (
-    <div className="hawl-home" data-hawl-home>
+    <div className="hawl-home" data-hawl-home data-has-items={needs.length > 0 ? 'true' : 'false'}>
       <img className="hawl-home-art" src={restingHelper} alt="" aria-hidden draggable={false} />
       <header className="hawl-home-head">
         <div className="hawl-home-titles">
           <h1 className="hawl-home-title">Needs you</h1>
           <p className="hawl-home-sub">
-            {session.needsYou > 0
-              ? `${session.needsYou} things only you can do. Agents are waiting on them.`
+            {counts.now > 0
+              ? `${counts.now} ${counts.now === 1 ? 'thing' : 'things'} only you can do. Agents are waiting on ${counts.now === 1 ? 'it' : 'them'}.`
               : hasProjects
                 ? 'Nothing needs you right now. Pick a workspace to keep working.'
                 : 'Nothing needs you yet. Add a project to start your first agent.'}
           </p>
+          <div className="hawl-home-actions">
+            <button type="button" className="hawl-btn hawl-btn-lit" onClick={onAddProject}>
+              <FolderPlus aria-hidden />
+              Add project
+            </button>
+            <button type="button" className="hawl-btn hawl-btn-acrylic" onClick={onCreate}>
+              <GitBranchPlus aria-hidden />
+              Create {createTargetLabel.toLowerCase()}
+            </button>
+          </div>
         </div>
         <div className="hawl-seg" role="tablist" aria-label="Show">
           {LANES.map((item) => (
@@ -79,7 +99,9 @@ export function HawlLanding({
               onClick={() => setLane(item.id)}
             >
               {item.label}
-              {item.id === 'done' ? null : <span className="hawl-seg-count">{counts[item.id]}</span>}
+              {item.id === 'done' ? null : (
+                <span className="hawl-seg-count">{counts[item.id]}</span>
+              )}
             </button>
           ))}
         </div>
@@ -87,7 +109,9 @@ export function HawlLanding({
       {banner}
       <div className="hawl-home-body">
         {lane === 'done' ? (
-          <p className="hawl-home-empty">Nothing is marked done yet. Items you finish show up here.</p>
+          <p className="hawl-home-empty">
+            Nothing is marked done yet. Items you finish show up here.
+          </p>
         ) : (
           visible.map((group) => (
             <section key={group.id} className="hawl-group" aria-label={group.label}>
@@ -97,26 +121,26 @@ export function HawlLanding({
                 <span className="hawl-group-count">{counts[group.id]}</span>
                 <span className="hawl-group-sort">{group.sort}</span>
               </div>
-              <p className="hawl-home-empty">
-                {group.id === 'now'
-                  ? 'Approvals, join requests and stuck work land here.'
-                  : group.id === 'fyi'
-                    ? 'Finished and passed work you may want to read.'
-                    : 'Anything you snooze waits here until it is due.'}
-              </p>
+              {counts[group.id] > 0 ? (
+                <ul className="hawl-needs">
+                  {needs
+                    .filter((item) => item.lane === group.id)
+                    .map((item, index) => (
+                      <HawlNeedsRow key={item.id} item={item} index={index} />
+                    ))}
+                </ul>
+              ) : (
+                <p className="hawl-home-empty">
+                  {group.id === 'now'
+                    ? 'Approvals, join requests and stuck work land here.'
+                    : group.id === 'fyi'
+                      ? 'Finished and passed work you may want to read.'
+                      : 'Anything you snooze waits here until it is due.'}
+                </p>
+              )}
             </section>
           ))
         )}
-        <div className="hawl-home-actions">
-          <button type="button" className="hawl-btn hawl-btn-lit" onClick={onAddProject}>
-            <FolderPlus aria-hidden />
-            Add project
-          </button>
-          <button type="button" className="hawl-btn hawl-btn-acrylic" onClick={onCreate}>
-            <GitBranchPlus aria-hidden />
-            Create {createTargetLabel.toLowerCase()}
-          </button>
-        </div>
       </div>
       <footer className="hawl-home-keys" aria-label="Keyboard shortcuts">
         {shortcuts.map((item) => (

@@ -74,7 +74,9 @@ export function HawlSheet({
         return
       }
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        const items = [...(ref.current?.querySelectorAll<HTMLElement>('[data-hawl-item]:not([disabled])') ?? [])]
+        const items = [
+          ...(ref.current?.querySelectorAll<HTMLElement>('[data-hawl-item]:not([disabled])') ?? [])
+        ]
         if (items.length === 0) {
           return
         }
@@ -108,7 +110,9 @@ export function HawlSheet({
     if (!open || !pos) {
       return
     }
-    const first = ref.current?.querySelector<HTMLElement>('[data-hawl-item][data-current="true"]:not([disabled]), [data-hawl-item]:not([disabled])')
+    const first = ref.current?.querySelector<HTMLElement>(
+      '[data-hawl-item][data-current="true"]:not([disabled]), [data-hawl-item]:not([disabled])'
+    )
     first?.focus({ preventScroll: true })
   }, [open, pos])
 

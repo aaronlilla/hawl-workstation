@@ -109,3 +109,231 @@ html:not(.dark) [data-setup-script-prompt-layer] > div > p.mt-0\.5,
 html:not(.dark) [data-setup-script-prompt-layer] > div > p.mt-1 {
   display: none;
 }
+
+/* ── Settings frame: the left column is plain text on the ground, the pane is the lit slab ── */
+html:not(.dark) .hawl-page-slab:has(.settings-view-shell) {
+  background: transparent;
+  box-shadow: none;
+}
+html:not(.dark) .hawl-page-slab:has(.settings-view-shell)::after {
+  display: none;
+}
+html:not(.dark) .settings-view-shell {
+  background: transparent;
+  gap: 8px;
+  padding: 0 0 0 4px;
+}
+html:not(.dark) .settings-view-shell > aside {
+  width: 272px;
+  background: transparent;
+  border-right: 0;
+}
+html:not(.dark) .settings-view-shell > aside > div {
+  border-bottom: 0;
+  padding-top: 4px;
+  padding-bottom: 8px;
+}
+html:not(.dark) .settings-view-shell > aside > div:nth-child(3) {
+  box-shadow:
+    inset 0 -2px 0 rgba(255, 255, 255, 0.85),
+    0 2px 0 rgba(120, 86, 40, 0.14);
+}
+html:not(.dark) .settings-view-shell > div:not(aside) {
+  border-radius: 24px;
+  background: var(--background);
+  overflow: hidden;
+  margin: 0 0 0 0;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.3),
+    0 1px 0 #e6d9bb,
+    0 2px 0 #cdbb97,
+    1px 8px 8px -2px rgba(var(--hw-shade), 0.3),
+    8px 20px 28px -8px rgba(var(--hw-shade), 0.34);
+}
+html:not(.dark) .settings-view-shell h2,
+html:not(.dark) .settings-view-shell h1 {
+  font-family: var(--hawl-font-display);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+html:not(.dark) .settings-view-shell aside p[class*='uppercase'] {
+  font: 700 11px/1 var(--app-font-family);
+  letter-spacing: 0.12em;
+  color: var(--hw-ink-4);
+  text-shadow: 0 1px 0 #fff;
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button,
+html:not(.dark) .settings-view-shell aside button[class*='px-2.5'] {
+  height: 38px;
+  border-radius: 14px;
+  color: var(--hw-ink-2);
+  font: 600 14px/1 var(--app-font-family);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    background 0.18s,
+    box-shadow 0.18s,
+    color 0.18s;
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button svg {
+  color: var(--hw-ink-3);
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button:hover:not([aria-current='page']) {
+  color: var(--hw-ink);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 236, 0.62));
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(80, 56, 24, 0.22),
+    0 3px 0 rgba(190, 166, 122, 0.5),
+    0 8px 14px -4px rgba(var(--hw-shade), 0.32);
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button[aria-current='page'] {
+  color: #fff8ee;
+  text-shadow: 0 1px 0 rgba(120, 40, 0, 0.5);
+  background: var(--hw-mat-orange);
+  box-shadow: var(--hw-lit);
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button[aria-current='page'] svg {
+  color: #fff8ee;
+  filter: drop-shadow(0 1px 0 rgba(120, 40, 0, 0.55)) drop-shadow(0 0 6px rgba(255, 230, 190, 0.8));
+}
+/* Back to app: a raised key. Search settings: a recessed well with the system focus light. */
+html:not(.dark) .settings-view-shell aside > div:first-child button {
+  height: 38px;
+  padding: 0 16px 0 12px;
+  border-radius: 14px;
+  color: var(--hw-ink);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise-low);
+  font: 650 14px/1 var(--app-font-family);
+}
+html:not(.dark) .settings-view-shell aside input {
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hw-well-fill);
+  box-shadow: var(--hw-well);
+  color: var(--hw-ink);
+}
+html:not(.dark) .settings-view-shell aside input:focus,
+html:not(.dark) .settings-view-shell aside input:focus-visible {
+  outline: 0;
+  border: 0;
+  box-shadow: var(--hw-well), var(--hw-focus);
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button span[class*='uppercase'],
+html:not(.dark) .settings-view-shell aside .space-y-1 button span[class*='rounded-full'] {
+  font: 700 10px/1 var(--app-font-family);
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  border: 0;
+  color: var(--hw-ink-3);
+  background: var(--hw-well-fill);
+  box-shadow:
+    inset 0 1.5px 2px rgba(var(--hw-shade), 0.35),
+    0 1px 0 #fff;
+}
+
+/* ── Tasks, Automations, Files, Phone: the page chrome (headings, filter strip, table, cards) ── */
+html:not(.dark) .hawl-page-slab main > header h1 {
+  font: 800 30px/1.1 var(--hawl-font-display);
+  letter-spacing: -0.03em;
+  color: var(--hw-ink);
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+html:not(.dark) .hawl-page-slab main > header {
+  padding-top: 6px;
+  padding-bottom: 14px;
+}
+/* Template and list cards are small raised slabs that light up under the pointer. */
+html:not(.dark)
+  .hawl-page-slab
+  main
+  button[class*='text-left'][class*='shadow-xs'][class*='border-border'] {
+  --hx: 30%;
+  --hy: 50%;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fffcf6 55%, #f6eddc 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -2px 3px rgba(150, 110, 60, 0.16),
+    0 0 0 1px rgba(60, 38, 10, 0.3),
+    0 1px 0 #d6c5a2,
+    0 2px 0 #b9a47c,
+    1px 8px 8px -3px rgba(60, 40, 14, 0.34);
+  transition:
+    transform 0.16s var(--hw-ease),
+    box-shadow 0.2s,
+    background 0.2s;
+}
+html:not(.dark)
+  .hawl-page-slab
+  main
+  button[class*='text-left'][class*='shadow-xs'][class*='border-border']:hover {
+  transform: translateY(-1px);
+  background:
+    radial-gradient(
+      260px 70px at var(--hx) var(--hy),
+      rgba(255, 190, 120, 0.4),
+      rgba(255, 190, 120, 0) 70%
+    ),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 55%, #f6eddc 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -2px 3px rgba(150, 110, 60, 0.16),
+    0 0 0 1px rgba(60, 38, 10, 0.34),
+    0 1px 0 #d6c5a2,
+    0 2px 0 #b9a47c,
+    1px 12px 12px -4px rgba(60, 40, 14, 0.38),
+    0 0 26px 2px rgba(255, 150, 70, 0.22);
+}
+html:not(.dark)
+  .hawl-page-slab
+  main
+  button[class*='text-left'][class*='shadow-xs'][class*='border-border']:active {
+  transform: translateY(1px);
+}
+/* Lists inside a page: a recessed, quiet ground. */
+html:not(.dark)
+  .hawl-page-slab
+  main
+  div[class*='rounded-md'][class*='border-border/50'][class*='bg-muted/20'] {
+  border: 0;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(231, 218, 190, 0.34), rgba(246, 236, 214, 0.5));
+  box-shadow:
+    inset 0 3px 6px rgba(var(--hw-shade), 0.14),
+    0 1px 0 #fff;
+}
+/* Tasks: the filter strip is a recessed trough, the list below it is one lit sheet. */
+html:not(.dark) .hawl-page-slab div[class*='border-border/50'][class*='bg-muted/35'] {
+  border: 0;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(180deg, rgba(231, 218, 190, 0.5), rgba(246, 236, 214, 0.6));
+  box-shadow: inset 0 3px 6px rgba(var(--hw-shade), 0.16);
+}
+html:not(.dark) .hawl-page-slab div[class*='rounded-t-none'][class*='border-t-0'] {
+  border: 0;
+  border-radius: 0 0 20px 20px;
+  background: linear-gradient(180deg, #fffefb, #fff9ec);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.2),
+    0 8px 16px -8px rgba(var(--hw-shade), 0.3);
+}
+html:not(.dark) .hawl-page-slab div[class*='sticky'][class*='uppercase'][class*='tracking'] {
+  border-bottom: 0;
+  color: var(--hw-ink-4);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background:
+    linear-gradient(var(--hw-engrave)) no-repeat 0 100% / 100% 2px,
+    #fffaf0;
+}
+html:not(.dark) .hawl-page-slab div[class*='divide-y'] > * {
+  border-color: transparent;
+  box-shadow:
+    inset 0 -2px 0 rgba(255, 255, 255, 0.9),
+    0 2px 0 rgba(120, 86, 40, 0.1);
+}

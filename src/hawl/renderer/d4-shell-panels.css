@@ -137,7 +137,9 @@ html:not(.dark) [class*='@container/tab-strip'] button[class*='h-7']:hover {
 }
 html:not(.dark) [class*='@container/tab-strip'] button[class*='h-7']:active {
   transform: translateY(2px);
-  box-shadow: inset 0 3px 4px rgba(var(--hw-shade), 0.3), 0 0 0 1px rgba(60, 38, 10, 0.4);
+  box-shadow:
+    inset 0 3px 4px rgba(var(--hw-shade), 0.3),
+    0 0 0 1px rgba(60, 38, 10, 0.4);
 }
 
 /* ── Terminal: a recessed screen inside the slab ─────────────────────────────────────── */

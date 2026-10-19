@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useMemo } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   Bot,
@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { SetupGuideSidebarEntry } from '@/components/sidebar/SetupGuideSidebarEntry'
+import { useAgentBucketCounts } from '@/components/dashboard/useAgentBucketCounts'
 import { useHawlLight } from './hawl-light'
 import { useHawlSession } from './hawl-session'
 
@@ -37,6 +38,8 @@ type NavItem = {
 export function HawlNav(): React.JSX.Element {
   useHawlLight()
   const session = useHawlSession()
+  const attention = useAgentBucketCounts().attention
+  const needsCount = session.needsItems.filter((item) => item.lane === 'now').length + attention
   const activeView = useAppStore((s) => s.activeView)
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
   const sidebarBody = useAppStore((s) => s.sidebarBody ?? 'workspaces')
@@ -49,6 +52,8 @@ export function HawlNav(): React.JSX.Element {
   const openAutomationsPage = useAppStore((s) => s.openAutomationsPage)
   const openMobilePage = useAppStore((s) => s.openMobilePage)
 
+  const navRef = useRef<HTMLElement | null>(null)
+  const [pill, setPill] = useState<{ top: number; height: number } | null>(null)
   const items = useMemo<NavItem[]>(() => {
     const home = activeView === 'terminal' && activeWorktreeId === null
     return [
@@ -57,7 +62,7 @@ export function HawlNav(): React.JSX.Element {
         label: 'Needs you',
         icon: CircleAlert,
         active: home,
-        badge: session.needsYou,
+        badge: needsCount,
         onSelect: () => {
           setActiveView('terminal')
           setActiveWorktree(null)
@@ -115,7 +120,7 @@ export function HawlNav(): React.JSX.Element {
     activeView,
     activeWorktreeId,
     sidebarBody,
-    session.needsYou,
+    needsCount,
     setActiveView,
     setActiveWorktree,
     setSidebarBody,
@@ -141,6 +146,24 @@ export function HawlNav(): React.JSX.Element {
     }
   ]
 
+  // The lit pill is one object that slides to the open page (H01 .is-sel), not a background per row.
+  const activeId = [...items, ...quiet].find((item) => item.active)?.id ?? null
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav) {
+      return
+    }
+    const measure = (): void => {
+      const node = nav.querySelector<HTMLElement>('[aria-current="page"]')
+      setPill(node ? { top: node.offsetTop, height: node.offsetHeight } : null)
+    }
+    measure()
+    // Row heights change with the window height (denser sidebar in short windows).
+    const observer = new ResizeObserver(measure)
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [activeId])
+
   const row = (item: NavItem, quietRow = false): React.JSX.Element => {
     const Icon = item.icon
     const lamp = session.lamps[item.id]
@@ -164,7 +187,18 @@ export function HawlNav(): React.JSX.Element {
   }
 
   return (
-    <nav className="hawl-nav" aria-label="Hawl" data-contextual-tour-target="sidebar-navigation">
+    <nav
+      ref={navRef}
+      className="hawl-nav"
+      aria-label="Hawl"
+      data-contextual-tour-target="sidebar-navigation"
+    >
+      <span
+        className="hawl-nav-pill"
+        aria-hidden
+        data-on={pill ? 'true' : 'false'}
+        style={pill ? { transform: `translateY(${pill.top}px)`, height: pill.height } : undefined}
+      />
       {items.map((item) => row(item))}
       <div className="hawl-nav-sep" aria-hidden />
       {quiet.map((item) => row(item, true))}

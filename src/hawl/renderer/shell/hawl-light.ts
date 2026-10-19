@@ -6,7 +6,8 @@ import type { RefObject } from 'react'
  * the whole window (installed once, throttled to a frame); it only writes two CSS variables on the
  * lit object under the pointer. The look itself is in d4-shell.css (`--hx`, `--hy`).
  */
-const LIT = '.hawl-btn-lit, .hawl-nav-row, .hawl-nav-row[aria-current="page"], .hawl-invite, .hawl-review'
+const LIT =
+  '.hawl-btn-lit, .hawl-nav-row, .hawl-invite, .hawl-review, main button[class*="text-left"][class*="shadow-xs"]'
 
 let installed = false
 

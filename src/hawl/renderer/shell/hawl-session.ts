@@ -23,6 +23,24 @@ export type HawlSite = {
 
 export type HawlLampTone = 'green' | 'amber' | 'red'
 
+export type HawlNeedsItem = {
+  id: string
+  /** Do now, FYI or Later (H01). */
+  lane: 'now' | 'fyi' | 'later'
+  tone: 'orange' | 'lime' | 'amber' | 'stone'
+  /** What needs you, in plain words. */
+  title: string
+  /** Work order id, shown in mono before the sub line. */
+  ref?: string
+  sub?: string
+  worker: { name: string; tone?: string }
+  /** Epoch ms the item arrived. */
+  at: number
+  /** Label of the lit button shown on hover (Review, Open). */
+  action?: string
+  onOpen?: () => void
+}
+
 export type HawlSession = {
   signedIn: boolean
   /** The relay connection is up: the Live lamp is lit green. */
@@ -30,8 +48,8 @@ export type HawlSession = {
   user: { name: string; initial?: string } | null
   sites: HawlSite[]
   activeSiteId: string | null
-  /** Count on the Needs you row. */
-  needsYou: number
+  /** Items from the relay for the Needs you page; local agents that wait on you are added by the page. */
+  needsItems: HawlNeedsItem[]
   /** Small lamps on sidebar rows, by nav id (chat, agents). */
   lamps: Partial<Record<string, HawlLampTone>>
 }
@@ -42,7 +60,7 @@ const initial: HawlSession = {
   user: null,
   sites: [],
   activeSiteId: null,
-  needsYou: 0,
+  needsItems: [],
   lamps: {}
 }
 

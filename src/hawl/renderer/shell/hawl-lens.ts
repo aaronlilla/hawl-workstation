@@ -105,12 +105,14 @@ function displacementMap(w: number, h: number, r: number, bw: number): string {
       const o = (j * w + i) * 4
       const f = field(i, j, w, h, r)
       const t = f.d >= bw ? 0 : Math.max(0, 1 - f.d / bw)
-      let k = Math.pow(t, 1.7) + Math.pow(Math.max(0, 1 - f.d / (bw * 0.4)), 2) * 0.16
+      let k = t ** 1.7 + Math.max(0, 1 - f.d / (bw * 0.4)) ** 2 * 0.16
       k = Math.min(1.25, k)
       const mx = (-(i + 0.5 - w / 2) / (w / 2)) * G
       const my = (-(j + 0.5 - h / 2) / (h / 2)) * G
-      const vx = Math.max(-1, Math.min(1, f.nx * k + mx))
-      const vy = Math.max(-1, Math.min(1, f.ny * k + my))
+      // Sample from further IN at the rim (the backdrop does not exist outside the sheet): the picture
+      // is stretched toward the edge like a thick lens, with no empty band along it.
+      const vx = Math.max(-1, Math.min(1, -f.nx * k + mx))
+      const vy = Math.max(-1, Math.min(1, -f.ny * k + my))
       D[o] = Math.round(127.5 + vx * 127)
       D[o + 1] = Math.round(127.5 + vy * 127)
       D[o + 2] = 128
@@ -133,78 +135,103 @@ function el(name: string, attrs: Record<string, string>): SVGElement {
 
 /**
  * Turns `node` into a lens. Returns a cleanup that removes the filter. `blur` is the frost in px
- * (Aaron 2026-10-13: much more blur behind glass, shapes and colours only).
+ * (Aaron 2026-10-13: much more blur behind glass, shapes and colours only). The map is rebuilt when
+ * the node changes size (text arriving after the sheet opened), so the lens always fits the sheet.
  */
-export function applyLens(node: HTMLElement, opts: { blur?: number; scale?: number } = {}): () => void {
+export function applyLens(
+  node: HTMLElement,
+  opts: { blur?: number; scale?: number } = {}
+): () => void {
   if (!canUseLens()) {
     return () => {}
   }
-  const w = Math.round(node.offsetWidth)
-  const h = Math.round(node.offsetHeight)
-  if (w < 24 || h < 24) {
-    return () => {}
+  let current: SVGElement | null = null
+  let builtW = 0
+  let builtH = 0
+  const clear = (): void => {
+    current?.remove()
+    current = null
   }
-  const radius = Math.min(
-    parseFloat(getComputedStyle(node).borderTopLeftRadius) || 20,
-    w / 2,
-    h / 2
-  )
-  const bw = Math.max(14, Math.min(46, Math.min(w, h) * 0.2))
-  const map = displacementMap(w, h, radius, bw)
-  if (!map) {
-    return () => {}
-  }
-  const id = `hawl-lens-${uid++}`
-  const scale = opts.scale ?? 54
-  const blur = opts.blur ?? 5
-  const f = el('filter', {
-    id,
-    x: '0',
-    y: '0',
-    width: String(w),
-    height: String(h),
-    filterUnits: 'userSpaceOnUse',
-    'color-interpolation-filters': 'sRGB'
-  })
-  const image = el('feImage', {
-    x: '0',
-    y: '0',
-    width: String(w),
-    height: String(h),
-    preserveAspectRatio: 'none',
-    result: 'm'
-  })
-  image.setAttribute('href', map)
-  image.setAttributeNS(XL, 'xlink:href', map)
-  f.appendChild(image)
-  f.appendChild(el('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: String(blur), result: 'src' }))
-  const channels: [string, number, string][] = [
-    ['r', 1, '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'],
-    ['g', 0.94, '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0'],
-    ['b', 0.88, '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0']
-  ]
-  for (const [c, k, matrix] of channels) {
-    f.appendChild(
-      el('feDisplacementMap', {
-        in: 'src',
-        in2: 'm',
-        scale: (scale * k).toFixed(1),
-        xChannelSelector: 'R',
-        yChannelSelector: 'G',
-        result: `d${c}`
-      })
+  const build = (): void => {
+    const w = Math.round(node.offsetWidth)
+    const h = Math.round(node.offsetHeight)
+    if (w < 24 || h < 24 || (w === builtW && h === builtH)) {
+      return
+    }
+    builtW = w
+    builtH = h
+    clear()
+    const radius = Math.min(
+      Number.parseFloat(getComputedStyle(node).borderTopLeftRadius) || 20,
+      w / 2,
+      h / 2
     )
-    f.appendChild(el('feColorMatrix', { in: `d${c}`, type: 'matrix', values: matrix, result: `c${c}` }))
+    const bw = Math.max(14, Math.min(46, Math.min(w, h) * 0.2))
+    const map = displacementMap(w, h, radius, bw)
+    if (!map) {
+      return
+    }
+    const id = `hawl-lens-${uid++}`
+    const scale = opts.scale ?? 42
+    const blur = opts.blur ?? 11
+    const f = el('filter', {
+      id,
+      x: '0',
+      y: '0',
+      width: String(w),
+      height: String(h),
+      filterUnits: 'userSpaceOnUse',
+      'color-interpolation-filters': 'sRGB'
+    })
+    const image = el('feImage', {
+      x: '0',
+      y: '0',
+      width: String(w),
+      height: String(h),
+      preserveAspectRatio: 'none',
+      result: 'm'
+    })
+    image.setAttribute('href', map)
+    image.setAttributeNS(XL, 'xlink:href', map)
+    f.appendChild(image)
+    f.appendChild(
+      el('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: String(blur), result: 'src' })
+    )
+    const channels: [string, number, string][] = [
+      ['r', 1, '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'],
+      ['g', 0.94, '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0'],
+      ['b', 0.88, '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0']
+    ]
+    for (const [c, k, matrix] of channels) {
+      f.appendChild(
+        el('feDisplacementMap', {
+          in: 'src',
+          in2: 'm',
+          scale: (scale * k).toFixed(1),
+          xChannelSelector: 'R',
+          yChannelSelector: 'G',
+          result: `d${c}`
+        })
+      )
+      f.appendChild(
+        el('feColorMatrix', { in: `d${c}`, type: 'matrix', values: matrix, result: `c${c}` })
+      )
+    }
+    f.appendChild(el('feBlend', { in: 'cr', in2: 'cg', mode: 'screen', result: 'rg' }))
+    f.appendChild(el('feBlend', { in: 'rg', in2: 'cb', mode: 'screen' }))
+    ensureDefs().appendChild(f)
+    current = f
+    const value = `url(#${id}) saturate(1.5) brightness(1.04)`
+    node.style.backdropFilter = value
+    node.style.setProperty('-webkit-backdrop-filter', value)
+    node.dataset.hawlLens = 'on'
   }
-  f.appendChild(el('feBlend', { in: 'cr', in2: 'cg', mode: 'screen', result: 'rg' }))
-  f.appendChild(el('feBlend', { in: 'rg', in2: 'cb', mode: 'screen' }))
-  ensureDefs().appendChild(f)
-  const value = `url(#${id}) saturate(1.5) brightness(1.04)`
-  node.style.backdropFilter = value
-  node.style.setProperty('-webkit-backdrop-filter', value)
-  node.dataset.hawlLens = 'on'
+  build()
+  const observer = new ResizeObserver(() => build())
+  observer.observe(node)
   return () => {
-    f.remove()
+    observer.disconnect()
+    clear()
     node.style.backdropFilter = ''
     node.style.removeProperty('-webkit-backdrop-filter')
     delete node.dataset.hawlLens

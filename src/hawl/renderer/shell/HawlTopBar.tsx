@@ -16,6 +16,7 @@ import { useAppStore } from '@/store'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
 import { HawlSlot } from './HawlSlots'
+import { HawlSidebarBrand } from './HawlSidebarTop'
 import { HawlSheet } from './HawlSheet'
 import { HawlAboutHost } from './HawlAbout'
 import { useHawlLight } from './hawl-light'
@@ -59,7 +60,13 @@ function SiteSwitcher(): React.JSX.Element {
         <span className="hawl-site-name">{active ? active.name : 'No site yet'}</span>
         <ChevronDown className="hawl-site-chev" aria-hidden />
       </button>
-      <HawlSheet anchor={anchor} open={open} onClose={close} label="Sites" className="hawl-sites-sheet">
+      <HawlSheet
+        anchor={anchor}
+        open={open}
+        onClose={close}
+        label="Sites"
+        className="hawl-sites-sheet"
+      >
         <div className="hawl-sheet-title">Sites</div>
         {session.sites.length === 0 ? (
           <p className="hawl-sheet-empty">
@@ -93,9 +100,13 @@ function SiteSwitcher(): React.JSX.Element {
                           <Lock aria-hidden /> Frozen
                         </>
                       ) : site.role && site.role !== 'owner' ? (
-                        <span className="hawl-site-role">{site.role === 'admin' ? 'Admin' : 'Member'}</span>
+                        <span className="hawl-site-role">
+                          {site.role === 'admin' ? 'Admin' : 'Member'}
+                        </span>
                       ) : null}
-                      {site.needsYou ? <span className="hawl-site-count">{site.needsYou}</span> : null}
+                      {site.needsYou ? (
+                        <span className="hawl-site-count">{site.needsYou}</span>
+                      ) : null}
                       {current ? <Check className="hawl-site-check" aria-hidden /> : null}
                     </span>
                   </button>
@@ -146,7 +157,9 @@ function LiveLamp(): React.JSX.Element {
   return (
     <span
       className={`hawl-live ${live ? 'hawl-live-on' : 'hawl-live-off'}`}
-      title={live ? 'Connected to Hawl' : signedIn ? 'Reconnecting to Hawl' : 'Not signed in to Hawl'}
+      title={
+        live ? 'Connected to Hawl' : signedIn ? 'Reconnecting to Hawl' : 'Not signed in to Hawl'
+      }
       data-state={live ? 'live' : 'offline'}
     >
       <span className="hawl-lamp" aria-hidden />
@@ -169,7 +182,9 @@ function TopbarActions(): React.JSX.Element {
         type="button"
         className="hawl-invite"
         disabled={!canInvite}
-        title={canInvite ? 'Invite someone to this site' : 'Sign in and pick a site to invite people'}
+        title={
+          canInvite ? 'Invite someone to this site' : 'Sign in and pick a site to invite people'
+        }
         onClick={() => window.dispatchEvent(new CustomEvent('hawl:invite'))}
       >
         <Plus aria-hidden />
@@ -186,10 +201,20 @@ function TopbarActions(): React.JSX.Element {
       >
         {session.user ? (session.user.initial ?? session.user.name.charAt(0)).toUpperCase() : null}
       </button>
-      <HawlSheet anchor={anchor} open={open} onClose={close} align="end" width={288} label="Account" className="hawl-account-sheet">
+      <HawlSheet
+        anchor={anchor}
+        open={open}
+        onClose={close}
+        align="end"
+        width={288}
+        label="Account"
+        className="hawl-account-sheet"
+      >
         <div className="hawl-account-head">
           <span className="hawl-avatar hawl-avatar-lg" aria-hidden>
-            {session.user ? (session.user.initial ?? session.user.name.charAt(0)).toUpperCase() : null}
+            {session.user
+              ? (session.user.initial ?? session.user.name.charAt(0)).toUpperCase()
+              : null}
           </span>
           <div>
             <div className="hawl-account-name">{session.user?.name ?? 'Not signed in'}</div>
@@ -199,7 +224,13 @@ function TopbarActions(): React.JSX.Element {
           </div>
         </div>
         {session.signedIn ? null : (
-          <button type="button" className="hawl-btn hawl-btn-lit hawl-sheet-primary" data-hawl-item disabled title="Hawl sign-in arrives in the next build">
+          <button
+            type="button"
+            className="hawl-btn hawl-btn-lit hawl-sheet-primary"
+            data-hawl-item
+            disabled
+            title="Hawl sign-in arrives in the next build"
+          >
             <LogIn aria-hidden />
             Sign in to Hawl
           </button>
@@ -224,7 +255,13 @@ function TopbarActions(): React.JSX.Element {
               data-hawl-item
               onClick={() => {
                 close()
-                setHawlSession({ signedIn: false, live: false, user: null, sites: [], activeSiteId: null })
+                setHawlSession({
+                  signedIn: false,
+                  live: false,
+                  user: null,
+                  sites: [],
+                  activeSiteId: null
+                })
               }}
             >
               <LogIn aria-hidden />
@@ -241,6 +278,9 @@ function TopbarActions(): React.JSX.Element {
 export function HawlTopBar(): React.JSX.Element {
   const openModal = useAppStore((s) => s.openModal)
   const combos = useShortcutKeyComboDetails('worktree.palette')
+  const activeView = useAppStore((s) => s.activeView)
+  // Settings is a full page without the sidebar, so the wordmark moves into the bar.
+  const sidebarHidden = activeView === 'settings' || activeView === 'space'
   const barRef = useRef<HTMLDivElement | null>(null)
   useHawlLight(barRef)
   useEffect(() => {
@@ -248,6 +288,7 @@ export function HawlTopBar(): React.JSX.Element {
   }, [])
   return (
     <div className="hawl-topbar" data-hawl-topbar ref={barRef}>
+      {sidebarHidden ? <HawlSidebarBrand /> : null}
       <HawlSlot name="site-switcher" fallback={<SiteSwitcher />} />
       <button
         type="button"

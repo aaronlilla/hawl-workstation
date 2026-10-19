@@ -97,15 +97,27 @@ export function HawlAboutHost(): React.JSX.Element | null {
             Lovecast Inc., used under the MIT License, which this app keeps in its LICENSE file.
           </p>
           <div className="hawl-about-links">
-            <button type="button" className="hawl-btn hawl-btn-lit" onClick={() => go(HAWL_SITE_URL)}>
+            <button
+              type="button"
+              className="hawl-btn hawl-btn-lit"
+              onClick={() => go(HAWL_SITE_URL)}
+            >
               <ExternalLink aria-hidden />
               hawl.ai
             </button>
-            <button type="button" className="hawl-btn hawl-btn-acrylic" onClick={() => go(HAWL_REPO_URL)}>
+            <button
+              type="button"
+              className="hawl-btn hawl-btn-acrylic"
+              onClick={() => go(HAWL_REPO_URL)}
+            >
               <ExternalLink aria-hidden />
               {HAWL_PRODUCT_NAME} on GitHub
             </button>
-            <button type="button" className="hawl-btn hawl-btn-acrylic" onClick={() => go(ORCA_UPSTREAM_URL)}>
+            <button
+              type="button"
+              className="hawl-btn hawl-btn-acrylic"
+              onClick={() => go(ORCA_UPSTREAM_URL)}
+            >
               <ExternalLink aria-hidden />
               Orca on GitHub
             </button>
