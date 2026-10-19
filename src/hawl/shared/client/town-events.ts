@@ -97,7 +97,7 @@ export class TownEventStream extends EventEmitter {
       try {
         await this.replay()
       } catch (e) {
-        this.emit('error', e as Error)
+        this.#fail(e as Error)
         // The socket replays from the cursor too, so a failed REST page is not fatal.
       }
     }
@@ -142,6 +142,13 @@ export class TownEventStream extends EventEmitter {
         return n
       }
       this.cursor = Math.max(this.cursor, next)
+    }
+  }
+
+  /** An 'error' event nobody listens to would throw inside a callback and kill the process. */
+  #fail(e: Error): void {
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', e)
     }
   }
 
@@ -200,7 +207,7 @@ export class TownEventStream extends EventEmitter {
           }
         } catch (e) {
           // Without a new token the relay closes this socket at expiry; the reconnect path takes over.
-          this.emit('error', e as Error)
+          this.#fail(e as Error)
         }
       })()
     }, delay)
@@ -241,7 +248,7 @@ export class TownEventStream extends EventEmitter {
           this.#settle = setTimeout(() => this.#accepted(ws), this.#o.settleMs ?? 1500)
           this.#scheduleRefresh(ws, jwt)
         } catch (e) {
-          this.emit('error', e as Error)
+          this.#fail(e as Error)
           ws.close(1011, 'no token')
         }
       })()

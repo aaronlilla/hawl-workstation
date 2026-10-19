@@ -4,19 +4,47 @@
 //   web    HAWL_SMOKE_WEB     default http://localhost:3000
 // Read-only SQL finds a local site owner (email) in the two local databases; sign-in itself goes
 // through the real web app (emailed code read from the local e2e sink) and the real approve-device route.
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { Http, HawlClient, PINNED_ROOTS, SiteApi, WebSession, startDeviceSignIn } from './index'
+import { dirname } from 'node:path'
+import { Http, HawlClient, ManifestStore, PINNED_ROOTS, SiteApi, WebSession, startDeviceSignIn } from './index'
 import type { Credentials } from './index'
 
-/** The local stack's throwaway ROOT public key (never the private half), plus the pinned production root. */
-export function localRoots(): Record<string, Record<string, string>> {
-  const file = `${platformDir}/_work/local-stack/secrets.json`
-  const sec = JSON.parse(readFileSync(file, 'utf8')) as {
-    rootKid: string
-    rootPublicKey: Record<string, string>
+type RootSecrets = { rootKid?: string; rootPublicKey?: Record<string, string> }
+
+/**
+ * The root the LOCAL relay's key manifest is signed by. Every worktree's local stack writes its own throwaway
+ * root to `<worktree>/_work/local-stack/secrets.json`, but they share one Postgres (`relay_local`), so whichever
+ * stack ran `keys init` first owns the manifest. Read the public halves only, and pick the one that actually
+ * verifies the manifest the relay serves now. Falls back to the e2e worktree's root, plus the pinned production root.
+ */
+export async function localRoots(): Promise<Record<string, Record<string, string>>> {
+  const mine = `${platformDir}/_work/local-stack/secrets.json`
+  const siblings = readdirSync(dirname(platformDir), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => `${dirname(platformDir)}/${d.name}/_work/local-stack/secrets.json`)
+  const candidates = [mine, ...siblings.filter((p) => p !== mine)].flatMap((f) => {
+    try {
+      const s = JSON.parse(readFileSync(f, 'utf8')) as RootSecrets
+      return s.rootKid && s.rootPublicKey ? [{ kid: s.rootKid, jwk: s.rootPublicKey }] : []
+    } catch {
+      return []
+    }
+  })
+  let served: unknown = null
+  try {
+    served = await (await fetch(`${RELAY}/.well-known/relay-key-manifest.json`)).json()
+  } catch {
+    // no relay: the first candidate is as good as any
   }
-  return { ...PINNED_ROOTS, [sec.rootKid]: sec.rootPublicKey }
+  for (const c of candidates) {
+    const store = new ManifestStore({ [c.kid]: c.jwk })
+    if (served && (await store.accept(served)).ok) {
+      return { ...PINNED_ROOTS, [c.kid]: c.jwk }
+    }
+  }
+  const first = candidates[0]
+  return { ...PINNED_ROOTS, ...(first ? { [first.kid]: first.jwk } : {}) }
 }
 
 export const RELAY = process.env.HAWL_SMOKE_LOCAL ?? 'http://localhost:8080'
@@ -196,7 +224,7 @@ export async function workerSignIn(
       credentials: cred,
       user: session,
       webOrigin: WEB,
-      trust: { roots: localRoots() }
+      trust: { roots: await localRoots() }
     })
   }
 }

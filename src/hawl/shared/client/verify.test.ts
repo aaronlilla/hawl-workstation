@@ -268,6 +268,28 @@ describe('worker socket with verification on', () => {
     real.signReady = orig
   })
 
+  it('an untrusted relay with no error listener is refused quietly, not thrown into the process', async () => {
+    const real = relay.trust!
+    const rogue = new TrustFixture()
+    real.signReady = (p) => rogue.signReady(p)
+    const seen: unknown[] = []
+    const on = (e: unknown) => seen.push(e)
+    process.on('unhandledRejection', on)
+    process.on('uncaughtException', on)
+    try {
+      const s = client().socket({ reconnectMs: { min: 10, max: 40 }, random: () => 0 })
+      stoppers.push(() => s.stop())
+      s.start()
+      await until(() => relay.handshakes >= 2)
+      await new Promise((r) => setTimeout(r, 100))
+      expect(s.state).not.toBe('connected')
+      expect(seen).toEqual([])
+    } finally {
+      process.off('unhandledRejection', on)
+      process.off('uncaughtException', on)
+    }
+  })
+
   it('a relay that serves a manifest signed by another root is never trusted', async () => {
     relay.manifestOverride = new TrustFixture().manifest()
     const { s, errors } = watch(client())

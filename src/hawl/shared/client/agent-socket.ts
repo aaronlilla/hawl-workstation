@@ -139,6 +139,13 @@ export class AgentSocket extends EventEmitter {
     return this.#rpc.call((id) => this.send({ t: 'tool.call', id, name, args }), timeoutMs)
   }
 
+  /** An 'error' event nobody listens to would throw inside a socket callback and kill the process. */
+  #fail(e: Error): void {
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', e)
+    }
+  }
+
   #set(s: SocketState): void {
     if (this.state === s) {
       return
@@ -167,7 +174,7 @@ export class AgentSocket extends EventEmitter {
       verifyReady: this.#o.verifyReady,
       current: () => this.#ws === ws,
       onHello: () => this.#set('handshake'),
-      onError: (e) => this.emit('error', e),
+      onError: (e) => this.#fail(e),
       onReady: (r) => {
         clearTimeout(hs)
         this.#backoff = this.#o.reconnectMs?.min ?? 1000
@@ -306,10 +313,7 @@ export class AgentSocket extends EventEmitter {
       case 'error': {
         if (!this.#rpc.answer(f) && f.t === 'error') {
           const e = (f.error ?? {}) as { code?: string; message?: string }
-          this.emit(
-            'error',
-            new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.')
-          )
+          this.#fail(new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.'))
         }
       }
     }

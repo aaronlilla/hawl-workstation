@@ -48,6 +48,7 @@ Persisting a sign-in: `FileCredentialStore(path, cipher)` and `EncryptedFile` (f
 - The keyring binding. The cipher seam is here and tested with AES-GCM; the Electron `safeStorage` wiring belongs to the main-process piece.
 - No `@hawl/protocol` import at runtime (the fork cannot depend on hawl-platform); types are written here.
 - Run against the real relay only on the failure path or the "nothing paused" path: `limits.resume` (a refusal; a real resume needs a work order stopped by the turn cap) and `handoffs.send` with `"auto"` (the relay needs an owner-approved routing rule for the task type, so it answers "No agent can take that kind of work right now"). `channels.thread` and `discussHandoff` have no test of their own.
+- `approvals.list` has no cursor: the relay returns the 100 OLDEST pending approvals (`ORDER BY id LIMIT 100`), so a site with more than 100 pending hides the newest. Read `needs.list` for what is new; it is the inbox surface.
 - Passkey and OAuth sign-in. Only the emailed-code web sign-in is proven.
 
 ## Tests

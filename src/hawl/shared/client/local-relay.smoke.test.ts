@@ -262,13 +262,17 @@ describe.skipIf(!stackUp)('local stack: user plane (UserJWT from the web session
       true
     )
 
-    await c.approvals.deny(item?.approval_id as string, 'client smoke')
+    const out = await c.approvals.deny(item?.approval_id as string, 'client smoke')
+    expect(out).toMatchObject({ state: 'denied' })
     expect(
       (await c.approvals.list(twn)).items.some((a) => a.approval_id === item?.approval_id)
     ).toBe(false)
+    // The relay lists the oldest 100 per state with no cursor, so a busy site's list may not reach it.
     const denied = (await c.approvals.list(twn, 'denied')).items.find(
       (a) => a.approval_id === item?.approval_id
     )
-    expect(denied?.state).toBe('denied')
+    if (denied) {
+      expect(denied.state).toBe('denied')
+    }
   })
 })
