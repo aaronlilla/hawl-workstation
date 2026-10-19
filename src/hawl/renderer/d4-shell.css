@@ -1,0 +1,853 @@
+/* Piece D4-shell: the Hawl app shell (Claude Design H01 desktop shell, H02 site switcher, F06 glass).
+   The page is a warm ground; the sidebar sits on it as plain text rows (object test: only buttons,
+   keys, wells and the page slab get bodies); the page area is one lit slab; the top bar holds the
+   site switcher, a recessed search well and the Live lamp. Materials are copied from
+   _work/2026-10-12-cd-full/system/tokens.css and F12.css so they match the design.
+   Light theme only: every rule is scoped to html:not(.dark), so Ember (dark) keeps the P1 look. */
+
+html:root:not(.dark) {
+  --hw-ink: #1c1712;
+  --hw-ink-2: #3a3025;
+  --hw-ink-3: #43382b;
+  --hw-ink-4: #7c705e;
+  --hw-shade: 52, 28, 6;
+  --hw-orange-600: #d55510;
+  --hw-orange-700: #a93f08;
+  --hw-mat-orange: linear-gradient(
+    180deg,
+    #ffa466 0%,
+    #fa7f32 34%,
+    #f06716 62%,
+    #dc540c 86%,
+    #c54709 100%
+  );
+  --hw-mat-acrylic: linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f3eada 100%);
+  --hw-ground:
+    radial-gradient(1100px 700px at 100% 0%, rgba(178, 210, 228, 0.55), rgba(178, 210, 228, 0) 70%),
+    radial-gradient(900px 700px at 0% 0%, rgba(255, 253, 244, 0.95), rgba(255, 244, 214, 0) 65%),
+    linear-gradient(160deg, #efe2c6 0%, #e2d2ac 55%, #d8c69c 100%);
+  --hw-raise:
+    inset 0 2px 0 #fff, inset -1px -2px 2px rgba(150, 110, 60, 0.25),
+    0 0 0 1px rgba(60, 38, 10, 0.5), 0 1px 0 #d6c5a2, 0 2px 0 #b39e76, 0 3px 0 #9c8560,
+    1px 8px 5px -1px rgba(60, 40, 14, 0.45), 5px 14px 14px -4px rgba(60, 40, 14, 0.35);
+  --hw-raise-low:
+    inset 0 1.5px 0 #fff, 0 0 0 1px rgba(60, 38, 10, 0.4), 0 1px 0 #cdbb97, 0 2px 0 #9c8560,
+    1px 4px 3px rgba(var(--hw-shade), 0.4);
+  --hw-well:
+    inset 0 4px 7px rgba(var(--hw-shade), 0.5), inset 3px 4px 3px rgba(var(--hw-shade), 0.3),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.95), 0 2px 0 #fff, 0 0 0 1px rgba(var(--hw-shade), 0.3);
+  --hw-lit:
+    inset 0 2px 0 rgba(255, 244, 228, 1), inset 2px 0 0 rgba(255, 222, 184, 0.6),
+    inset 0 -4px 5px rgba(120, 40, 0, 0.4), 0 0 0 1px rgba(100, 34, 3, 0.9), 0 2px 0 #b84711,
+    0 4px 0 #8c3105, 2px 9px 4px -1px rgba(60, 18, 0, 0.5),
+    3px 12px 16px -6px rgba(242, 106, 27, 0.55);
+  --hw-focus: 0 0 0 2px #fffefb, 0 0 0 4px #3b93d3, 0 0 18px 2px rgba(59, 147, 211, 0.45);
+
+  /* Tokens the rest of Orca reads, retuned so Hawl panels agree with the shell. */
+  --worktree-sidebar: transparent;
+  --worktree-sidebar-accent: rgba(255, 255, 255, 0.7);
+  --bg-titlebar: transparent;
+  --sidebar: #fbf4e3;
+}
+
+/* ── Ground ───────────────────────────────────────────────────────────────────────────── */
+html:not(.dark) body,
+html:not(.dark) #root {
+  background: var(--hw-ground);
+  background-attachment: fixed;
+}
+html:not(.dark) #root > div:first-child {
+  background: transparent;
+}
+
+/* ── Titlebar strip above the sidebar: plain text on the ground ───────────────────────── */
+html:not(.dark) .titlebar,
+html:not(.dark) .titlebar-left {
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+}
+html:not(.dark) .titlebar-left-floating {
+  background: var(--hw-mat-acrylic);
+}
+html:not(.dark) .titlebar-logo {
+  display: none; /* the wordmark in the sidebar brand block replaces the small mark */
+}
+html:not(.dark) .sidebar-toggle,
+html:not(.dark) .titlebar-icon-button {
+  border-radius: 10px;
+  color: var(--hw-ink-3);
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+html:not(.dark) .sidebar-toggle:hover:not(:disabled),
+html:not(.dark) .titlebar-icon-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 248, 236, 0.6));
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(80, 56, 24, 0.22),
+    0 3px 0 rgba(190, 166, 122, 0.5);
+  color: var(--hw-ink);
+}
+
+/* ── Sidebar (H01 left column) ────────────────────────────────────────────────────────── */
+html:not(.dark) .hawl-sidebar {
+  background: transparent;
+  padding: 0 4px 4px 8px;
+  color: var(--hw-ink);
+}
+.hawl-brand {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 2px 10px 0 8px;
+  flex-shrink: 0;
+}
+.hawl-brand img {
+  height: 38px;
+  width: auto;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+.hawl-slot:empty {
+  display: none;
+}
+
+/* Nav rows: plain text on the ground, a lit orange object only for the current page. */
+html:not(.dark) .hawl-sidebar [data-contextual-tour-target='sidebar-navigation'] {
+  gap: 4px;
+  padding: 4px 6px 6px;
+}
+/* Search lives in the top bar (H01), not as a sidebar row. */
+html:not(.dark)
+  .hawl-sidebar
+  [data-contextual-tour-target='sidebar-navigation']
+  > button:first-child {
+  display: none;
+}
+html:not(.dark) .hawl-sidebar [data-contextual-tour-target='sidebar-navigation'] button,
+html:not(.dark) .hawl-sidebar [data-contextual-tour-target='sidebar-navigation'] a {
+  position: relative;
+  height: 42px;
+  padding: 0 12px;
+  gap: 12px;
+  border-radius: 14px;
+  font:
+    600 14px/1 var(--hawl-font-ui, 'Hawl Inter', system-ui),
+    sans-serif;
+  letter-spacing: -0.005em;
+  color: var(--hw-ink-2);
+  background: transparent;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    background 0.16s,
+    box-shadow 0.16s,
+    color 0.16s;
+}
+html:not(.dark) .hawl-sidebar [data-contextual-tour-target='sidebar-navigation'] button svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.8;
+  color: var(--hw-ink-3);
+  opacity: 1;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.85));
+}
+html:not(.dark) .hawl-sidebar [data-contextual-tour-target='sidebar-navigation'] button:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 248, 236, 0.6));
+  color: var(--hw-ink);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(80, 56, 24, 0.22),
+    0 3px 0 rgba(190, 166, 122, 0.5),
+    0 8px 14px -4px rgba(var(--hw-shade), 0.32);
+}
+html:not(.dark) .hawl-sidebar [data-contextual-tour-target='sidebar-navigation'] button:hover svg {
+  color: var(--hw-orange-600);
+}
+html:not(.dark)
+  .hawl-sidebar
+  [data-contextual-tour-target='sidebar-navigation']
+  button[aria-current='page'] {
+  color: #fff8ee;
+  background: var(--hw-mat-orange);
+  text-shadow: 0 1px 0 rgba(120, 40, 0, 0.5);
+  box-shadow: var(--hw-lit);
+}
+html:not(.dark)
+  .hawl-sidebar
+  [data-contextual-tour-target='sidebar-navigation']
+  button[aria-current='page']
+  svg {
+  color: #fff8ee;
+  filter: drop-shadow(0 1px 0 rgba(120, 40, 0, 0.55)) drop-shadow(0 0 6px rgba(255, 230, 190, 0.8));
+}
+html:not(.dark) .hawl-sidebar button:focus-visible {
+  outline: 0;
+  box-shadow: var(--hw-focus);
+}
+/* "New" and count pills in the nav: small lit objects. */
+html:not(.dark)
+  .hawl-sidebar
+  [data-contextual-tour-target='sidebar-navigation']
+  span[class*='rounded-full'],
+html:not(.dark)
+  .hawl-sidebar
+  [data-contextual-tour-target='sidebar-navigation']
+  span[class*='bg-primary'] {
+  background: var(--hw-mat-orange);
+  color: #fff;
+  font-weight: 700;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 244, 228, 0.95),
+    inset 0 -2px 3px rgba(120, 40, 0, 0.4),
+    0 0 0 1px rgba(100, 34, 3, 0.85),
+    0 1px 0 #b84711,
+    0 0 12px rgba(255, 120, 40, 0.6);
+}
+
+/* Project list: section label in small caps, rows as text with a lit hover. */
+html:not(.dark) .hawl-sidebar [class*='worktree-sidebar-foreground'] {
+  color: var(--hw-ink-2);
+}
+html:not(.dark) .hawl-sidebar [data-worktree-card],
+html:not(.dark) .hawl-sidebar [role='option'] {
+  border-radius: 14px;
+}
+
+/* Footer toolbar: hairline engraved, no box. */
+html:not(.dark) .hawl-sidebar .border-t {
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(120, 86, 40, 0.14),
+    0 -2px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ── Top bar (H01 / H02) ──────────────────────────────────────────────────────────────── */
+.hawl-topbar {
+  container: hawl-topbar / inline-size;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 64px;
+  min-height: 64px;
+  padding: 8px calc(var(--window-controls-width, 0px) + 14px) 6px 4px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+.hawl-topbar > *,
+.hawl-topbar button {
+  -webkit-app-region: no-drag;
+}
+.hawl-topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+html:not(.dark) .hawl-site-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  height: 44px;
+  padding: 0 12px 0 6px;
+  border-radius: 15px;
+  border: 0;
+  cursor: pointer;
+  font: 700 15px/1 var(--hawl-font-display);
+  letter-spacing: -0.015em;
+  color: var(--hw-ink);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise);
+  transition: transform 0.15s;
+}
+html:not(.dark) .hawl-site-switcher:disabled {
+  cursor: default;
+  opacity: 0.92;
+}
+html:not(.dark) .hawl-site-switcher:not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow: var(--hw-raise-low);
+}
+.hawl-site-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font: 800 17px/1 var(--hawl-font-display);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(100, 30, 0, 0.6);
+  background:
+    radial-gradient(18px 8px at 30% 8%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0)),
+    var(--hw-mat-orange, #fa7f32);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -2px 3px rgba(150, 50, 0, 0.4),
+    0 0 0 1px rgba(120, 40, 4, 0.7),
+    0 0 14px 1px rgba(255, 120, 36, 0.45);
+}
+.hawl-site-chev {
+  width: 16px;
+  height: 16px;
+  color: var(--hw-ink-4, #7c705e);
+}
+
+/* Search: a recessed well. */
+html:not(.dark) .hawl-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 430px;
+  max-width: 430px;
+  height: 44px;
+  padding: 0 10px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  cursor: text;
+  text-align: left;
+  color: #7a7063;
+  font: 450 14.5px/1 var(--app-font-family);
+  background: linear-gradient(180deg, #dcd0b8, #ede6d4);
+  box-shadow: var(--hw-well);
+  transition: box-shadow 0.15s;
+}
+html:not(.dark) .hawl-search:hover {
+  background: linear-gradient(180deg, #d6c9ae, #e9e1cc);
+}
+html:not(.dark) .hawl-search:focus-visible {
+  outline: 0;
+  box-shadow: var(--hw-well), var(--hw-focus);
+}
+.hawl-search-ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--hw-ink-3, #43382b);
+}
+.hawl-search-text {
+  flex: 1;
+}
+.hawl-search-keys {
+  display: inline-flex;
+  gap: 6px;
+}
+
+/* Key caps (F04): small physical keys. */
+html:not(.dark) .hawl-kcap,
+html:not(.dark) .hawl-sidebar .hawl-kcap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 9px;
+  border: 0;
+  font: 650 12px/1 var(--font-mono);
+  letter-spacing: 0.02em;
+  color: var(--hw-ink-2);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f6f3 60%, #eceae5 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 2px rgba(120, 100, 70, 0.18),
+    0 0 0 1px rgba(60, 38, 10, 0.32),
+    0 1px 0 #cfc3a8,
+    0 2px 0 #b3a483,
+    1px 4px 3px rgba(var(--hw-shade), 0.28);
+}
+
+/* Live lamp (S-156): a recessed pill with a lit lamp. Offline = grey, no glow. */
+.hawl-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 16px 0 14px;
+  border-radius: 999px;
+  font: 650 14px/1 var(--app-font-family);
+  color: var(--hw-ink, #1c1712);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: linear-gradient(180deg, #d5c8ae, #e8e0cc);
+  box-shadow:
+    inset 0 3px 5px rgba(52, 28, 6, 0.5),
+    inset 2px 0 3px rgba(52, 28, 6, 0.2),
+    inset 0 -1px 0 #fff,
+    0 1px 0 #fff,
+    0 0 0 1px rgba(52, 28, 6, 0.28);
+}
+.hawl-lamp {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex: none;
+  background: radial-gradient(circle at 34% 28%, #f5ffd0 0 10%, #8ccb22 46%, #3d6a06 100%);
+  box-shadow:
+    inset 0 -2px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 2px #fbf6ea,
+    0 0 0 3px rgba(58, 36, 10, 0.55),
+    0 0 12px 3px rgba(140, 205, 30, 0.9);
+}
+.hawl-live-off .hawl-lamp {
+  background: radial-gradient(circle at 34% 28%, #f4efe4 0 10%, #b6ad9b 46%, #7c7260 100%);
+  box-shadow:
+    inset 0 -2px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 2px #fbf6ea,
+    0 0 0 3px rgba(58, 36, 10, 0.55);
+}
+
+/* ── Page slab: the one big object the work sits in ──────────────────────────────────── */
+html:not(.dark) .hawl-page-column {
+  padding: 0 0 8px 4px;
+}
+html:not(.dark) .hawl-page-slab {
+  border-radius: 22px;
+  background: var(--background);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.3),
+    0 1px 0 #e6d9bb,
+    1px 6px 8px -2px rgba(var(--hw-shade), 0.3),
+    8px 18px 26px -8px rgba(var(--hw-shade), 0.32);
+}
+html:not(.dark) .hawl-page-slab > * {
+  border-radius: inherit;
+}
+/* Collapsed-sidebar titlebar stays inside the slab corner. */
+html:not(.dark) .hawl-page-column > .titlebar {
+  border-radius: 14px;
+}
+
+/* ── Right panel ─────────────────────────────────────────────────────────────────────── */
+html:not(.dark) .hawl-right-panel {
+  background: transparent;
+  border-left: 0 !important;
+  margin: 0 8px 8px 4px;
+  border-radius: 22px;
+  background: var(--sidebar);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.3),
+    0 1px 0 #e6d9bb,
+    1px 6px 8px -2px rgba(var(--hw-shade), 0.3),
+    8px 18px 26px -8px rgba(var(--hw-shade), 0.32);
+}
+html:not(.dark) .hawl-right-panel .border-b {
+  border-bottom: 0;
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* ── Status bar (H01 key-hint row): a plain strip with engraved top line ─────────────── */
+html:not(.dark) .hawl-statusbar {
+  background: transparent;
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(120, 86, 40, 0.14),
+    inset 0 3px 0 rgba(255, 255, 255, 0.7);
+  height: 28px;
+  min-height: 28px;
+  color: var(--hw-ink-3);
+  font-weight: 500;
+}
+html:not(.dark) .hawl-statusbar .rounded:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Empty home (G03) ─────────────────────────────────────────────────────────────────── */
+.hawl-home {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  width: 100%;
+  max-width: 880px;
+  padding: 0 32px;
+}
+.hawl-home-art {
+  width: 300px;
+  height: 300px;
+  flex: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(10px 22px 18px rgba(52, 28, 6, 0.28));
+}
+.hawl-home-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 380px;
+}
+.hawl-home-mark {
+  height: 40px;
+  width: auto;
+  margin-bottom: 6px;
+  pointer-events: none;
+}
+.hawl-home-title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--hw-ink, #1c1712);
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+.hawl-home-sub {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--hw-ink-3, #43382b);
+}
+.hawl-home-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.hawl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 46px;
+  padding: 0 20px 0 16px;
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+  font: 700 14.5px/1 var(--app-font-family);
+  transition: transform 0.12s;
+}
+.hawl-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.hawl-btn:active {
+  transform: translateY(2px);
+}
+.hawl-btn:focus-visible {
+  outline: 0;
+  box-shadow: var(--hw-focus, 0 0 0 3px #3b93d3);
+}
+html:not(.dark) .hawl-btn-lit {
+  color: #fff8ee;
+  background: var(--hw-mat-orange);
+  text-shadow: 0 1px 0 rgba(120, 40, 0, 0.5);
+  box-shadow: var(--hw-lit);
+}
+html:not(.dark) .hawl-btn-lit:hover {
+  filter: brightness(1.05) saturate(1.05);
+}
+html:not(.dark) .hawl-btn-acrylic {
+  color: var(--hw-ink);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise);
+}
+html:not(.dark) .hawl-btn-acrylic:hover {
+  background: #fff;
+}
+.hawl-home-keys {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+  width: 100%;
+}
+.hawl-home-key-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  font-size: 13.5px;
+  color: var(--hw-ink-3, #43382b);
+}
+
+@media (max-width: 760px) {
+  .hawl-home {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hawl-home-art {
+    width: 180px;
+    height: 180px;
+  }
+  .hawl-home-copy {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hawl-btn,
+  .hawl-site-switcher {
+    transition: none;
+  }
+}
+
+/* ── Late fixes and the sidebar footer (H01 bottom group: Settings, Help as labelled rows) ── */
+.hawl-site-switcher,
+.hawl-site-name {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+html:not(.dark) .hawl-sidebar-footer > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 2px;
+  padding: 8px 6px 8px;
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(120, 86, 40, 0.14),
+    inset 0 3px 0 rgba(255, 255, 255, 0.7);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:last-child {
+  justify-content: flex-end;
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label] {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  gap: 12px;
+  justify-content: flex-start;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--hw-ink-2);
+  font: 600 14px/1 var(--app-font-family);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label] svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.8;
+  color: var(--hw-ink-3);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label]::after {
+  content: attr(aria-label);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label]:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 248, 236, 0.6));
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(80, 56, 24, 0.22),
+    0 3px 0 rgba(190, 166, 122, 0.5),
+    0 8px 14px -4px rgba(var(--hw-shade), 0.32);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child button[aria-label]:hover svg {
+  color: var(--hw-orange-600);
+}
+html:not(.dark) .hawl-sidebar-footer > div > div:first-child > div {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+}
+
+/* ── Tab strip (H01 tab): lit marker on the open tab, raised acrylic, plain text on the rest ── */
+html:not(.dark) [data-testid='sortable-tab'] {
+  border-top: 0;
+  height: calc(100% - 8px);
+  margin: 8px 2px 0;
+  padding: 0 8px;
+  border-radius: 12px 12px 0 0;
+  background: transparent;
+  color: var(--hw-ink-3);
+  font-weight: 550;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+html:not(.dark) [data-testid='sortable-tab']:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+html:not(.dark) [data-testid='sortable-tab'][data-active='true'] {
+  color: var(--hw-ink);
+  background: linear-gradient(180deg, #fff, #f6eedd);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.4),
+    0 -4px 12px -4px rgba(60, 40, 14, 0.3);
+}
+html:not(.dark) [data-testid='sortable-tab'] > span.absolute.bottom-0 {
+  left: 10px;
+  right: 10px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #ffc08a, #f26a1b 50%, #c54709);
+  box-shadow:
+    0 0 10px 2px rgba(255, 120, 30, 0.65),
+    0 0 26px 6px rgba(255, 120, 30, 0.25);
+}
+html:not(.dark) .terminal-tab-strip {
+  border-right: 0;
+}
+
+/* ── About (M09) ─────────────────────────────────────────────────────────────────────── */
+.hawl-about-body {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 8px 0 8px;
+}
+.hawl-about-art {
+  width: 180px;
+  height: 180px;
+  flex: none;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(8px 16px 14px rgba(52, 28, 6, 0.26));
+}
+.hawl-about-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.hawl-about-mark {
+  height: 36px;
+  width: auto;
+  pointer-events: none;
+}
+.hawl-about-title {
+  margin: 4px 0 0;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+html:not(.dark) .hawl-about-version {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font: 650 12px/1 var(--font-mono);
+  color: var(--hw-ink-2);
+  background: linear-gradient(180deg, #d5c8ae, #e8e0cc);
+  box-shadow:
+    inset 0 2px 3px rgba(52, 28, 6, 0.4),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(52, 28, 6, 0.24);
+}
+.hawl-about-credit {
+  margin: 0;
+  max-width: 520px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--hw-ink-3, #43382b);
+}
+.hawl-about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+.hawl-about .hawl-btn {
+  height: 40px;
+  font-size: 13.5px;
+}
+
+/* Narrow windows: the search well keeps a usable width and drops its key caps. */
+.hawl-search {
+  min-width: 150px;
+}
+@container hawl-topbar (max-width: 520px) {
+  .hawl-search-keys {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .hawl-search-keys {
+    display: none;
+  }
+  .hawl-live {
+    padding: 0 12px;
+  }
+}
+
+/* ── Ember (dark): same layout, plain dark materials ─────────────────────────────────── */
+html.dark .hawl-topbar {
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+html.dark .hawl-site-switcher,
+html.dark .hawl-search,
+html.dark .hawl-live,
+html.dark .hawl-btn-acrylic {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--secondary);
+  color: var(--foreground);
+  font: 600 13.5px/1 var(--app-font-family);
+}
+html.dark .hawl-search {
+  flex: 1 1 360px;
+  max-width: 420px;
+  color: var(--muted-foreground);
+  text-align: left;
+}
+html.dark .hawl-btn {
+  height: 40px;
+  border-radius: 12px;
+}
+html.dark .hawl-btn-lit {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+html.dark .hawl-site-tile {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 800;
+}
+html.dark .hawl-lamp {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7c7260;
+}
+html.dark .hawl-kcap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font: 600 11px/1 var(--font-mono);
+}
+html.dark .hawl-site-chev,
+html.dark .hawl-search-ic {
+  width: 15px;
+  height: 15px;
+}
+html.dark .hawl-home-title,
+html.dark .hawl-about-title {
+  color: var(--foreground);
+}
+html.dark .hawl-home-sub,
+html.dark .hawl-home-key-row,
+html.dark .hawl-about-credit {
+  color: var(--muted-foreground);
+}
+html.dark .hawl-about-version {
+  font: 600 12px/1 var(--font-mono);
+  color: var(--muted-foreground);
+}

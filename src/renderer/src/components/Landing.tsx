@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, ExternalLink, FolderPlus, GitBranchPlus, Star, X } from 'lucide-react'
+import { AlertTriangle, ExternalLink, Star, X } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAppStore } from '../store'
 import { isGitRepoKind } from '../../../shared/repo-kind'
@@ -9,10 +9,9 @@ import {
   githubProjectKeys,
   isPreflightIssueDismissed
 } from './landing-preflight-dismissal'
-import { ShortcutKeyCombo } from './ShortcutKeyCombo'
 import { useShortcutKeyDetails, type ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { useMountedRef } from '@/hooks/useMountedRef'
-import logo from '../../../../resources/logo.svg'
+import { HawlLanding } from '../../../hawl/renderer/shell/HawlLanding'
 import { HAWL_STAR_NAG_ENABLED } from '../../../hawl/shared/brand'
 import { translate } from '@/i18n/i18n'
 import { hasGitHubBackedProject, type PreflightIssue } from './landing-preflight-issues'
@@ -253,68 +252,21 @@ export default function Landing(): React.JSX.Element {
     ]
   }, [createTargetLabel, createWorktreeShortcut, nextWorktreeShortcut, previousWorktreeShortcut])
 
+  // Hawl fork: the empty home is HawlLanding (src/hawl/renderer/shell).
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-background">
-      <div className="w-full max-w-lg px-6">
-        <div className="flex flex-col items-center gap-4 py-8">
-          <div
-            className="flex items-center justify-center size-20 rounded-2xl border border-border/80 shadow-lg shadow-black/40"
-            style={{ backgroundColor: '#12181e' }}
-          >
-            <img
-              src={logo}
-              alt={translate('auto.components.Landing.520304a067', 'Orca logo')}
-              className="size-12"
-            />
-          </div>
-          <h1 className="text-4xl font-bold text-foreground tracking-tight">
-            {translate('auto.components.Landing.6ca6ff404e', 'ORCA')}
-          </h1>
-
-          {preflightIssues.length > 0 && <PreflightBanner issues={preflightIssues} repos={repos} />}
-
-          <p className="text-sm text-muted-foreground text-center">
-            {hasProjects
-              ? translate(
-                  'auto.components.Landing.9c00bd4adf',
-                  'Select a workspace from the sidebar to begin.'
-                )
-              : translate('auto.components.Landing.cd21242762', 'Add a project to get started.')}
-          </p>
-
-          <div className="flex items-center justify-center gap-2.5 flex-wrap">
-            <button
-              className="inline-flex items-center gap-1.5 bg-secondary/70 border border-border/80 text-foreground font-medium text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
-              onClick={() => openModal('add-repo')}
-            >
-              <FolderPlus className="size-3.5" />
-              {translate('auto.components.Landing.f9eaa9e12d', 'Add project')}
-            </button>
-
-            <button
-              className="inline-flex items-center gap-1.5 bg-secondary/70 border border-border/80 text-foreground font-medium text-sm px-4 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
-              onClick={() => openModal('new-workspace-composer', { telemetrySource: 'unknown' })}
-            >
-              <GitBranchPlus className="size-3.5" />
-              {translate('auto.components.Landing.76a95f7f47', 'Create')}{' '}
-              {createTargetLabel.toLowerCase()}
-            </button>
-          </div>
-
-          <div className="mt-6 w-full max-w-xs space-y-2">
-            {shortcuts.map((shortcut) => (
-              <div key={shortcut.id} className="grid grid-cols-[1fr_auto] items-center gap-3">
-                <span className="text-sm text-muted-foreground">{shortcut.action}</span>
-                <ShortcutKeyCombo
-                  keys={shortcut.shortcut.keys}
-                  doubleTap={shortcut.shortcut.doubleTap}
-                  separatorClassName="mx-0.5 text-[10px] text-muted-foreground"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <HawlLanding
+        hasProjects={hasProjects}
+        createTargetLabel={createTargetLabel}
+        shortcuts={shortcuts}
+        banner={
+          preflightIssues.length > 0 ? (
+            <PreflightBanner issues={preflightIssues} repos={repos} />
+          ) : null
+        }
+        onAddProject={() => openModal('add-repo')}
+        onCreate={() => openModal('new-workspace-composer', { telemetrySource: 'unknown' })}
+      />
 
       {showGitHubSupportFooter && (
         <div className="absolute bottom-6 left-0 right-0 flex justify-center">

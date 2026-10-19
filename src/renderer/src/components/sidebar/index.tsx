@@ -18,6 +18,8 @@ import { useWorkspaceRevealBodyRedirect } from './use-workspace-reveal-body-redi
 import { resolveLeftSidebarStyleVariables } from '@/lib/left-sidebar-appearance'
 import { useSystemPrefersDark } from '@/components/terminal-pane/use-system-prefers-dark'
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
+import { HawlSidebarBrand } from '../../../../hawl/renderer/shell/HawlSidebarTop'
+import { HawlSlot } from '../../../../hawl/renderer/shell/HawlSlots'
 import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
 import { SeveredTerminalDaemonBanner } from './SeveredTerminalDaemonBanner'
 import { StalledTerminalDaemonBanner } from './StalledTerminalDaemonBanner'
@@ -164,14 +166,17 @@ function Sidebar({
     <TooltipProvider delayDuration={400}>
       <div
         ref={sidebarRef}
-        className="relative min-h-0 flex-shrink-0 bg-worktree-sidebar flex flex-col overflow-hidden scrollbar-sleek-parent"
+        className="hawl-sidebar relative min-h-0 flex-shrink-0 bg-worktree-sidebar flex flex-col overflow-hidden scrollbar-sleek-parent"
         style={leftSidebarStyle}
         {...dropHandlers}
       >
         {sidebarOpen && (
           <>
             {/* Fixed controls */}
+            {/* Hawl fork: brand block, then marked slots for the yard tree and foreman strip. */}
+            <HawlSidebarBrand />
             <SidebarNav />
+            <HawlSlot name="yard-tree" />
             <SidebarHeader
               onWorkspaceBoardMenuOpenChange={setWorkspaceBoardMenuOpen}
               activityOptionsTarget={setAgentOptionsTarget}
@@ -208,6 +213,7 @@ function Sidebar({
               </>
             )}
 
+            <HawlSlot name="foreman-strip" />
             <div className="relative shrink-0">
               <SetupScriptPromptCard />
 

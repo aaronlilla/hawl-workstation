@@ -59,6 +59,19 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 |---|---|
 | `src/renderer/src/components/settings/GeneralPane.tsx` | renders `HawlAboutSection` (in `src/hawl/renderer/`) in place of the Orca "Support" section; the credit "Built on Orca (MIT)" lives there |
 
+## Shell redesign (piece D4-shell; Hawl code in `src/hawl/renderer/`)
+CSS: `hawl-theme.css` imports `hawl-pieces.css` (one `@import` per piece; `d4-shell.css` is this piece). Light theme only, every rule scoped `html:not(.dark)`; dark gets plain fallbacks. Marked slots (`HawlSlot`, `registerHawlSlot` in `shell/HawlSlots.tsx`): `site-switcher`, `topbar-live`, `topbar-actions` (top bar), `yard-tree`, `foreman-strip` (sidebar).
+| File | Hook |
+|---|---|
+| `src/renderer/src/app-shell/AppWorkspaceShell.tsx` | renders `<HawlTopBar />` at the top of the page column; class `hawl-page-column` on that column and `hawl-page-slab` on the content area |
+| `src/renderer/src/components/sidebar/index.tsx` | class `hawl-sidebar`; renders `<HawlSidebarBrand />` above the nav, `<HawlSlot name="yard-tree" />` under it, `<HawlSlot name="foreman-strip" />` above the footer |
+| `src/renderer/src/components/sidebar/SidebarToolbar.tsx` | class `hawl-sidebar-footer` (CSS turns Settings and Help into labelled rows) |
+| `src/renderer/src/components/status-bar/StatusBarSurface.tsx` | class `hawl-statusbar` |
+| `src/renderer/src/components/right-sidebar/index.tsx` | class `hawl-right-panel` |
+| `src/renderer/src/components/Landing.tsx` | empty home renders `HawlLanding`; Orca markup, logo import and unused imports removed |
+| `src/renderer/src/components/settings/GeneralPane.tsx` | (P1 hook) the About section is now laid out by `HawlAboutSection` (art, wordmark, lit links) |
+| `config/tsconfig.tc.web.json` | `include` gains `../src/hawl/**/*` (without it `tc:web` fails TS6307 on every import of src/hawl) |
+
 ## Known leftovers (not changed)
 - `mobile/` Expo app still points at Orca hosts (M6).
 - `hawl://` is registered with the OS but only `orca://` links are parsed in code.

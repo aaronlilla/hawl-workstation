@@ -7,6 +7,7 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
+import { HawlTopBar } from '../../../hawl/renderer/shell/HawlTopBar'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
@@ -154,14 +155,16 @@ export function AppWorkspaceShell(props: {
                 <WorktreeSidebar layout={layout} scrollRefs={sidebarScrollRefs} />
               )
             ) : null}
-            <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+            <div className="hawl-page-column flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+              {/* Hawl fork: the Hawl top bar (site switcher, search, Live lamp) heads the page column. */}
+              <HawlTopBar />
               {/* Why: automations/artifacts own their page headers; the stacked titlebar would be an empty 36px stripe. */}
               {layout.stackedSidebarOpen &&
               layout.activeView !== 'automations' &&
               layout.activeView !== 'artifacts' ? (
                 <div className="titlebar">{titlebarMainStrip}</div>
               ) : null}
-              <div className="relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
+              <div className="hawl-page-slab relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
                 {/* Why: match the RightSidebar header's 36px/top-0 so the toggle's vertical center is identical open vs closed — else the icon jitters. */}
                 {layout.workspaceChromeActive && !layout.rightSidebarOpen && (
                   <div
