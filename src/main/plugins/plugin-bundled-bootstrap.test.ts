@@ -15,15 +15,15 @@ async function tempRoot(prefix: string): Promise<string> {
 }
 
 async function writeBundle(root: string, name = 'Skills'): Promise<{ path: string; hash: string }> {
-  const path = 'stablyai.orca-skills'
+  const path = 'aaronlilla.hawl-skills'
   const pluginRoot = join(root, path)
   await mkdir(pluginRoot, { recursive: true })
   await writeFile(
     join(pluginRoot, 'orca-plugin.json'),
     JSON.stringify({
       manifestVersion: 1,
-      id: 'orca-skills',
-      publisher: 'stablyai',
+      id: 'hawl-skills',
+      publisher: 'aaronlilla',
       name,
       version: '1.0.0',
       engines: { orca: '>=1.0.0' },
@@ -43,7 +43,7 @@ async function writeIndex(root: string, path: string, contentHash: string): Prom
     join(root, 'bundled-plugins.json'),
     JSON.stringify({
       version: 1,
-      plugins: [{ pluginKey: 'stablyai.orca-skills', path, contentHash }]
+      plugins: [{ pluginKey: 'aaronlilla.hawl-skills', path, contentHash }]
     })
   )
 }
@@ -61,10 +61,10 @@ describe('bundled plugin bootstrap', () => {
 
     await expect(
       bootstrapBundledPlugins({ root, userDataPath, hostVersion: '1.4.0' })
-    ).resolves.toEqual({ installed: ['stablyai.orca-skills'], unchanged: [], errors: [] })
+    ).resolves.toEqual({ installed: ['aaronlilla.hawl-skills'], unchanged: [], errors: [] })
     await expect(
       bootstrapBundledPlugins({ root, userDataPath, hostVersion: '1.4.0' })
-    ).resolves.toEqual({ installed: [], unchanged: ['stablyai.orca-skills'], errors: [] })
+    ).resolves.toEqual({ installed: [], unchanged: ['aaronlilla.hawl-skills'], errors: [] })
   })
 
   it('publishes an updated immutable bundle only when the indexed hash matches', async () => {
@@ -78,9 +78,9 @@ describe('bundled plugin bootstrap', () => {
 
     const updated = await bootstrapBundledPlugins({ root, userDataPath, hostVersion: '1.4.0' })
 
-    expect(updated).toEqual({ installed: ['stablyai.orca-skills'], unchanged: [], errors: [] })
+    expect(updated).toEqual({ installed: ['aaronlilla.hawl-skills'], unchanged: [], errors: [] })
     const lock = await readPluginLockfile(join(userDataPath, 'plugins'))
-    expect(lock.plugins['stablyai.orca-skills']?.contentHash).toBe(second.hash)
+    expect(lock.plugins['aaronlilla.hawl-skills']?.contentHash).toBe(second.hash)
   })
 
   it('repairs a missing or modified bundled current version', async () => {
@@ -89,17 +89,17 @@ describe('bundled plugin bootstrap', () => {
     const bundle = await writeBundle(root)
     await writeIndex(root, bundle.path, bundle.hash)
     await bootstrapBundledPlugins({ root, userDataPath, hostVersion: '1.4.0' })
-    const versionDir = join(userDataPath, 'plugins', 'stablyai.orca-skills', bundle.hash)
+    const versionDir = join(userDataPath, 'plugins', 'aaronlilla.hawl-skills', bundle.hash)
     await writeFile(join(versionDir, 'orca-plugin.json'), '{}')
 
     await expect(
       bootstrapBundledPlugins({ root, userDataPath, hostVersion: '1.4.0' })
-    ).resolves.toEqual({ installed: ['stablyai.orca-skills'], unchanged: [], errors: [] })
+    ).resolves.toEqual({ installed: ['aaronlilla.hawl-skills'], unchanged: [], errors: [] })
 
     await rm(versionDir, { recursive: true, force: true })
     await expect(
       bootstrapBundledPlugins({ root, userDataPath, hostVersion: '1.4.0' })
-    ).resolves.toEqual({ installed: ['stablyai.orca-skills'], unchanged: [], errors: [] })
+    ).resolves.toEqual({ installed: ['aaronlilla.hawl-skills'], unchanged: [], errors: [] })
   })
 
   it('refuses mismatched release hashes before publication', async () => {

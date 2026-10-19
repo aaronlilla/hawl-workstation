@@ -11,8 +11,10 @@ Thin fork: remote `upstream` = stablyai/orca (main only, blobless clone). All Ha
 Plan: `C:\Users\Administrator\.claude-clean\plans\i-want-to-sort-goofy-treasure.md` (milestones M0 fork and rebrand, M1 sign-in, M2 site/yard/haul tree, M3 agents, M4 approvals and proof, M5 presence/rooms/yard console, M6 phone, M7 release).
 
 ## Run it
-Not yet built. Orca's own steps are in README.md and .github/CONTRIBUTING.md; confirm them before first build.
+From a checkout: `pnpm install --frozen-lockfile`, `pnpm run build:electron-vite`, then `node_modules/electron/dist/electron.exe .` (add `--remote-debugging-port=9333` to drive it). Unit tests: `node node_modules/vitest/vitest.mjs run --config config/vitest.config.ts --maxWorkers=2 <paths>` (the `run-vitest.mjs` wrapper needs Bun, which is not installed). Network proof: `node src/hawl/tools/net-capture.mjs 130 out.json`. Every edited Orca file is listed in FORK-HOOKS.md.
 
 ## Status 2026-10-19
 - Local clone made at `C:\dev\hawl-workstation` from upstream main 20fc7af55. Nothing changed yet. No GitHub fork or repo created.
 - Open: product and repo name (placeholder "Hawl Workstation"); retire or keep the Tauri command center; mobile distribution; relay changes (yards read route, push registration).
+
+- 2026-10-19 P1-rebrand (M0): rebranded on branch `hawl/P1-rebrand`: identity, Hawl theme and terminal palettes, icons, About credit, updater feed, vendor services and telemetry off. See FORK-HOOKS.md.

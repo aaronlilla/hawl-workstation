@@ -14,7 +14,12 @@ export const ORCA_UPSTREAM_URL = 'https://github.com/stablyai/orca'
 export const ORCA_UPSTREAM_LICENSE = 'MIT'
 
 /** Orca's hosted services (login, relay, push, sharing, feedback, changelog, kill list) are off in the fork. */
-export const HAWL_VENDOR_SERVICES_ENABLED = false
+// Only the unit-test config (config/vitest.config.ts) flips it on, so Orca's own tests of those
+// services keep running; packaged and dev builds always get false.
+export const HAWL_VENDOR_SERVICES_ENABLED =
+  typeof process !== 'undefined' &&
+  process.env?.VITEST === 'true' &&
+  process.env?.HAWL_VENDOR_SERVICES_FOR_TESTS === '1'
 
 /** The star-on-GitHub prompt is off in the fork. */
 export const HAWL_STAR_NAG_ENABLED = false

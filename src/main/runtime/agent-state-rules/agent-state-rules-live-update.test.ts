@@ -128,7 +128,7 @@ describe('agent state rules channel and URL', () => {
 
   it('fetches the fixed release-download URL for the engine and channel', () => {
     expect(agentStateRulesDownloadUrl('next')).toBe(
-      'https://github.com/stablyai/orca/releases/download/agent-state-rules-engine-1-next/agent-state-rules.json'
+      'https://github.com/aaronlilla/hawl-workstation/releases/download/agent-state-rules-engine-1-next/agent-state-rules.json'
     )
   })
 })

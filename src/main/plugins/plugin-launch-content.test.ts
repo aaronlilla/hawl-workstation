@@ -29,9 +29,9 @@ describe('Phase 1 launch plugin content', () => {
       await readJson(join(launchRoot, 'orca-marketplace.json'))
     )
     expect(marketplace.plugins.map((plugin) => plugin.id).sort()).toEqual([
-      'stablyai.orca-multipass-recipes',
-      'stablyai.orca-navigation-shortcuts',
-      'stablyai.orca-portuguese'
+      'aaronlilla.hawl-multipass-recipes',
+      'aaronlilla.hawl-navigation-shortcuts',
+      'aaronlilla.hawl-portuguese'
     ])
     expect(
       marketplace.plugins.filter(
@@ -108,6 +108,6 @@ describe('Phase 1 launch plugin content', () => {
     })
 
     expect(result.errors).toEqual([])
-    expect(result.installed).toEqual(['stablyai.orca-navigation-shortcuts'])
+    expect(result.installed).toEqual(['aaronlilla.hawl-navigation-shortcuts'])
   })
 })

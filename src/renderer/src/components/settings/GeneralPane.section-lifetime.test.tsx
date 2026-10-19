@@ -36,8 +36,8 @@ vi.mock('@/components/settings/GeneralWorkspaceSettingsSection', () => ({
   GeneralWorkspaceSettingsSection: () => null
 }))
 vi.mock('@/components/settings/CliSection', () => ({ CliSection: () => null }))
-vi.mock('@/components/settings/GeneralSupportSection', () => ({
-  GeneralSupportSection: () => null
+vi.mock('../../../../hawl/renderer/HawlAboutSection', () => ({
+  HawlAboutSection: () => null
 }))
 vi.mock('@/components/settings/ReleaseChannelSection', () => ({
   ReleaseChannelSection: () => <div>Release picker open</div>

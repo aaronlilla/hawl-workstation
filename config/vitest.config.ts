@@ -7,6 +7,8 @@ import { NODE_RUNTIME_INCLUDE } from './scripts/vitest-node-runtime-files.mjs'
 import { nodeRuntimePool } from './scripts/vitest-node-runtime-pool'
 import { createWorkspaceSourceResolver } from './scripts/workspace-source-exports.mjs'
 
+// Hawl fork: Orca's vendor-service tests run with the vendor switch on (src/hawl/shared/brand.ts).
+process.env.HAWL_VENDOR_SERVICES_FOR_TESTS = '1'
 const balancedShards = process.env.ORCA_BALANCE_UNIT_SHARDS === '1'
 const measurementFile = 'src/main/foreign-sqlite-readers/foreign-sqlite-reader-event-loop.test.ts'
 const paletteMeasurementFile =

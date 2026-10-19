@@ -137,12 +137,12 @@ describe('PluginMarketplaceService', () => {
       pluginsDataDir: await tempRoot(),
       fetcher: async () =>
         fetched(
-          marketplace('Attack', 'community.orca-secrets', 'https://github.com/attacker/x.git')
+          marketplace('Attack', 'community.hawl-secrets', 'https://github.com/attacker/x.git')
         )
     })
 
     await expect(service.addSource(source())).rejects.toThrow(
-      'reserved plugin identity community.orca-secrets'
+      'reserved plugin identity community.hawl-secrets'
     )
     await expect(service.listSources()).resolves.toEqual([])
   })
@@ -150,13 +150,13 @@ describe('PluginMarketplaceService', () => {
   it('derives the Official badge only from the canonical marketplace and source organization', async () => {
     const officialMarketplace: PluginMarketplace = {
       name: 'Orca Plugins',
-      owner: 'stablyai',
+      owner: 'aaronlilla',
       plugins: [
         {
-          id: 'stablyai.orca-shortcuts',
+          id: 'aaronlilla.hawl-shortcuts',
           source: {
             kind: 'git',
-            url: 'git@github.com:stablyai/orca-shortcuts.git',
+            url: 'git@github.com:aaronlilla/hawl-shortcuts.git',
             ref: 'main'
           },
           categories: ['keybindings']
@@ -168,10 +168,10 @@ describe('PluginMarketplaceService', () => {
       fetcher: async () => fetched(officialMarketplace)
     })
 
-    await service.addSource(source('https://github.com/stablyai/orca-plugins.git'))
+    await service.addSource(source('https://github.com/aaronlilla/hawl-plugins.git'))
 
     await expect(service.listPlugins()).resolves.toEqual([
-      expect.objectContaining({ pluginKey: 'stablyai.orca-shortcuts', official: true })
+      expect.objectContaining({ pluginKey: 'aaronlilla.hawl-shortcuts', official: true })
     ])
   })
 
@@ -216,10 +216,10 @@ describe('PluginMarketplaceService', () => {
     const root = await tempRoot()
     const officialMarketplace = marketplace(
       'Orca Plugins',
-      'stablyai.orca-notes',
-      'https://github.com/stablyai/orca-notes.git'
+      'aaronlilla.hawl-notes',
+      'https://github.com/aaronlilla/hawl-notes.git'
     )
-    officialMarketplace.owner = 'stablyai'
+    officialMarketplace.owner = 'aaronlilla'
     const fetcher = vi.fn(async () => fetched(officialMarketplace))
     const first = new PluginMarketplaceService({ pluginsDataDir: root, fetcher })
 
@@ -259,10 +259,10 @@ describe('PluginMarketplaceService', () => {
     }
     const officialMarketplace = marketplace(
       'Orca Plugins',
-      'stablyai.orca-notes',
-      'https://github.com/stablyai/orca-notes.git'
+      'aaronlilla.hawl-notes',
+      'https://github.com/aaronlilla/hawl-notes.git'
     )
-    officialMarketplace.owner = 'stablyai'
+    officialMarketplace.owner = 'aaronlilla'
     const listSources = vi
       .fn<() => Promise<readonly PluginMarketplaceRegisteredSource[]>>()
       .mockRejectedValueOnce(new Error('source store temporarily unavailable'))
@@ -304,10 +304,10 @@ describe('PluginMarketplaceService', () => {
     )
     const officialMarketplace = marketplace(
       'Orca Plugins',
-      'stablyai.orca-notes',
-      'https://github.com/stablyai/orca-notes.git'
+      'aaronlilla.hawl-notes',
+      'https://github.com/aaronlilla/hawl-notes.git'
     )
-    officialMarketplace.owner = 'stablyai'
+    officialMarketplace.owner = 'aaronlilla'
     const service = new PluginMarketplaceService({
       pluginsDataDir: root,
       store,

@@ -122,7 +122,7 @@ describe('UpdateCard staged install recovery', () => {
   })
 
   it.each([
-    ['busy', 'Another Orca is updating', /Wait a moment/],
+    ['busy', 'Another Hawl is updating', /Wait a moment/],
     ['unresponsive', 'Waiting for background servers', /Stop it from the terminal/]
   ] as const)('gives a specific next step for %s', (reason, title, guidance) => {
     renderWithInitialStatus({
@@ -140,7 +140,7 @@ describe('UpdateCard staged install recovery', () => {
   it('shows preparation feedback without another install button while recovery runs', () => {
     renderWithInitialStatus({ state: 'downloaded', version: '1.4.200', installing: true })
     expect(screen.getByText('Preparing your update')).toBeTruthy()
-    expect(screen.getByText(/Checking running Orca instances/)).toBeTruthy()
+    expect(screen.getByText(/Checking running Hawl instances/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Restart to Update' })).toBeNull()
     expect(quitAndInstall).not.toHaveBeenCalled()
   })
@@ -152,7 +152,7 @@ describe('UpdateCard staged install recovery', () => {
         state: 'error',
         version: '1.4.200',
         message:
-          'Close the other Orca instances (process IDs: 12345) before installing this update.',
+          'Close the other Hawl instances (process IDs: 12345) before installing this update.',
         retryAction: 'install',
         ...(source ? { source } : {})
       })
@@ -178,7 +178,7 @@ describe('UpdateCard staged install recovery', () => {
 describe('UpdateCard Windows signature failures', () => {
   it('does not offer the rejected version as a manual publisher-check bypass', () => {
     const message =
-      'New version 1.4.200 is not signed by the application owner: publisherNames: Orca'
+      'New version 1.4.200 is not signed by the application owner: publisherNames: Hawl'
     renderAfterAvailableStatus()
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))
@@ -188,7 +188,7 @@ describe('UpdateCard Windows signature failures', () => {
     expect(screen.queryByText(message)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Check official releases' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases')
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/aaronlilla/hawl-workstation/releases')
     expect(openUrl).not.toHaveBeenCalledWith(expect.stringContaining('/tag/'))
   })
 
@@ -216,14 +216,14 @@ describe('UpdateCard Windows signature failures', () => {
   // An install failure now carries the updater's own text, so it can reach these branches too.
   it('routes a signature verdict raised during install to the security-stop card', () => {
     const message =
-      'New version 1.4.200 is not signed by the application owner: publisherNames: Orca'
+      'New version 1.4.200 is not signed by the application owner: publisherNames: Hawl'
     renderAfterAvailableStatus()
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))
 
     expect(screen.getByText("Update Wasn't Installed")).toBeTruthy()
     // The generic restart advice must not be prefixed onto a security stop.
-    expect(screen.queryByText(/Quit and reopen Orca/)).toBeNull()
+    expect(screen.queryByText(/Quit and reopen Hawl/)).toBeNull()
   })
 })
 
@@ -245,7 +245,7 @@ describe('UpdateCard hourly builds', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Release notes' }))
     expect(openUrl).toHaveBeenCalledWith(
-      'https://github.com/stablyai/orca-hourly/releases/tag/v1.4.160-hourly.202607281400'
+      'https://github.com/aaronlilla/hawl-workstation-hourly/releases/tag/v1.4.160-hourly.202607281400'
     )
   })
 })
@@ -298,7 +298,7 @@ function showPackageRecovery(recovery = PACKAGE_RECOVERY): void {
   act(() =>
     useAppStore.getState().setUpdateStatus({
       state: 'error',
-      message: 'Quit Orca before running the system package install command.',
+      message: 'Quit Hawl before running the system package install command.',
       recovery
     })
   )
@@ -322,13 +322,15 @@ describe('UpdateCard Linux package-install recovery', () => {
   it('renders an initial recovery snapshot with its versioned release fallback', () => {
     renderWithInitialStatus({
       state: 'error',
-      message: 'Quit Orca before running the system package install command.',
+      message: 'Quit Hawl before running the system package install command.',
       recovery: PACKAGE_RECOVERY
     })
 
     expect(screen.getByText('Manual Install Required')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/aaronlilla/hawl-workstation/releases/tag/v1.4.200'
+    )
   })
 
   it('uses the recovery version when cached update state is stale', () => {
@@ -336,7 +338,9 @@ describe('UpdateCard Linux package-install recovery', () => {
     showPackageRecovery()
 
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/aaronlilla/hawl-workstation/releases/tag/v1.4.200'
+    )
   })
 
   it.each([
@@ -379,7 +383,9 @@ describe('UpdateCard Linux package-install recovery', () => {
     await flushActions()
 
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/aaronlilla/hawl-workstation/releases/tag/v1.4.200'
+    )
   })
 
   it('resets command discovery when a newer package cycle replaces the recovery', async () => {
@@ -405,7 +411,7 @@ describe('UpdateCard Linux package-install recovery', () => {
 
   it('links unusable package metadata to the release without offering a futile retry', () => {
     const message =
-      'The downloaded package metadata could not be verified. Quit Orca before downloading and installing the update from the official release page.'
+      'The downloaded package metadata could not be verified. Quit Hawl before downloading and installing the update from the official release page.'
     renderWithInitialStatus({
       state: 'error',
       message,
@@ -418,7 +424,9 @@ describe('UpdateCard Linux package-install recovery', () => {
     expect(screen.queryByText('Manual Install Required')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Retry Download' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://github.com/aaronlilla/hawl-workstation/releases/tag/v1.4.200'
+    )
   })
 
   it('keeps generic errors on the generic card when no recovery is attached', () => {
@@ -434,7 +442,7 @@ describe('UpdateCard Linux package-install recovery', () => {
 
   it('shows the appended install cause behind the generic card details', () => {
     const message =
-      'Could not start the update installer. Orca remains open. (Command failed: pkexec must be setuid root)'
+      'Could not start the update installer. Hawl remains open. (Command failed: pkexec must be setuid root)'
     renderAfterAvailableStatus()
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))

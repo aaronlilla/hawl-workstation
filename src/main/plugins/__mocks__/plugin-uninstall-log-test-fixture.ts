@@ -106,7 +106,7 @@ export async function createUninstallFixture() {
     const manifest = {
       manifestVersion: 1,
       id,
-      publisher: official ? 'stablyai' : 'memory-audit',
+      publisher: official ? 'aaronlilla' : 'memory-audit',
       name: id,
       version: '1.0.0',
       engines: { orca: '>=1.0.0' },
@@ -125,7 +125,11 @@ export async function createUninstallFixture() {
           pluginsDir: getUserPluginsDir(root),
           stagingDir: sourcePath,
           hostVersion: '1.4.0',
-          source: { kind: 'git', url: 'https://github.com/stablyai/orca-plugins.git', ref: 'main' },
+          source: {
+            kind: 'git',
+            url: 'https://github.com/aaronlilla/hawl-plugins.git',
+            ref: 'main'
+          },
           resolvedCommit: '1'.repeat(40)
         })
       : await installPluginFromLocalPath({

@@ -43,33 +43,33 @@ describe('plugin install trust', () => {
     [
       {
         kind: 'git',
-        url: 'https://github.com/attacker/orca-secrets.git',
+        url: 'https://github.com/attacker/hawl-secrets.git',
         ref: 'main'
       },
-      'reserved plugin identity community.orca-secrets must resolve to the stablyai organization'
+      'reserved plugin identity community.hawl-secrets must resolve to the aaronlilla organization'
     ],
     [
       {
         kind: 'git',
-        url: 'git@github.com:stablyai/orca-secrets.git',
+        url: 'git@github.com:aaronlilla/hawl-secrets.git',
         ref: 'main'
       },
       null
     ]
   ])('enforces reserved source organization', (source, expected) => {
-    expect(pluginInstallTrustError('community.orca-secrets', source)).toBe(expected)
+    expect(pluginInstallTrustError('community.hawl-secrets', source)).toBe(expected)
   })
 
   it('rejects locally installed reserved identities before publication', async () => {
     const sourcePath = await tempRoot('orca-reserved-plugin-')
     const pluginsDir = await tempRoot('orca-plugin-installs-')
-    await writePlugin(sourcePath, 'stablyai', 'orca-skills')
+    await writePlugin(sourcePath, 'aaronlilla', 'hawl-skills')
 
     await expect(
       installPluginFromLocalPath({ pluginsDir, sourcePath, hostVersion: '1.4.0' })
     ).resolves.toEqual({
       ok: false,
-      error: 'reserved plugin identity stablyai.orca-skills cannot be installed from a local path'
+      error: 'reserved plugin identity aaronlilla.hawl-skills cannot be installed from a local path'
     })
     await expect(readPluginLockfile(pluginsDir)).resolves.toEqual({ version: 1, plugins: {} })
   })
@@ -77,20 +77,20 @@ describe('plugin install trust', () => {
   it('allows the app-bundled path only for the complete official identity', async () => {
     const sourcePath = await tempRoot('orca-bundled-plugin-')
     const pluginsDir = await tempRoot('orca-plugin-installs-')
-    await writePlugin(sourcePath, 'stablyai', 'orca-skills')
+    await writePlugin(sourcePath, 'aaronlilla', 'hawl-skills')
 
     const result = await installBundledPlugin({
       pluginsDir,
       sourcePath,
       hostVersion: '1.4.0',
-      expectedPluginKey: 'stablyai.orca-skills'
+      expectedPluginKey: 'aaronlilla.hawl-skills'
     })
 
-    expect(result).toMatchObject({ ok: true, pluginKey: 'stablyai.orca-skills' })
+    expect(result).toMatchObject({ ok: true, pluginKey: 'aaronlilla.hawl-skills' })
     const lock = await readPluginLockfile(pluginsDir)
-    expect(lock.plugins['stablyai.orca-skills']?.source).toEqual({
+    expect(lock.plugins['aaronlilla.hawl-skills']?.source).toEqual({
       kind: 'bundled',
-      bundleId: 'stablyai.orca-skills'
+      bundleId: 'aaronlilla.hawl-skills'
     })
   })
 
