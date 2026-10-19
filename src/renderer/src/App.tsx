@@ -34,6 +34,7 @@ import { usePersistedUIWriter } from './app-shell/use-persisted-ui-writer'
 import { useRuntimeGraphSync } from './app-shell/use-runtime-graph-sync'
 import { useWindowVisibilityEffects } from './app-shell/use-window-visibility-effects'
 import { SpaceWindowStatePublisher } from './components/workspace-space/SpaceWindowStatePublisher'
+import { ForemanDock } from '../../hawl/renderer/foreman/ForemanDock'
 
 function App(): React.JSX.Element {
   const layout = useAppChromeLayout()
@@ -111,6 +112,8 @@ function App(): React.JSX.Element {
       <ClaudeAccountSwitchDialog />
       <PinnedTabCloseDialog />
       <RunningTerminalCloseDialog />
+      {/* Hawl hook (FORK-HOOKS.md): the foreman button and screen. */}
+      <ForemanDock />
       {/* Why: Electron's drag-region hit-test is DOM-order-based (ignores z-index); render last so WindowControls stay clickable. */}
       {hasCustomTitleBar && <WindowControls />}
     </div>

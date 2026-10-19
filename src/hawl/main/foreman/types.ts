@@ -339,6 +339,8 @@ export type IntakeResult = {
 
 export type JobView = {
   taskId: string
+  capability: string | null
+  requester: string
   state: TaskState
   exec: ExecState | null
   /** 'foreman' or the agent id holding the job. */

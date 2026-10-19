@@ -189,6 +189,8 @@ export class Outbox {
       (err: unknown) => {
         this.inflightId = null
         this.#fail(head, err)
+        // A refused-for-good effect is gone: whatever waited behind it goes now.
+        this.flush()
         this.#env.hooks().onChange?.()
       }
     )

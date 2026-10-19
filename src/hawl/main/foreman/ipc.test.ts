@@ -105,7 +105,7 @@ describe('S15/S18 the console controls from the plan', () => {
     })
     expect(fail('hawl:foreman:set-menu', [null])).toMatch(/capability must be an object/)
     expect(fail('hawl:foreman:set-menu', [{ id: 'x' }])).toMatch(/description/)
-    expect(fail('hawl:foreman:set-menu', new Array(201).fill({ id: 'a', description: 'b' }))).toMatch(/200/)
+    expect(fail('hawl:foreman:set-menu', Array.from({ length: 201 }, () => ({ id: 'a', description: 'b' })))).toMatch(/200/)
   })
 
   it('S19/S20: rules are added, listed and removed; a rule with nothing to match is refused', () => {

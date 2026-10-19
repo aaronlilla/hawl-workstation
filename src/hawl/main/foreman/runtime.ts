@@ -43,6 +43,8 @@ export type RuntimeOptions = {
   /** An unchanged snapshot is rewritten after this long, so "saved at" stays close to now. Default 5 min. */
   refreshMs?: number
   onError?: (err: unknown, where?: string) => void
+  /** Something may have changed (a call, a tick, a delivery). For pushing a refresh to the screen. */
+  onChanged?: () => void
 }
 
 const realScheduler: Scheduler = {
@@ -52,7 +54,8 @@ const realScheduler: Scheduler = {
 
 export class ForemanRuntime {
   readonly foreman: Foreman
-  readonly #o: Required<Omit<RuntimeOptions, 'onError'>> & Pick<RuntimeOptions, 'onError'>
+  readonly #o: Required<Omit<RuntimeOptions, 'onError' | 'onChanged'>> &
+    Pick<RuntimeOptions, 'onError' | 'onChanged'>
   #timer: unknown = null
   #saveTimer: unknown = null
   #expectedAt = 0
@@ -163,6 +166,7 @@ export class ForemanRuntime {
       return
     }
     this.#arm(minWaitMs)
+    this.#o.onChanged?.()
     if (this.#saveTimer === null) {
       this.#saveTimer = this.#o.scheduler.set(() => {
         this.#saveTimer = null

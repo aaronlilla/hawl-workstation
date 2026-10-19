@@ -22,6 +22,8 @@ export function jobView(c: ForemanCtx, taskId: string): JobView {
   }
   return {
     taskId: job.taskId,
+    capability: job.capability,
+    requester: job.requester,
     state: job.state,
     exec: job.exec,
     holder: live?.state === 'active' ? live.agentId : 'foreman',
@@ -65,6 +67,8 @@ export function busyAgentIds(c: ForemanCtx): string[] {
 export function tombView(t: Tombstone): JobView {
   return {
     taskId: t.taskId,
+    capability: null,
+    requester: '',
     state: t.state,
     exec: null,
     holder: 'foreman',

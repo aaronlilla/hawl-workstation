@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { hawlForemanApi } from '../hawl/preload/foreman'
 import type { PreloadApi } from './api-types'
 import { installBrowserFindListener } from './preload-runtime-support'
 import { appApi } from './api/app-bridge'
@@ -190,6 +191,8 @@ const api = {
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('api', api)
+    // Hawl hook (FORK-HOOKS.md)
+    contextBridge.exposeInMainWorld('hawl', { foreman: hawlForemanApi })
   } catch (error) {
     console.error(error)
   }
