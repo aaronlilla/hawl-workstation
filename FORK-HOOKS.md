@@ -67,7 +67,7 @@ Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (
 - Existing unit tests that assert the old defaults (terminal theme names, bundled plugin ids, feed URLs) are not updated yet.
 
 ## D3-surfaces (glass surfaces, menus, command menu, toasts, dialogs, drawers, cards)
-All styling lives in `src/hawl/renderer/d3-surfaces.css`, imported through `src/hawl/renderer/hawl-pieces.css` (single hook, one `@import` per piece), which `hawl-theme.css` imports first. It targets Orca's own `data-slot` / Radix / cmdk / sonner attributes, so no component is restyled in TSX.
+All styling lives in `src/hawl/renderer/d3-surfaces.css`, imported through `src/hawl/renderer/hawl-pieces.css` (single hook, one `@import` per piece), which `hawl-theme.css` imports first. It targets Orca's own `data-slot` / Radix / cmdk / sonner attributes, so no component is restyled in TSX. Round 2 added a lit scene behind dialogs and sheets (overlay gradients), chunky menu rows and key caps, tinted toasts with a timer line, recessed fields and lit primary key inside dialogs, and glass lanes in the workspace board. Still no Orca file edits for it.
 | File | Hook |
 |---|---|
 | `src/hawl/renderer/hawl-theme.css` | one `@import './hawl-pieces.css'` at the top |
