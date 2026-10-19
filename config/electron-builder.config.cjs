@@ -365,6 +365,8 @@ module.exports = {
     'out/package.json',
     'out/cli/**',
     'out/shared/**',
+    // Hawl: the compiled CLI imports ../../hawl/shared/brand (profile folder name), so it must sit beside out/shared.
+    'out/hawl/**',
     'out/main/agent-hooks/**',
     'out/main/antigravity/**',
     'out/main/claude/**',
@@ -545,7 +547,7 @@ module.exports = {
     }
   },
   win: {
-    executableName: 'Orca',
+    executableName: 'Hawl',
     // Why: Windows installers are signed after electron-builder packaging by
     // SignPath, so the packager cannot infer the updater publisherName.
     //

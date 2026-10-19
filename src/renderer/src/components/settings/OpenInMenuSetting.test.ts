@@ -35,10 +35,10 @@ describe('OpenInMenuSetting presets', () => {
     expect(isOpenInAppPresetAdded([{ command: ' cursor ' }], cursor)).toBe(true)
   })
 
-  it('keeps the Zed icon visible on dark menus', () => {
+  it('uses a bundled icon, never a Google favicon request (Hawl: no third-party egress)', () => {
     const icon = OpenInApplicationIcon({ application: { command: 'zed' } })
 
-    expect(icon.props.className).toContain('dark:invert')
+    expect(icon.type).not.toBe('img')
   })
 })
 

@@ -222,7 +222,7 @@ it('launches the copied helper on plain Node and leaves no inherited credentials
     Label: macDaemonJobLabel(state.root),
     KeepAlive: false,
     // Local Network access for a plist-launched job resolves through its associated app.
-    AssociatedBundleIdentifiers: ['com.stablyai.orca'],
+    AssociatedBundleIdentifiers: ['com.hawl.workstation'],
     EnvironmentVariables: { ORCA_TEST_SECRET: 'test-value' }
   })
   expect(JSON.stringify(job)).not.toContain('NODE_CHANNEL_FD')
@@ -253,7 +253,7 @@ it('uses one launchd label per profile and protocol', () => {
   expect(macDaemonJobLabel('/Users/a/Library/Application Support/orca')).not.toBe(
     macDaemonJobLabel('/Users/a/Library/Application Support/orca-dev')
   )
-  expect(macDaemonJobLabel('/p')).toMatch(/^com\.stablyai\.orca\.terminal\.[0-9a-f]{16}\.v49$/)
+  expect(macDaemonJobLabel('/p')).toMatch(/^com.hawl.workstation\.terminal\.[0-9a-f]{16}\.v49$/)
 })
 
 it.each(['13.4.1', '12.7.6'])(

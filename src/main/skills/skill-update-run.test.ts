@@ -60,7 +60,7 @@ describe('SkillUpdateRunner', () => {
       '--yes',
       `skills@${SKILLS_CLI_VERSION}`,
       'add',
-      'https://github.com/stablyai/orca/tree/0123456789abcdef0123456789abcdef01234567',
+      'https://github.com/aaronlilla/hawl-workstation/tree/0123456789abcdef0123456789abcdef01234567',
       '--skill',
       'orca-cli',
       '--skill',
