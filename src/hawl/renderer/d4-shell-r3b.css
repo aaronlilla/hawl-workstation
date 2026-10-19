@@ -1,0 +1,399 @@
+/* D4-shell, round 3 part 2: empty-state cards, top bar at narrow widths, glass menus and pickers,
+   Settings controls, the terminal well, the status bar and wide windows. Light theme only.
+   Imported by d4-shell-r3.css. */
+
+/* Empty states on pages (Files signed out, Work with no source): one lit card, not a lone icon and grey text. */
+html:not(.dark) .hawl-page-slab main > div[class*='items-center'][class*='justify-center'] {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  height: auto;
+  width: min(520px, calc(100% - 64px));
+  min-height: 0;
+  margin: 12px 32px 0;
+  padding: 26px 28px 24px;
+  border-radius: 24px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+  background: linear-gradient(180deg, #fffefb, #fff9ec);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.2),
+    0 12px 22px -10px rgba(var(--hw-shade), 0.35);
+}
+html:not(.dark) .hawl-page-slab main > div[class*='items-center'][class*='justify-center'] > svg {
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  border-radius: 14px;
+  color: var(--hw-ink-2);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise-low);
+}
+html:not(.dark) .hawl-page-slab main > div[class*='items-center'][class*='justify-center'] h2 {
+  font: 800 20px/1.2 var(--hawl-font-display);
+  letter-spacing: -0.02em;
+  color: var(--hw-ink);
+}
+html:not(.dark) .hawl-page-slab main > div[class*='items-center'][class*='justify-center'] p {
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--hw-ink-3);
+}
+html:not(.dark) .hawl-page-slab main > div[class*='items-center'][class*='justify-center'] > div {
+  text-align: left;
+  align-items: flex-start;
+}
+html:not(.dark) .hawl-page-slab main > div[class*='items-center'][class*='justify-center'] button {
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 700;
+  color: var(--hw-ink);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise);
+}
+/* Work: the "no source" notice reads left aligned inside the sheet. */
+html:not(.dark) .hawl-page-slab[data-hawl-view='tasks'] div[class*='py-10'][class*='text-center'] {
+  text-align: left;
+  padding-left: 28px;
+}
+/* Work: Open / Assigned to me sit on the ground as pills, not a second recessed bar inside the first. */
+html:not(.dark) .hawl-page-slab[data-hawl-view='tasks'] div[class*='bg-muted/35'] {
+  background: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+html:not(.dark)
+  .hawl-page-slab[data-hawl-view='tasks']
+  div[class*='bg-muted/35']
+  div:has(> button[class*='bg-foreground/90']) {
+  background: var(--hw-trough);
+}
+
+/* ── Top bar when the right panel is open: it gives back the window-controls gap and keeps its words ── */
+html:not(.dark):has(.hawl-page-slab[data-hawl-view='workspace'][data-hawl-panel='open']) .hawl-topbar {
+  padding-right: 14px;
+}
+@container hawl-topbar (max-width: 860px) {
+  html:not(.dark) .hawl-live,
+  html:not(.dark) .hawl-invite {
+    width: auto;
+    padding: 0 14px;
+    justify-content: flex-start;
+  }
+  .hawl-live-text,
+  .hawl-invite-label {
+    display: inline;
+  }
+  html:not(.dark) .hawl-search {
+    flex: 1 1 160px;
+  }
+  .hawl-site-name {
+    max-width: 110px;
+  }
+}
+@container hawl-topbar (max-width: 700px) {
+  .hawl-site-name {
+    max-width: 80px;
+  }
+  .hawl-search-text {
+    font-size: 13.5px;
+  }
+}
+
+/* ── Menus, pickers and popovers: glass, like the site and account menus ─────────────── */
+html:not(.dark)
+  :is(
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dropdown-menu-sub-content'],
+    [data-slot='context-menu-content'],
+    [data-slot='context-menu-sub-content'],
+    [data-slot='select-content'],
+    [data-slot='popover-content']
+  ) {
+  min-width: 244px;
+  padding: 8px;
+  border: 0;
+  border-radius: 22px;
+  color: var(--hw-ink);
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.88), rgba(255, 247, 230, 0.76));
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  backdrop-filter: blur(26px) saturate(1.6);
+  box-shadow: var(--hw-glass-rim), var(--hw-glass-drop);
+}
+html:not(.dark)
+  :is(
+    [data-slot='dropdown-menu-item'],
+    [data-slot='dropdown-menu-checkbox-item'],
+    [data-slot='dropdown-menu-radio-item'],
+    [data-slot='dropdown-menu-sub-trigger'],
+    [data-slot='context-menu-item'],
+    [data-slot='context-menu-radio-item'],
+    [data-slot='context-menu-sub-trigger'],
+    [data-slot='select-item']
+  ) {
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  gap: 10px;
+  font: 600 14px/1.2 var(--app-font-family);
+  color: var(--hw-ink-2);
+  transition:
+    background 0.14s,
+    box-shadow 0.14s,
+    color 0.14s;
+}
+html:not(.dark)
+  :is(
+    [data-slot='dropdown-menu-item'],
+    [data-slot='dropdown-menu-checkbox-item'],
+    [data-slot='dropdown-menu-radio-item'],
+    [data-slot='dropdown-menu-sub-trigger'],
+    [data-slot='context-menu-item'],
+    [data-slot='context-menu-radio-item'],
+    [data-slot='context-menu-sub-trigger'],
+    [data-slot='select-item']
+  )
+  svg {
+  width: 17px;
+  height: 17px;
+  color: var(--hw-ink-3);
+}
+html:not(.dark)
+  :is(
+    [data-slot='dropdown-menu-item'],
+    [data-slot='dropdown-menu-checkbox-item'],
+    [data-slot='dropdown-menu-radio-item'],
+    [data-slot='dropdown-menu-sub-trigger'],
+    [data-slot='context-menu-item'],
+    [data-slot='context-menu-radio-item'],
+    [data-slot='context-menu-sub-trigger'],
+    [data-slot='select-item']
+  ):is([data-highlighted], :focus, [data-state='open']) {
+  color: var(--hw-ink);
+  background:
+    radial-gradient(120px 40px at 20% 0%, rgba(255, 190, 120, 0.4), rgba(255, 190, 120, 0) 70%),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 60%, #f6eddc 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.2),
+    0 4px 8px -3px rgba(var(--hw-shade), 0.3);
+}
+html:not(.dark)
+  :is(
+    [data-slot='dropdown-menu-separator'],
+    [data-slot='context-menu-separator'],
+    [data-slot='select-separator']
+  ) {
+  height: 2px;
+  margin: 6px 6px;
+  background: var(--hw-engrave);
+}
+html:not(.dark)
+  :is([data-slot='dropdown-menu-label'], [data-slot='context-menu-label'], [data-slot='select-label']) {
+  color: var(--hw-ink-4);
+  font: 700 11px/1 var(--app-font-family);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* The site menu was washed out: it keeps the glass look but the page text no longer shows through. */
+html:not(.dark) .hawl-sheet[data-hawl-lens],
+html:not(.dark) .hawl-sheet {
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.9), rgba(255, 247, 230, 0.8));
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  backdrop-filter: blur(26px) saturate(1.6);
+}
+
+/* ── Settings controls: lit orange switches, recessed wells, raised keys ─────────────── */
+html:not(.dark) button[role='switch'] {
+  width: 46px;
+  height: 26px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hw-well-fill);
+  box-shadow:
+    inset 0 3px 5px rgba(var(--hw-shade), 0.4),
+    inset 0 1px 1px rgba(var(--hw-shade), 0.3),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(var(--hw-shade), 0.25);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+html:not(.dark) button[role='switch'][data-state='checked'] {
+  background: var(--hw-mat-orange);
+  box-shadow:
+    inset 0 2px 3px rgba(120, 40, 0, 0.45),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(100, 34, 3, 0.7),
+    0 0 14px 1px rgba(242, 106, 27, 0.4);
+}
+html:not(.dark) button[role='switch'] > span {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--hw-mat-acrylic);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(52, 34, 10, 0.5),
+    0 2px 3px rgba(var(--hw-shade), 0.5);
+}
+html:not(.dark) [data-slot='select-trigger'],
+html:not(.dark) .settings-view-shell button[class*='border-input'] {
+  border: 0;
+  border-radius: 12px;
+  color: var(--hw-ink);
+  font-weight: 600;
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise-low);
+}
+html:not(.dark) [data-slot='select-trigger']:hover,
+html:not(.dark) .settings-view-shell button[class*='border-input']:hover {
+  background: #fff;
+}
+html:not(.dark) .settings-view-shell input[class*='border-input'],
+html:not(.dark) .settings-view-shell textarea[class*='border-input'] {
+  border: 0;
+  border-radius: 12px;
+  color: var(--hw-ink);
+  background: var(--hw-well-fill);
+  box-shadow:
+    inset 0 3px 5px rgba(var(--hw-shade), 0.3),
+    inset 0 1px 1px rgba(var(--hw-shade), 0.3),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(var(--hw-shade), 0.22);
+}
+html:not(.dark) .settings-view-shell input[class*='border-input']:focus-visible,
+html:not(.dark) .settings-view-shell textarea[class*='border-input']:focus-visible {
+  outline: 0;
+  box-shadow: var(--hw-focus);
+}
+/* Orca's own onboarding row and the BETA / OPTIONAL tags are noise in Hawl's settings list. */
+html:not(.dark) .settings-view-shell aside button[class*='px-2.5'][class*='py-2'] {
+  display: none;
+}
+html:not(.dark) .settings-view-shell aside .space-y-1 button span[class*='uppercase'] {
+  display: none;
+}
+
+/* ── Terminal and workspace: the terminal is a cream well, tabs and panel agree with it ── */
+html:not(.dark) .hawl-page-slab[data-hawl-view='workspace'] .pane,
+html:not(.dark) .hawl-page-slab[data-hawl-view='workspace'] .xterm-viewport {
+  background-color: #fcf6e7 !important;
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view='workspace'] .xterm-container {
+  padding: 4px 6px;
+  box-shadow: inset 0 3px 6px rgba(var(--hw-shade), 0.14);
+}
+html:not(.dark) .hawl-right-panel button:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Status bar: a glass strip with an engraved top edge, readable at a glance ────────── */
+html:not(.dark) .hawl-statusbar {
+  height: 30px;
+  min-height: 30px;
+  font-size: 12px;
+  color: var(--hw-ink-3);
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.62), rgba(246, 236, 214, 0.5));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 -1px 0 rgba(var(--hw-shade), 0.16),
+    0 -2px 0 rgba(255, 255, 255, 0.8);
+}
+html:not(.dark) .hawl-statusbar span,
+html:not(.dark) .hawl-statusbar button {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hw-ink-3);
+}
+html:not(.dark) .hawl-statusbar svg {
+  color: var(--hw-ink-4);
+}
+html:not(.dark) .hawl-statusbar button:hover {
+  color: var(--hw-ink);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 1px rgba(var(--hw-shade), 0.14);
+}
+
+/* ── Wide windows: the home column fills the page, rows run full width like H01 ───────── */
+.hawl-home[data-has-items='false'] .hawl-home-body {
+  max-width: none;
+  padding-right: min(36cqw, 440px);
+}
+@container hawl-home (max-width: 900px) {
+  .hawl-home[data-has-items='false'] .hawl-home-body {
+    padding-right: 0;
+  }
+}
+
+/* ── Small windows: hints and the helper step aside instead of floating over the content ── */
+@container hawl-home (max-width: 760px) {
+  .hawl-home-keys {
+    position: static;
+    margin-top: 24px;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@container hawl-home (max-width: 640px) {
+  .hawl-home-art {
+    display: none;
+  }
+}
+@media (max-height: 640px) {
+  .hawl-home-keys {
+    display: none;
+  }
+}
+
+/* Narrow page column: search becomes one round key, then Live and search drop out so the window controls never sit on a control. */
+@container hawl-topbar (max-width: 620px) {
+  html:not(.dark) .hawl-search {
+    flex: 0 0 46px;
+    width: 46px;
+    padding: 0;
+    justify-content: center;
+  }
+  .hawl-search-text,
+  .hawl-search-keys {
+    display: none;
+  }
+}
+@container hawl-topbar (max-width: 400px) {
+  html:not(.dark) .hawl-live,
+  html:not(.dark) .hawl-invite,
+  html:not(.dark) .hawl-search,
+  .hawl-site-name,
+  .hawl-site-chev {
+    display: none;
+  }
+  html:not(.dark) .hawl-site-switcher {
+    padding: 0 6px;
+  }
+}
+
+/* Signed out, the site menu's actions wait for sign-in: they read as engraved keys, not a washed-out orange. */
+html:not(.dark) .hawl-sheet-primary:disabled {
+  opacity: 1;
+  filter: none;
+  color: var(--hw-ink-4);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  background: var(--hw-well-fill);
+  box-shadow:
+    inset 0 3px 5px rgba(var(--hw-shade), 0.28),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(var(--hw-shade), 0.22);
+}
+html:not(.dark) .hawl-sheet-row:disabled {
+  opacity: 0.72;
+}

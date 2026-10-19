@@ -177,7 +177,7 @@ export default function ArtifactsPage(): React.JSX.Element {
         }
       >
         <h1 className="truncate text-base font-semibold leading-8">
-          {translate('auto.components.artifacts.ArtifactsPage.title', 'Artifacts')}
+          {translate('auto.components.artifacts.ArtifactsPage.title', 'Files')}
         </h1>
       </header>
 

@@ -209,9 +209,9 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(helpIndex).toBeGreaterThan(settingsIndex)
   })
 
-  it('renders Send Feedback menu item', () => {
+  it('leaves Orca-only Send Feedback out of the Hawl menu', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Send Feedback')
+    expect(html).not.toContain('Send Feedback')
   })
 
   it('renders Keyboard Shortcuts menu item', () => {
@@ -219,10 +219,9 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(html).toContain('Keyboard Shortcuts')
   })
 
-  it('renders Milestones with progress when setup is incomplete', () => {
+  it('leaves Milestones out of the Hawl menu (setup lives in the Get set up row)', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Milestones')
-    expect(html).toContain('data-testid="setup-guide-progress-ring"')
+    expect(html).not.toContain('Milestones')
   })
 
   it('hides Milestones when setup is complete', () => {
@@ -236,14 +235,14 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(html).not.toContain('Milestones')
   })
 
-  it('renders the Onboarding menu item by default', () => {
+  it('leaves the Orca Onboarding item out of the Hawl menu', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Onboarding')
+    expect(html).not.toContain('Onboarding')
   })
 
-  it('renders Restart Orca by default', () => {
+  it('renders the restart item by default', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Restart Orca')
+    expect(html).toContain('Restart ')
   })
 
   it('renders Docs link', () => {
@@ -261,27 +260,10 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(html).toContain('GitHub')
   })
 
-  it('renders Discord link', () => {
+  it('has no Discord or X links in the Hawl menu', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Discord')
-    expect(html).toContain('viewBox="0 0 20 20"')
-    expect(html).toContain('M16.0742 4.45014C14.9244 3.92097 13.7106 3.54556 12.4638 3.3335')
-  })
-
-  it('opens Discord invite through the shell bridge', async () => {
-    const container = await renderMenu()
-    const discordButton = findMenuItem(container, 'Discord')
-
-    await act(async () => {
-      discordButton.click()
-    })
-
-    expect(mocks.shellOpenUrl).toHaveBeenCalledWith('https://discord.gg/fzjDKHxv8Q')
-  })
-
-  it('renders X link', () => {
-    const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('>X<')
+    expect(html).not.toContain('Discord')
+    expect(html).not.toContain('>X<')
   })
 
   it('renders Check for Updates menu item', () => {

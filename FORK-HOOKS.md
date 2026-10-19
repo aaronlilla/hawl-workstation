@@ -95,3 +95,14 @@ CSS: `hawl-theme.css` imports `hawl-pieces.css` (one `@import` per piece; `d4-sh
 - Skill install points at `github.com/aaronlilla/hawl-workstation`, which does not exist until the repo is published; the pinned commit is the local one.
 - `mobile/` Expo app still points at Orca hosts (M6). Feature-wall onboarding GIFs show Orca's UI. Mac/Linux packaging art, `posthog-node` still listed in package.json (unused).
 - Packaged build (`build:win`) and installer not run.
+
+## Round 3 (every working page, not only the Needs you home)
+CSS: `d4-shell-r3.css` (pages: heading, ground, pills, wells, keys) and `d4-shell-r3b.css` (empty-state cards, narrow top bar, glass menus and pickers, Settings switches and selects, terminal well, status bar, wide and small windows), both under `src/hawl/renderer/`, imported from `d4-shell.css`. New code: `shell/HawlPageHead.tsx` (Work, Activity and Phone headings), `shell/HawlAgents.tsx` and `shell/hawl-page.ts` (the Agents page; Needs you and Agents share the home column).
+| File | Hook |
+|---|---|
+| `src/renderer/src/app-shell/AppWorkspaceShell.tsx` | renders `<HawlPageHead />` above the slab; slab gets `data-hawl-view` (home, workspace or the page) and `data-hawl-panel` (right panel open or closed) |
+| `src/renderer/src/components/Landing.tsx` | create label is always "Workspace" (was Worktree or Workspace by repo kind) |
+| `src/renderer/src/components/artifacts/ArtifactsPage.tsx` (+ test) | page title "Files" (was "Artifacts") |
+| `src/renderer/src/components/sidebar/SidebarToolbar.tsx` (+ test) | the "Workspace board moved" first-launch hint is off (`WORKSPACE_BOARD_MOVED_HINT_ENABLED = false`) |
+| `src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx` (+ test) | Send Feedback, Milestones and Onboarding are behind `HAWL_HELP_ORCA_ITEMS = false`; stale Discord, X and Restart tests updated |
+| `src/hawl/shared/terminal-themes.ts` | Hawl Daylight terminal is a cream well (`#fcf6e7`, ink `#2b2318`) instead of white |

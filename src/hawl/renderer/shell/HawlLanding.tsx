@@ -5,7 +5,9 @@ import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
 import type { ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import restingHelper from '../art/empty-quiet.webp'
 import { useHawlLight } from './hawl-light'
+import { HawlAgents } from './HawlAgents'
 import { HawlNeedsRow, useHawlNeeds } from './HawlNeeds'
+import { useHawlHomePage } from './hawl-page'
 
 export type HawlLandingShortcut = {
   id: string
@@ -55,6 +57,7 @@ export function HawlLanding({
   onCreate: () => void
 }): React.JSX.Element {
   useHawlLight()
+  const homePage = useHawlHomePage()
   const needs = useHawlNeeds()
   const [lane, setLane] = useState<Lane>('now')
   const counts: Record<Lane, number> = {
@@ -62,6 +65,9 @@ export function HawlLanding({
     fyi: needs.filter((n) => n.lane === 'fyi').length,
     later: needs.filter((n) => n.lane === 'later').length,
     done: 0
+  }
+  if (homePage === 'agents') {
+    return <HawlAgents />
   }
   const visible = lane === 'done' ? [] : GROUPS.filter((g) => g.id === lane || lane === 'now')
   return (

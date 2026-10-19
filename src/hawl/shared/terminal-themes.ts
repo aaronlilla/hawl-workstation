@@ -30,10 +30,10 @@ export const HAWL_TERMINAL_THEMES: TerminalThemeMap = {
     brightWhite: '#fff3ea'
   },
   [HAWL_TERMINAL_THEME_LIGHT]: {
-    background: '#fffefb',
-    foreground: '#14243a',
+    background: '#fcf6e7',
+    foreground: '#2b2318',
     cursor: '#c64a0e',
-    cursorAccent: '#fffefb',
+    cursorAccent: '#fcf6e7',
     selectionBackground: '#fbd9bb',
     selectionForeground: '#14243a',
     black: '#14243a',

@@ -134,7 +134,7 @@ describe('ArtifactsPage', () => {
     const row = await screen.findByRole('button', { name: /Quarterly report/ })
     expect(row).toBeInTheDocument()
     expect(screen.queryByRole('heading', { level: 2, name: 'Quarterly report' })).toBeNull()
-    const title = screen.getByRole('heading', { level: 1, name: 'Artifacts' })
+    const title = screen.getByRole('heading', { level: 1, name: 'Files' })
     expect(title).toHaveClass('text-base', 'font-semibold', 'leading-8')
     expect(title.closest('header')).toHaveClass('px-3', 'pb-3', 'md:px-5')
     expect(screen.getByRole('main')).toHaveClass('pt-5', 'md:pt-6')

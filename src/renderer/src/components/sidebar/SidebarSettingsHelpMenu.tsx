@@ -49,6 +49,8 @@ const SidebarFeedbackDialog = lazyWithRetry(
   { reloadKey: 'sidebar-feedback-dialog' }
 )
 
+// Hawl fork: feedback, Milestones and Onboarding are Orca's own; they stay out of Hawl's Help menu.
+const HAWL_HELP_ORCA_ITEMS = false
 const DOCS_URL = 'https://hawl.ai/docs'
 const CHANGELOG_URL = 'https://github.com/aaronlilla/hawl-workstation/releases'
 const GITHUB_URL = 'https://github.com/aaronlilla/hawl-workstation'
@@ -237,6 +239,8 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            {HAWL_HELP_ORCA_ITEMS ? (
+              <>
             <DropdownMenuItem onSelect={handleOpenFeedback}>
               <MessageSquareText className="size-3.5" />
               {translate(
@@ -275,6 +279,8 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
                 'Onboarding'
               )}
             </DropdownMenuItem>
+              </>
+            ) : null}
             <ExternalMenuItem
               label={translate(
                 'auto.components.sidebar.SidebarSettingsHelpMenu.cdc87f897e',

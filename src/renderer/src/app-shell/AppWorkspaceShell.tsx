@@ -7,6 +7,7 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
+import { HawlPageHead } from '../../../hawl/renderer/shell/HawlPageHead'
 import { HawlTopBar } from '../../../hawl/renderer/shell/HawlTopBar'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
@@ -164,7 +165,18 @@ export function AppWorkspaceShell(props: {
               layout.activeView !== 'artifacts' ? (
                 <div className="titlebar">{titlebarMainStrip}</div>
               ) : null}
-              <div className="hawl-page-slab relative flex flex-1 min-w-0 min-h-0 overflow-hidden">
+              <HawlPageHead />
+              <div
+                className="hawl-page-slab relative flex flex-1 min-w-0 min-h-0 overflow-hidden"
+                data-hawl-view={
+                  layout.activeView === 'terminal'
+                    ? layout.activeWorktreeId
+                      ? 'workspace'
+                      : 'home'
+                    : layout.activeView
+                }
+                data-hawl-panel={layout.rightSidebarOpen ? 'open' : 'closed'}
+              >
                 {/* Why: match the RightSidebar header's 36px/top-0 so the toggle's vertical center is identical open vs closed — else the icon jitters. */}
                 {layout.workspaceChromeActive && !layout.rightSidebarOpen && (
                   <div

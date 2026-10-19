@@ -9,6 +9,7 @@
 
 @import './d4-shell-panels.css';
 @import './d4-shell-pages.css';
+@import './d4-shell-r3.css';
 
 html:root:not(.dark) {
   --hw-ink: #1c1712;

@@ -1,0 +1,200 @@
+/* D4-shell, round 3: every page a person works in, not just the Needs you home. The page is the ground
+   (no white box), headings use the H01 heading, controls are the system materials (recessed wells,
+   raised acrylic keys, one lit orange), menus are glass. Light theme only (html:not(.dark)).
+   Imported by d4-shell.css. */
+
+@import './d4-shell-r3b.css';
+
+/* ── Page head: Work, Activity, Phone get the H01 heading Orca never had ───────────────── */
+.hawl-page-head {
+  position: relative;
+  z-index: 1;
+  padding: 22px 30px 10px 32px;
+  animation: hawl-rise 0.3s var(--hw-ease) both;
+}
+.hawl-page-title {
+  margin: 0;
+  font: 800 34px/1 var(--hawl-font-display);
+  letter-spacing: -0.035em;
+  color: var(--hw-ink, #1c1712);
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+.hawl-page-sub {
+  margin: 8px 0 0;
+  font: 450 14.5px/1.4 var(--app-font-family);
+  color: var(--hw-ink-3, #43382b);
+  max-width: 560px;
+}
+
+/* ── The page is the ground: no white slab around Work, Activity, Files, Automations, Phone ── */
+html:not(.dark) .hawl-page-slab:is(
+    [data-hawl-view='tasks'],
+    [data-hawl-view='activity'],
+    [data-hawl-view='artifacts'],
+    [data-hawl-view='automations'],
+    [data-hawl-view='mobile'],
+    [data-hawl-view='skills']
+  ) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+html:not(.dark) .hawl-page-slab:is(
+    [data-hawl-view='tasks'],
+    [data-hawl-view='activity'],
+    [data-hawl-view='artifacts'],
+    [data-hawl-view='automations'],
+    [data-hawl-view='mobile'],
+    [data-hawl-view='skills']
+  )::after {
+  display: none;
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view]:not([data-hawl-view='workspace']):not(
+    [data-hawl-view='settings']
+  )
+  .bg-background {
+  background: transparent;
+}
+/* Files, Automations and Settings carry their own heading: give it the H01 heading look. */
+html:not(.dark) .hawl-page-slab:is([data-hawl-view='artifacts'], [data-hawl-view='automations'])
+  header h1 {
+  font: 800 34px/1 var(--hawl-font-display);
+  letter-spacing: -0.035em;
+  color: var(--hw-ink);
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view='artifacts'] header,
+html:not(.dark) .hawl-page-slab[data-hawl-view='automations'] main > header {
+  padding: 22px 30px 10px 34px;
+}
+
+/* ── Controls on pages: segmented pills, wells, keys ──────────────────────────────────── */
+/* Selected pill (Orca paints it navy with bg-foreground) becomes the raised segment; the rest are plain text. */
+html:not(.dark) .hawl-page-slab button[class*='rounded-md'][class*='border'][class*='bg-foreground/90'] {
+  border: 0;
+  border-radius: 11px;
+  color: var(--hw-ink);
+  background:
+    radial-gradient(40px 14px at 28% 0%, #fff, rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset -1px -2px 2px rgba(150, 110, 60, 0.3),
+    0 0 0 1px rgba(52, 34, 10, 0.62),
+    0 1px 0 #cdbb93,
+    0 2px 0 #a89268,
+    1px 5px 3px -1px rgba(8, 4, 0, 0.5);
+}
+html:not(.dark) .hawl-page-slab button[class*='rounded-md'][class*='border'][class*='px-2.5'][class*='bg-muted/50'],
+html:not(.dark) .hawl-page-slab button[class*='rounded-md'][class*='border'][class*='px-2.5'][class*='bg-transparent'] {
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--hw-ink-3);
+}
+html:not(.dark) .hawl-page-slab button[class*='rounded-md'][class*='border'][class*='px-2.5'][class*='bg-muted/50']:hover {
+  color: var(--hw-ink);
+  background: rgba(255, 255, 255, 0.4);
+}
+html:not(.dark) .hawl-page-slab div:has(> button[class*='bg-foreground/90'][class*='px-2.5']) {
+  gap: 3px;
+  padding: 4px;
+  border-radius: 15px;
+  background: var(--hw-trough);
+  box-shadow:
+    inset 0 3px 6px rgba(70, 44, 12, 0.5),
+    inset 0 1px 1px rgba(60, 38, 10, 0.5),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.22);
+}
+html:not(.dark) .hawl-page-slab div:has(> button[class*='bg-foreground/90'][class*='px-2.5']) > button {
+  height: 30px;
+  padding: 0 14px;
+  font-weight: 600;
+  font-size: 13px;
+}
+/* Search and text fields: recessed wells with the system focus light. */
+html:not(.dark) .hawl-page-slab input:not([type='checkbox']):not([type='radio']),
+html:not(.dark) .hawl-page-slab textarea {
+  border: 0;
+  border-radius: 12px;
+  background: var(--hw-well-fill);
+  color: var(--hw-ink);
+  box-shadow:
+    inset 0 3px 5px rgba(var(--hw-shade), 0.3),
+    inset 0 1px 1px rgba(var(--hw-shade), 0.3),
+    0 1px 0 #fff,
+    0 0 0 1px rgba(var(--hw-shade), 0.22);
+}
+html:not(.dark) .hawl-page-slab input:not([type='checkbox']):not([type='radio']):focus-visible,
+html:not(.dark) .hawl-page-slab textarea:focus-visible {
+  outline: 0;
+  box-shadow: var(--hw-focus);
+}
+/* Dropdown buttons, filter keys, small icon keys: raised acrylic. */
+html:not(.dark) .hawl-page-slab button[role='combobox'],
+html:not(.dark) .hawl-page-slab section button[class*='h-8'][class*='rounded-md'][class*='border-border'] {
+  border: 0;
+  border-radius: 12px;
+  color: var(--hw-ink);
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise-low);
+}
+html:not(.dark) .hawl-page-slab button[role='combobox']:hover {
+  background: #fff;
+}
+html:not(.dark) .hawl-page-slab section button[aria-label^='Close'] {
+  border-radius: 12px;
+  background: var(--hw-mat-acrylic);
+  box-shadow: var(--hw-raise-low);
+}
+/* The faint grey source chip and the stock "GitHub · No host" line read as small printed labels. */
+html:not(.dark) .hawl-page-slab section div[class*='max-w-[min(420px'] {
+  border: 0;
+  background: transparent;
+  color: var(--hw-ink-4);
+  font-weight: 600;
+}
+
+/* Work: the table is one lit sheet on the ground, its header a printed strip. */
+html:not(.dark) .hawl-page-slab[data-hawl-view='tasks'] div[class*='rounded-md'][class*='max-h-full'] {
+  margin-bottom: 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fffefb, #fff9ec);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 0 0 1px rgba(60, 38, 10, 0.2),
+    0 8px 16px -8px rgba(var(--hw-shade), 0.3);
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view='tasks'] div[class*='py-10'][class*='text-center'] {
+  color: var(--hw-ink-3);
+}
+
+/* Activity: filter bar and list on the ground, the detail pane a lit sheet. */
+html:not(.dark) .hawl-page-slab[data-hawl-view='activity'] > div {
+  padding: 0 30px 18px 34px;
+  gap: 16px;
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view='activity'] [class*='border-l'],
+html:not(.dark) .hawl-page-slab[data-hawl-view='activity'] [class*='border-r'] {
+  border-color: transparent;
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view='activity'] [class*='border-b'],
+html:not(.dark) .hawl-page-slab[data-hawl-view='activity'] [class*='border-t'] {
+  border-color: transparent;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 -1px 0 rgba(var(--hw-shade), 0.12);
+}
+
+/* Activity's strip (back arrow, "agents / 0 unread") repeats what the sidebar says: the heading replaces it. */
+html:not(.dark) .hawl-page-column:has([data-hawl-page-head='activity']) > .titlebar {
+  display: none;
+}
+/* Work: Close is the sidebar's job; the table header cells stay on the sheet, not white blocks. */
+html:not(.dark) .hawl-page-slab section button[aria-label='Close tasks'],
+html:not(.dark) .hawl-page-slab section button[aria-label='Close tasks'] + div {
+  display: none;
+}
+html:not(.dark) .hawl-page-slab[data-hawl-view='tasks'] div[class*='sticky'] > * {
+  background: transparent;
+}

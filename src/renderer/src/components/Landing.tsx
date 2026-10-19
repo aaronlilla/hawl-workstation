@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ExternalLink, Star, X } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAppStore } from '../store'
-import { isGitRepoKind } from '../../../shared/repo-kind'
 import type { Repo } from '../../../shared/repo-types'
 import {
   dismissPreflightIssue,
@@ -226,8 +225,8 @@ export default function Landing(): React.JSX.Element {
   const repos = useAppStore((s) => s.repos)
   const openModal = useAppStore((s) => s.openModal)
 
-  const createTargetLabel =
-    repos.length > 0 && repos.every((repo) => isGitRepoKind(repo)) ? 'Worktree' : 'Workspace'
+  // Hawl fork: one word everywhere, "workspace" (git worktree stays an Orca detail).
+  const createTargetLabel = 'Workspace'
   const hasProjects = repos.length > 0
   const hasGitHubProject = useMemo(() => hasGitHubBackedProject(repos), [repos])
   // Hawl fork: no star-on-GitHub prompt (HAWL_STAR_NAG_ENABLED is false).

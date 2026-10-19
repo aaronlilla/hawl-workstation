@@ -17,6 +17,7 @@ import { SetupGuideSidebarEntry } from '@/components/sidebar/SetupGuideSidebarEn
 import { useAgentBucketCounts } from '@/components/dashboard/useAgentBucketCounts'
 import { useHawlLight } from './hawl-light'
 import { useHawlSession } from './hawl-session'
+import { setHawlHomePage, useHawlHomePage } from './hawl-page'
 
 type NavItem = {
   id: string
@@ -42,8 +43,7 @@ export function HawlNav(): React.JSX.Element {
   const needsCount = session.needsItems.filter((item) => item.lane === 'now').length + attention
   const activeView = useAppStore((s) => s.activeView)
   const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
-  const sidebarBody = useAppStore((s) => s.sidebarBody ?? 'workspaces')
-  const setSidebarBody = useAppStore((s) => s.setSidebarBody)
+  const homePage = useHawlHomePage()
   const setActiveView = useAppStore((s) => s.setActiveView)
   const setActiveWorktree = useAppStore((s) => s.setActiveWorktree)
   const openTaskPage = useAppStore((s) => s.openTaskPage)
@@ -61,9 +61,10 @@ export function HawlNav(): React.JSX.Element {
         id: 'needs-you',
         label: 'Needs you',
         icon: CircleAlert,
-        active: home,
+        active: home && homePage === 'needs',
         badge: needsCount,
         onSelect: () => {
+          setHawlHomePage('needs')
           setActiveView('terminal')
           setActiveWorktree(null)
         }
@@ -100,12 +101,11 @@ export function HawlNav(): React.JSX.Element {
         id: 'agents',
         label: 'Agents',
         icon: Bot,
-        active: activeView === 'terminal' && sidebarBody === 'agents',
+        active: home && homePage === 'agents',
         onSelect: () => {
-          if (activeView !== 'terminal') {
-            setActiveView('terminal')
-          }
-          setSidebarBody(sidebarBody === 'agents' ? 'workspaces' : 'agents')
+          setHawlHomePage('agents')
+          setActiveView('terminal')
+          setActiveWorktree(null)
         }
       },
       {
@@ -119,11 +119,10 @@ export function HawlNav(): React.JSX.Element {
   }, [
     activeView,
     activeWorktreeId,
-    sidebarBody,
+    homePage,
     needsCount,
     setActiveView,
     setActiveWorktree,
-    setSidebarBody,
     openTaskPage,
     openActivityPage,
     openArtifactsPage

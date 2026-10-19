@@ -9,6 +9,8 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { hasFeatureInteraction } from '../../../../shared/feature-interactions'
 
+// Hawl fork: nobody comes from an older Orca layout, so the relocation hint stays off.
+const WORKSPACE_BOARD_MOVED_HINT_ENABLED = false
 const WORKSPACE_BOARD_MOVED_HINT_STORAGE_KEY = 'orca.workspaceBoardMovedHintSeen.v1'
 const WORKSPACE_BOARD_MOVED_HINT_DURATION_MS = 12000
 
@@ -37,7 +39,7 @@ const SidebarToolbar = React.memo(function SidebarToolbar({
   )
 
   React.useEffect(() => {
-    if (!persistedUIReady) {
+    if (!WORKSPACE_BOARD_MOVED_HINT_ENABLED || !persistedUIReady) {
       return
     }
     // Why: only users who had already opened the old board location should
