@@ -7,6 +7,7 @@ import './lib/react-commit-cascade-observer'
 import './assets/main.css'
 import { installHawlLight } from '../../hawl/renderer/theme/light-engine'
 import '../../hawl/renderer/preload-fonts'
+import '../../hawl/renderer/themes/d2-controls'
 
 import { StrictMode } from 'react'
 import { useTranslation } from 'react-i18next'

@@ -1,0 +1,198 @@
+/* D2-controls round 3: the main action is the tallest orange key on every screen, the quiet button is cream,
+   the view switch is a chunky rocker, switches carry a fat knob, wells are deep. Loaded after r2. CSS only. */
+
+/* ── home screen: one orange main key, one cream quiet key, both big (F01 / F02) ── */
+.hawl-landing-actions {
+  gap: 18px;
+  align-items: center;
+}
+.hawl-landing-actions button {
+  min-height: 52px;
+  padding-inline: 26px;
+  font-size: 15px;
+  font-weight: 650;
+  gap: 8px;
+  border-radius: 18px;
+}
+.hawl-landing-actions button svg {
+  width: 17px;
+  height: 17px;
+}
+.hawl-landing-actions button[class~='bg-primary'] {
+  min-height: 60px;
+  padding-inline: 30px;
+  font-size: 16px;
+  border-radius: 20px;
+}
+.hawl-landing-actions button[class~='bg-primary']::after {
+  content: '\2192';
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.55em;
+  height: 1.55em;
+  margin-left: 0.35em;
+  margin-right: -0.55em;
+  border-radius: 50%;
+  font-size: 0.9em;
+  font-weight: 800;
+  line-height: 1;
+  color: #1c3a02;
+  text-shadow: 0 1px 0 rgba(230, 255, 180, 0.8);
+  background: radial-gradient(circle at 34% 28%, #f3ffc4 0 10%, #b9e338 34%, #7fb60d 78%, #5d8f05 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -2px 2px rgba(40, 72, 0, 0.45),
+    0 0 0 1px rgba(46, 78, 2, 0.85),
+    0 1.5px 0 rgba(46, 78, 2, 0.7),
+    0 3px 4px rgba(58, 16, 0, 0.45);
+}
+
+/* ── view switch: a deep recessed rocker with a fat raised thumb (F02) ── */
+[data-slot='toggle-group'],
+[data-slot='tabs-list']:not([data-variant='line']) {
+  height: auto;
+  min-height: 40px;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 20px;
+  box-shadow:
+    inset 0 4px 9px rgba(var(--d2-shade), 0.5),
+    inset 2px 3px 4px rgba(var(--d2-shade), 0.28),
+    inset -1px -1px 0 rgba(var(--d2-hi), 0.9),
+    0 1.5px 0 rgba(var(--d2-hi), 0.95),
+    0 0 0 1.5px rgba(var(--d2-shade), 0.3);
+}
+[data-slot='toggle-group'] [data-slot='toggle-group-item'],
+[data-slot='tabs-list']:not([data-variant='line']) [data-slot='tabs-trigger'] {
+  min-height: 32px;
+  min-width: 58px;
+  padding-inline: 16px;
+  font-size: 13px;
+  border-radius: 16px;
+}
+[data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on']::after,
+[data-slot='tabs-list']:not([data-variant='line']) [data-slot='tabs-trigger'][data-state='active']::after {
+  width: 20px;
+  height: 3px;
+  margin-left: -10px;
+  bottom: 3px;
+}
+
+/* ── switch: a fat knurled knob in a recessed lamp track (F03). 60x34, knob 28 ── */
+[data-slot='switch']:not([class~='h-3.5']),
+[data-slot='switch-indicator']:not([class~='h-3.5']) {
+  width: 60px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 17px;
+}
+[data-slot='switch']:not([class~='h-3.5']) [data-slot='switch-thumb'],
+[data-slot='switch-indicator']:not([class~='h-3.5']) [data-slot='switch-thumb'] {
+  width: 28px;
+  height: 28px;
+}
+[data-slot='switch'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'],
+[data-slot='switch-indicator'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'] {
+}
+[data-slot='switch'][class~='h-3.5'],
+[data-slot='switch-indicator'][class~='h-3.5'] {
+  width: 44px;
+  height: 24px;
+  padding: 2px;
+}
+[data-slot='switch'][class~='h-3.5'] [data-slot='switch-thumb'],
+[data-slot='switch-indicator'][class~='h-3.5'] [data-slot='switch-thumb'] {
+  width: 20px;
+  height: 20px;
+}
+[data-slot='switch'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'],
+[data-slot='switch-indicator'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'] {
+}
+/* the lamp: a small round light at the empty end of the track, lit when on, dark when off */
+[data-slot='switch']:not([class~='h-3.5']) {
+  position: relative;
+}
+[data-slot='switch']:not([class~='h-3.5'])::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fffbe0, #d4f56a 60%, #9bcb1e);
+  box-shadow: 0 0 6px 1px rgba(210, 250, 90, 0.9);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+[data-slot='switch'][data-state='checked']:not([class~='h-3.5'])::before {
+  opacity: 1;
+}
+[data-slot='switch'][data-state='unchecked']:not([class~='h-3.5'])::before {
+  opacity: 0.55;
+  right: 11px;
+  left: auto;
+  background: radial-gradient(circle at 35% 30%, #6a625a, #2c2824);
+  box-shadow: none;
+}
+
+/* ── fields: deep lit wells, 44px tall, 14px corners (F04) ── */
+input[data-slot='input']:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']):not([class*='h-']),
+[data-slot='select-trigger']:not([class*='h-']) {
+  height: 44px;
+}
+[data-slot='select-trigger'][data-size='sm'] {
+  height: 38px;
+}
+input[data-slot='input']:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+:is([data-slot='textarea'], div[class~='border'][class~='border-input'][class~='bg-transparent']),
+[data-slot='select-trigger'] {
+  border-radius: 14px;
+  padding-inline: 14px;
+  font-size: 14px;
+  --well-in:
+    inset 0 3px 3px rgba(var(--d2-field-sh), 0.5),
+    inset 0 9px 11px -5px rgba(var(--d2-field-sh), 0.5),
+    inset 4px 0 7px -5px rgba(var(--d2-field-sh), 0.32),
+    inset -2px 0 2px -1px rgba(255, 255, 255, 0.85),
+    inset 0 -2px 1px -1px rgba(255, 255, 255, 0.95);
+}
+
+/* ── settings rows: bold titles over quiet captions (F03 "Site settings") ── */
+[data-slot='label'] {
+  font-weight: 700;
+  color: var(--foreground);
+  letter-spacing: -0.005em;
+}
+[data-slot='label'] + p,
+[data-slot='label'] ~ p {
+  line-height: 1.45;
+}
+
+/* ── a disabled key with a bead keeps its bead in stone ── */
+[data-slot='button'][data-variant='default']:disabled::after {
+  filter: grayscale(1) brightness(1.15);
+  opacity: 0.7;
+}
+
+/* ── phone width: the right panel steps aside and the left rail shrinks so the centre keeps room ── */
+@media (max-width: 760px) {
+  .app-layout .relative.flex-shrink-0.flex-row.overflow-visible[style*='width'] {
+    display: none !important;
+  }
+  .app-layout .bg-worktree-sidebar[style*='width'] {
+    width: min(220px, 46vw) !important;
+  }
+  .hawl-landing-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hawl-landing-actions button {
+    width: min(280px, 90%);
+    justify-content: center;
+    white-space: nowrap;
+    padding-inline: 16px;
+  }
+}

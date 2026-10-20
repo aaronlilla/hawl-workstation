@@ -1,0 +1,308 @@
+/* D2-controls round 2: F01 sizes, coloured glass secondary, chunky switch, bigger keys, menus, avatars.
+   Loaded after d2-controls.css (imported from hawl-theme.css) so it wins by order. CSS only. */
+
+html:root {
+  --d2-sky-a: #cfe8f7;
+  --d2-sky-b: #9ccdee;
+  --d2-lime-a: #dff1a8;
+  --d2-lime-b: #b9de63;
+  --d2-glass-ink: #14233a;
+}
+html.dark {
+  --d2-sky-a: #3a5a78;
+  --d2-sky-b: #27425c;
+  --d2-lime-a: #4f6a22;
+  --d2-lime-b: #36501a;
+  --d2-glass-ink: #eaf3fb;
+}
+
+/* Buttons take F01's size steps (scaled one step for a dense app): 28 / 36 / 44 / 56. */
+[data-slot='button'][data-size='xs']:not([data-variant='link']) {
+  height: 28px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+[data-slot='button'][data-size='sm']:not([data-variant='link']) {
+  height: 36px;
+  padding-inline: 14px;
+}
+[data-slot='button'][data-size='default']:not([data-variant='link']) {
+  height: 44px;
+  padding-inline: 20px;
+  font-size: 14px;
+}
+[data-slot='button'][data-size='lg']:not([data-variant='link']) {
+  height: 56px;
+  padding-inline: 28px;
+  font-size: 16px;
+}
+[data-slot='button'][data-size='icon']:not([class*='size-']) {
+  width: 40px;
+  height: 40px;
+}
+[data-slot='button'][data-size='icon-sm']:not([class*='size-']) {
+  width: 34px;
+  height: 34px;
+}
+[data-slot='button'][data-size='icon-lg']:not([class*='size-']) {
+  width: 48px;
+  height: 48px;
+}
+[data-slot='button'][data-size='icon-xs']:not([class*='size-']) {
+  width: 26px;
+  height: 26px;
+}
+button:not([data-slot])[class~='bg-primary'],
+button:not([data-slot])[class~='bg-destructive'] {
+  min-height: 36px;
+  padding-inline: 16px;
+}
+
+/* a taller primary needs a deeper light and a bigger glow on the ground */
+[data-slot='button'][data-variant='default'][data-size='default'],
+[data-slot='button'][data-variant='default'][data-size='lg'] {
+  --wk: 1;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 246, 232, 0.95),
+    inset 2px 0 0 rgba(255, 222, 184, 0.7),
+    inset -1px 0 0 rgba(120, 36, 0, 0.35),
+    inset 0 -4px 7px rgba(120, 36, 0, 0.42),
+    inset 0 0 18px rgba(255, 170, 100, 0.3),
+    0 0 0 1px rgba(104, 34, 3, 0.9),
+    var(--wall-p),
+    1px 4px 3px 0 rgba(58, 16, 0, 0.6),
+    calc(3px + var(--dx) * 4px) 10px 12px -3px rgba(86, 26, 0, 0.45),
+    calc(var(--dx) * 10px) 16px 30px -4px rgba(242, 106, 27, 0.8),
+    calc(var(--dx) * 18px) 8px 54px -2px rgba(255, 128, 48, 0.5);
+}
+/* the green arrow bead (F01 "Start free") on text-only primary buttons */
+[data-slot='button'][data-variant='default']:is([data-size='sm'], [data-size='default'], [data-size='lg']):not(:has(> svg))::after {
+  content: '\2192';
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.55em;
+  height: 1.55em;
+  margin-left: 0.4em;
+  margin-right: -0.5em;
+  border-radius: 50%;
+  font-size: 0.85em;
+  font-weight: 800;
+  line-height: 1;
+  color: #1c3a02;
+  text-shadow: 0 1px 0 rgba(230, 255, 180, 0.8);
+  background: radial-gradient(circle at 34% 28%, #f3ffc4 0 10%, #b9e338 34%, #7fb60d 78%, #5d8f05 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -2px 2px rgba(40, 72, 0, 0.45),
+    0 0 0 1px rgba(46, 78, 2, 0.85),
+    0 1.5px 0 rgba(46, 78, 2, 0.7),
+    0 3px 4px rgba(58, 16, 0, 0.45);
+}
+
+/* secondary and outline text buttons become coloured glass: sky above, lawn below, a blue rim (F02 secondary) */
+[data-slot='button'][data-variant='secondary']:not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']) {
+  color: var(--d2-glass-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+  background-color: var(--d2-sky-a);
+  background-image:
+    radial-gradient(
+      calc(var(--h) * 2) calc(var(--h) * 1.1) at var(--mx) var(--my),
+      rgba(255, 255, 255, calc(var(--core) * 0.85)) 0%,
+      rgba(255, 255, 255, 0) 100%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(172deg, var(--d2-sky-a) 0%, var(--d2-sky-b) 46%, var(--d2-lime-a) 78%, var(--d2-lime-b) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 1),
+    inset 1.5px 0 0 rgba(255, 255, 255, 0.85),
+    inset -1px 0 0 rgba(30, 90, 140, 0.3),
+    inset 0 -3px 4px rgba(40, 110, 150, 0.28),
+    0 0 0 1px rgba(46, 128, 190, 0.7),
+    0 1px 0 1px #b8c9d6,
+    0 2px 0 1px #9db4c6,
+    1px 3px 2px 0 rgba(var(--d2-shade), 0.4),
+    3px 8px 10px -3px rgba(40, 110, 170, 0.4);
+}
+[data-slot='button'][data-variant='secondary']:not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']):hover:not(:disabled) {
+  --core: 1;
+  background-color: var(--d2-sky-a);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 1),
+    inset 1.5px 0 0 rgba(255, 255, 255, 1),
+    inset -1px 0 0 rgba(30, 90, 140, 0.26),
+    inset 0 -3px 4px rgba(40, 110, 150, 0.22),
+    0 0 0 1px rgba(46, 128, 190, 0.8),
+    0 1px 0 1px #b8c9d6,
+    0 2px 0 1px #9db4c6,
+    1px 4px 2px 0 rgba(var(--d2-shade), 0.38),
+    3px 10px 12px -3px rgba(40, 110, 170, 0.45),
+    calc(var(--dx) * 8px) 4px 22px 0 rgba(120, 190, 240, 0.5);
+}
+[data-slot='button'][data-variant='secondary']:not([data-size^='icon']):not([data-slot='toggle-group-item']):not([role='combobox']):active:not(:disabled) {
+  filter: brightness(0.96);
+  box-shadow:
+    inset 0 3px 6px rgba(30, 90, 140, 0.4),
+    inset 0 1px 2px rgba(30, 90, 140, 0.3),
+    0 0 0 1px rgba(46, 128, 190, 0.7),
+    0.4px 1px 0 1px #8fb0c6,
+    1px 2px 2px 0 rgba(var(--d2-shade), 0.3);
+}
+[data-slot='button'][data-variant='outline'][aria-pressed='true'] {
+  background-image: linear-gradient(180deg, var(--d2-q2), var(--d2-q1));
+}
+[data-slot='button'][data-variant='outline'][data-size^='icon'] {
+  border-radius: 50%;
+}
+
+/* switch: a chunky well with a knurled knob (F03). 46x26 with a 21px knob */
+[data-slot='switch']:not([class~='h-3.5']),
+[data-slot='switch-indicator']:not([class~='h-3.5']) {
+  width: 46px;
+  height: 26px;
+  padding: 2px;
+}
+[data-slot='switch']:not([class~='h-3.5']) [data-slot='switch-thumb'],
+[data-slot='switch-indicator']:not([class~='h-3.5']) [data-slot='switch-thumb'] {
+  width: 21px;
+  height: 21px;
+}
+[data-slot='switch'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'],
+[data-slot='switch-indicator'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'] {
+}
+[data-slot='switch'][class~='h-3.5'],
+[data-slot='switch-indicator'][class~='h-3.5'] {
+  width: 32px;
+  height: 18px;
+}
+[data-slot='switch'][class~='h-3.5'] [data-slot='switch-thumb'],
+[data-slot='switch-indicator'][class~='h-3.5'] [data-slot='switch-thumb'] {
+  width: 14px;
+  height: 14px;
+}
+[data-slot='switch'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'],
+[data-slot='switch-indicator'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'] {
+}
+[data-slot='switch'][data-state='checked'],
+[data-slot='switch-indicator'][data-state='checked'] {
+  background-image: radial-gradient(80% 160% at 24% 28%, #fbffe0 0%, #dcfa7e 26%, #a9dc26 60%, #78a912 100%);
+  box-shadow:
+    inset 0 3px 5px rgba(34, 64, 0, 0.55),
+    inset 0 1px 1px rgba(30, 56, 0, 0.7),
+    inset -1px -1px 2px rgba(248, 255, 205, 0.7),
+    0 0 0 1px rgba(46, 78, 2, 0.9),
+    0 1px 0 rgba(var(--d2-hi), 0.9),
+    0 0 10px 1px rgba(170, 232, 50, 0.85),
+    0 5px 12px -2px rgba(140, 200, 30, 0.65);
+}
+
+/* checkbox, radio, slider: bigger keys */
+[data-slot='checkbox'],
+input[type='checkbox']:not([data-slot]),
+[data-slot='radio-group-item'],
+input[type='radio']:not([data-slot]) {
+  width: 20px;
+  height: 20px;
+}
+[data-slot='slider-track'] {
+  height: 10px;
+}
+[data-slot='slider-thumb'] {
+  width: 24px;
+  height: 24px;
+}
+
+/* fields: taller wells */
+input[data-slot='input']:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']):not([class*='h-']) {
+  height: 40px;
+}
+[data-slot='select-trigger']:not([class*='h-']) {
+  height: 40px;
+}
+[data-slot='select-trigger'][data-size='sm'] {
+  height: 34px;
+}
+
+/* menus, selects, popovers, command palette: sheets of glass with lit rows */
+:is(
+    [data-slot='select-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dropdown-menu-sub-content'],
+    [data-slot='popover-content'],
+    [data-slot='hover-card-content'],
+    [cmdk-root]
+  ) {
+  border-color: transparent;
+  border-radius: 14px;
+  background-color: var(--d2-a1);
+  background-image:
+    radial-gradient(70% 40% at 12% 0%, rgba(var(--d2-hi), 0.9), rgba(var(--d2-hi), 0) 100%),
+    linear-gradient(180deg, var(--d2-a0) 0%, var(--d2-a1) 40%, var(--d2-a2) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(var(--d2-hi), 1),
+    inset 1.5px 0 0 rgba(var(--d2-hi), 0.8),
+    inset 0 -2px 4px rgba(var(--d2-core), 0.16),
+    0 0 0 1px rgba(var(--d2-edge), 0.34),
+    0.4px 1px 0 1px var(--d2-wall1),
+    0.8px 2px 0 1px var(--d2-wall2),
+    2px 12px 22px -4px rgba(var(--d2-shade), 0.4),
+    4px 22px 44px -10px rgba(var(--d2-shade), 0.3);
+}
+:is([data-slot='select-item'], [data-slot='dropdown-menu-item'], [data-slot='dropdown-menu-radio-item'], [data-slot='dropdown-menu-sub-trigger'], [cmdk-item]) {
+  border-radius: 10px;
+  min-height: 32px;
+  transition:
+    background-color 160ms var(--d2-ease),
+    box-shadow 200ms var(--d2-ease);
+}
+:is([data-slot='select-item'], [data-slot='dropdown-menu-item'], [data-slot='dropdown-menu-radio-item'], [data-slot='dropdown-menu-sub-trigger'], [cmdk-item]):is(:focus, [data-highlighted], [data-selected='true'], [data-state='open']) {
+  background-color: var(--d2-q0);
+  background-image: linear-gradient(180deg, rgba(var(--d2-hi), 0.9), rgba(var(--d2-hi), 0.1));
+  box-shadow:
+    inset 0 1.5px 0 rgba(var(--d2-hi), 1),
+    inset 0 -2px 3px rgba(var(--d2-core), 0.18),
+    0 0 0 1px rgba(var(--d2-edge), 0.2),
+    0 2px 6px -2px rgba(255, 130, 50, 0.45);
+}
+:is([data-slot='dropdown-menu-separator'], [data-slot='select-separator']) {
+  height: 2px;
+  background: linear-gradient(180deg, rgba(var(--d2-shade), 0.22), rgba(var(--d2-hi), 0.9));
+}
+[data-slot='tabs-trigger'] {
+  border-radius: 10px;
+}
+
+/* avatars and worker identity: a lens in a metal ring (F08) */
+[data-slot='avatar'] {
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 1.5px var(--d2-a0),
+    0 0 0 2.5px rgba(var(--d2-edge), 0.5),
+    0 1px 0 2.5px var(--d2-wall1),
+    1px 4px 5px -1px rgba(var(--d2-shade), 0.45);
+}
+[data-slot='avatar-fallback'] {
+  font-weight: 700;
+  color: var(--d2-ink-on-orange);
+  background-color: #f7a25f;
+  background-image: radial-gradient(circle at 32% 24%, #ffe6c6 0 8%, #ffb06c 40%, #f26a1b 100%);
+  text-shadow: 0 1px 0 rgba(255, 220, 176, 0.7);
+}
+[data-slot='avatar-image'] {
+  border-radius: 50%;
+}
+
+button:not([data-slot])[class~='border']:not([class~='bg-primary']):not([class~='bg-destructive']):not([class~='border-0']):not([role='combobox']):not([role='radio']):is([class~='px-4'], [class~='px-3']) {
+  min-height: 40px;
+  --h: 40px;
+}
+
+/* the primary key is the tallest thing in its row (F01: 36 / 46 / 60) */
+[data-slot='button'][data-variant='default'][data-size='xs'] { height: 30px; }
+[data-slot='button'][data-variant='default'][data-size='sm'] { height: 42px; padding-inline: 18px; font-size: 14px; }
+[data-slot='button'][data-variant='default'][data-size='default'] { height: 48px; }
+[data-slot='button'][data-variant='default'][data-size='lg'] { height: 60px; }
+[data-slot='button'][data-variant='default'][data-size='sm'] {
+  --wk: 0.9;
+}

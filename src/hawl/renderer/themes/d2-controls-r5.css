@@ -1,0 +1,202 @@
+/* D2-controls round 5: cleaner glass wells, lit sidebar search and chips, tooltip without the navy diamond,
+   display type, warm ground with blooms, bigger lit key and switches, phone overflow. Loaded after r4. CSS only. */
+
+/* ── F04 fields: clean pale glass wells, warm tan bevel instead of a grey-black smudge ── */
+html:root {
+  --d2-field-0: #e9e6df;
+  --d2-field-1: #f0eee9;
+  --d2-field-2: #f7f6f2;
+  --d2-field-3: #fefdfb;
+  --d2-field-sh: 160, 132, 96;
+}
+html.dark {
+  --d2-field-sh: 0, 0, 0;
+  --d2-field-0: #0b0705;
+  --d2-field-1: #120d09;
+  --d2-field-2: #19130e;
+  --d2-field-3: #211a14;
+}
+
+/* ── warm ground: gradient, orange and sky blooms (F01 / F03 / F08 sit on these) ── */
+html:root:not(.dark) body {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(60% 50% at 96% 4%, rgba(255, 168, 96, 0.22), transparent 70%),
+    radial-gradient(50% 45% at 4% 100%, rgba(120, 190, 240, 0.16), transparent 70%),
+    linear-gradient(180deg, #fffdf8 0%, #fff6e6 100%);
+  background-attachment: fixed;
+}
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-lg.border,
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-md.border,
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-xl.border {
+  background-color: rgba(255, 253, 247, 0.62);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 246, 228, 0.5));
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 1px rgba(120, 84, 30, 0.14),
+    0 10px 26px -14px rgba(120, 70, 10, 0.35);
+}
+
+/* ── type: heavy tight display face on headings, readable settings text ── */
+.settings-view-shell h1,
+.settings-view-shell h2,
+[data-slot='dialog-title'] {
+  font-family: var(--hawl-font-display, inherit);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #14243a;
+}
+.settings-view-shell h2 { font-size: 26px; }
+.settings-view-shell h3 { font-family: var(--hawl-font-display, inherit); font-size: 16px; font-weight: 750; letter-spacing: -0.02em; }
+.settings-view-shell .text-sm,
+.settings-view-shell label { font-size: 14px; }
+.settings-view-shell .text-xs { font-size: 12.5px; }
+
+/* ── sidebar Search: the same cut well as F04 ── */
+[data-contextual-tour-target='sidebar-navigation'] > button.group {
+  height: 38px;
+  border-radius: 12px;
+  background-color: var(--d2-field-2);
+  background-image:
+    radial-gradient(34px 4px at 84% 100%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, var(--d2-field-0) 0%, var(--d2-field-1) 24%, var(--d2-field-2) 60%, var(--d2-field-3) 100%);
+  box-shadow:
+    inset 0 1.5px 1px rgba(var(--d2-field-sh), 0.38),
+    inset 0 5px 7px -4px rgba(var(--d2-field-sh), 0.3),
+    inset -2px 0 2px -1px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 1px -1px rgba(255, 255, 255, 0.9),
+    0 0 0 1px rgba(var(--d2-field-sh), 0.24),
+    0 1px 0 1px rgba(255, 255, 255, 0.9);
+  color: color-mix(in srgb, var(--foreground) 62%, transparent);
+  font-size: 14px;
+  transition: box-shadow 200ms ease, background 200ms ease;
+}
+[data-contextual-tour-target='sidebar-navigation'] > button.group:hover,
+[data-contextual-tour-target='sidebar-navigation'] > button.group:focus-visible {
+  background-image: linear-gradient(180deg, #e2edf6 0%, #eef5fa 30%, #fbfdfe 100%);
+  box-shadow:
+    inset 0 1.5px 1px rgba(20, 70, 120, 0.34),
+    inset 0 0 0 1.5px rgba(74, 157, 221, 0.9),
+    inset 0 0 14px -2px rgba(74, 157, 221, 0.45),
+    0 0 0 3px rgba(74, 157, 221, 0.2),
+    0 6px 14px -4px rgba(74, 157, 221, 0.45);
+}
+
+/* ── sidebar nav icons sit in small lit tiles (F08 coins) ── */
+[data-contextual-tour-target='sidebar-navigation'] button > svg,
+[data-contextual-tour-target='sidebar-navigation'] [role='button'] > svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 5px;
+  border-radius: 10px;
+  stroke-width: 2;
+  color: #14243a;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fbf1dc 55%, #f1e1bf 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 2px rgba(150, 104, 40, 0.22),
+    0 0 0 1px rgba(110, 76, 24, 0.28),
+    0 2px 3px -1px rgba(90, 56, 10, 0.3);
+}
+[data-contextual-tour-target='sidebar-navigation'] [aria-current='page'] > svg {
+  color: #fff8ec;
+  background-image: linear-gradient(180deg, #ffb066 0%, #ff7a2a 55%, #d95a10 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 2px rgba(120, 40, 0, 0.35),
+    0 0 0 1px rgba(150, 60, 4, 0.5),
+    0 4px 8px -2px rgba(255, 122, 42, 0.55);
+}
+[data-contextual-tour-target='sidebar-navigation'] > button.group > svg {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  width: 17px;
+  height: 17px;
+}
+
+/* ── "New" badge: F08 lit orange chip ── */
+[data-contextual-tour-target='sidebar-navigation'] span.shrink-0.rounded-full.bg-primary {
+  background-image: linear-gradient(180deg, #ffbf85 0%, #ff8a3c 48%, #e2641a 100%);
+  color: #fffaf0;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 2px 9px;
+  text-shadow: 0 -1px 0 rgba(120, 40, 0, 0.45);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -2px 2px rgba(120, 40, 0, 0.3),
+    0 0 0 1px rgba(150, 60, 4, 0.5),
+    0 3px 7px -2px rgba(255, 122, 42, 0.6);
+}
+
+/* ── tooltip: no navy diamond. The arrow lives in a Radix wrapper span, so hide that span ── */
+[data-slot='tooltip-content'] > span:has(> svg),
+[data-slot='tooltip-content'] svg.rotate-45 {
+  display: none;
+}
+
+/* ── primary key: bigger soft glow on the ground, stronger hover ── */
+[data-slot='button'][data-variant='default']:not(:disabled) {
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -3px 3px rgba(120, 40, 0, 0.3),
+    0 0 0 1px rgba(150, 60, 4, 0.55),
+    0 3px 5px -1px rgba(120, 50, 6, 0.4),
+    0 12px 22px -8px rgba(255, 122, 42, 0.6),
+    0 22px 50px -14px rgba(255, 138, 60, 0.55);
+}
+[data-slot='button'][data-variant='default']:not(:disabled):hover {
+  filter: brightness(1.07) saturate(1.1);
+  transform: translateY(-1px);
+}
+
+/* ── switches: closer to the piece size ── */
+[data-slot='switch'] {
+  transform: scale(1.12);
+  transform-origin: right center;
+}
+
+/* ── segmented: no stray underline on the active label ── */
+[data-slot='toggle-group-item'] *,
+[data-slot='toggle-group-item']::after,
+[data-slot='toggle-group-item'] > *::after {
+  text-decoration: none;
+}
+[data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on']::after {
+  content: none;
+  display: none;
+  box-shadow: none;
+}
+
+/* ── disabled keys: pale lit glass, not a muddy grey ── */
+[data-slot='button']:disabled {
+  opacity: 1;
+  color: color-mix(in srgb, var(--foreground) 40%, transparent);
+  background-image: linear-gradient(180deg, #fffdf8, #f6ecd8);
+}
+[data-slot='button']:disabled svg {
+  opacity: 0.5;
+}
+
+/* ── phone width: no sideways scroll ── */
+@media (max-width: 620px) {
+  html,
+  body,
+  #root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  .settings-view-shell {
+    min-width: 0;
+  }
+  .settings-view-shell > aside {
+    max-height: 22vh;
+    overflow-y: auto;
+  }
+  .settings-view-shell > :not(aside) {
+    overflow-x: hidden;
+  }
+}

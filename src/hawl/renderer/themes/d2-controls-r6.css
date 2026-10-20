@@ -1,0 +1,151 @@
+/* D2-controls round 6: the ground the controls sit on. A visible warm tan gradient with a sky bloom top right and an
+   orange bloom low left (F01 / F03 / F08 grounds); every pane is frosted glass over it instead of opaque cream;
+   stronger glass cards; bigger recessed segmented tray; spaced sidebar rows. Loaded after r5. CSS only. */
+
+html:root {
+  --d6-hi: 255, 255, 255;
+  --d6-glass-a: rgba(255, 252, 244, 0.58);
+  --d6-glass-b: rgba(255, 244, 224, 0.34);
+  --d6-edge: rgba(120, 84, 30, 0.2);
+}
+
+/* ── ground ── */
+html:root:not(.dark) body {
+  background-color: #e8dcc2;
+  background-image:
+    radial-gradient(52% 46% at 100% 0%, rgba(140, 188, 216, 0.7), rgba(140, 188, 216, 0) 72%),
+    radial-gradient(46% 42% at 8% 104%, rgba(255, 140, 56, 0.34), rgba(255, 140, 56, 0) 72%),
+    radial-gradient(40% 30% at 62% 52%, rgba(255, 252, 240, 0.55), rgba(255, 252, 240, 0) 80%),
+    linear-gradient(180deg, #f2ecdd 0%, #eadfc6 55%, #dfcfab 100%);
+  background-attachment: fixed;
+}
+html.dark body {
+  background-image:
+    radial-gradient(52% 46% at 100% 0%, rgba(60, 110, 150, 0.38), rgba(60, 110, 150, 0) 72%),
+    radial-gradient(46% 42% at 8% 104%, rgba(255, 122, 42, 0.2), rgba(255, 122, 42, 0) 72%);
+  background-attachment: fixed;
+}
+
+/* ── side panes: frosted glass over the ground (left project list, right panel, settings list) ── */
+html:root:not(.dark) .bg-worktree-sidebar,
+html:root:not(.dark) .settings-view-shell > aside {
+  background-color: rgba(255, 250, 238, 0.4);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 244, 222, 0.16) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: blur(22px) saturate(1.35);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.85),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+    1px 0 0 rgba(120, 84, 30, 0.16),
+    10px 0 26px -16px rgba(120, 70, 10, 0.38);
+}
+html:root:not(.dark) .bg-sidebar {
+  background-color: rgba(255, 250, 238, 0.42);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 244, 222, 0.16) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: blur(22px) saturate(1.35);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.85),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+    -1px 0 0 rgba(120, 84, 30, 0.16),
+    -10px 0 26px -16px rgba(120, 70, 10, 0.38);
+}
+html.dark .bg-worktree-sidebar,
+html.dark .bg-sidebar,
+html.dark .settings-view-shell > aside {
+  background-color: rgba(26, 18, 12, 0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.07), 1px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+/* settings main pane and the title bar stay transparent so the ground shows */
+html:root:not(.dark) .settings-view-shell,
+html:root:not(.dark) .settings-view-shell > :not(aside) {
+  background-color: transparent;
+}
+
+/* ── cards: layered glass that lifts off the ground ── */
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-lg.border,
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-md.border,
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-xl.border,
+html:root:not(.dark) [data-slot='card'] {
+  background-color: rgba(255, 252, 244, 0.5);
+  background-image:
+    radial-gradient(70% 40% at 12% 0%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 243, 220, 0.34));
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  border-color: rgba(255, 255, 255, 0.95);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 1),
+    inset 0 -2px 3px rgba(150, 104, 40, 0.14),
+    0 0 0 1px rgba(120, 84, 30, 0.2),
+    0 2px 3px rgba(120, 70, 10, 0.16),
+    0 16px 34px -14px rgba(120, 70, 10, 0.5);
+}
+
+/* ── sidebar rows: air between the lit tiles ── */
+[data-contextual-tour-target='sidebar-navigation'] {
+  gap: 6px;
+  padding-bottom: 8px;
+}
+[data-contextual-tour-target='sidebar-navigation'] > button.group {
+  margin-bottom: 4px;
+}
+[data-contextual-tour-target='sidebar-navigation'] > button.group:not(:focus-visible):not(:hover) {
+  /* the blue focus rim belongs to keyboard focus and hover only */
+  box-shadow:
+    inset 0 1.5px 1px rgba(var(--d2-field-sh), 0.38),
+    inset 0 5px 7px -4px rgba(var(--d2-field-sh), 0.3),
+    inset -2px 0 2px -1px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 1px -1px rgba(255, 255, 255, 0.9),
+    0 0 0 1px rgba(var(--d2-field-sh), 0.24),
+    0 1px 0 1px rgba(255, 255, 255, 0.9);
+}
+[data-contextual-tour-target='sidebar-navigation'] button:not(.group) {
+  min-height: 38px;
+  border-radius: 12px;
+  font-weight: 650;
+  color: #14243a;
+}
+[data-contextual-tour-target='sidebar-navigation'] button:not(.group) > svg {
+  width: 17px;
+  height: 17px;
+  padding: 6px;
+  border-radius: 11px;
+}
+
+/* ── segmented: a deep recessed tray and a big raised thumb with its orange lamp ── */
+div:has(> button:not([data-slot]):is([role='radio']:not([class~='size-4']), [class~='rounded-sm'][class*='px-']:is([class~='py-1'], [class~='py-0.5']))),
+[data-slot='toggle-group'] {
+  padding: 4px;
+  gap: 3px;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 4px 8px rgba(var(--d2-shade), 0.5),
+    inset 2px 4px 4px rgba(var(--d2-shade), 0.26),
+    inset -1px -1px 0 rgba(var(--d2-hi), 0.9),
+    0 1px 0 rgba(var(--d2-hi), 0.95),
+    0 0 0 1px rgba(var(--d2-shade), 0.3);
+}
+button:not([data-slot]):is([role='radio']:not([class~='size-4']), [class~='rounded-sm'][class*='px-']:is([class~='py-1'], [class~='py-0.5'])),
+[data-slot='toggle-group'] [data-slot='toggle-group-item'] {
+  min-height: 30px;
+  padding-inline: 14px;
+  font-size: 13.5px;
+  border-radius: 10px;
+}
+button:not([data-slot]):is([role='radio']:not([class~='size-4']), [class~='rounded-sm'][class*='px-']:is([class~='py-1'], [class~='py-0.5'])):is([aria-checked='true'], [class~='bg-accent'])::after,
+[data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on']::after {
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  bottom: 3px;
+}
+
+/* ── settings list rows ── */
+html:root:not(.dark) .settings-view-shell > aside button {
+  border-radius: 12px;
+}

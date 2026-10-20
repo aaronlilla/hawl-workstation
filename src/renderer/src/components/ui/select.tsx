@@ -57,7 +57,9 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = 'item-aligned',
+  // Hawl: popper so the list opens under the trigger instead of covering it (FORK-HOOKS.md)
+  position = 'popper',
+  sideOffset = 6,
   align = 'center',
   portalContainer,
   ...props
@@ -79,6 +81,7 @@ function SelectContent({
           className
         )}
         position={position}
+        sideOffset={sideOffset}
         align={align}
         {...props}
       >

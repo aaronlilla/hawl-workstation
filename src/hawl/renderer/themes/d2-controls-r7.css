@@ -1,0 +1,138 @@
+/* D2-controls round 7: the ground shows through the home pane, the second home key is sky-and-lawn glass,
+   the status bar and toasts are glass, the switch halo is tamed, the segmented thumb is raised with its lamp.
+   Loaded after r6. CSS only. */
+
+/* ── home empty state: no opaque slab, the atmosphere shows ── */
+html:root:not(.dark) .app-layout .absolute.inset-0.bg-background {
+  background-color: transparent;
+}
+html:root:not(.dark) .hawl-landing-actions button:not([class~='bg-primary']):not([data-slot='split']) {
+  min-height: 48px;
+  padding-inline: 22px;
+  font-size: 14.5px;
+  font-weight: 650;
+  border-radius: 24px;
+  color: var(--d2-glass-ink, #14243a);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  background-color: rgba(168, 214, 238, 0.9);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.14) 48%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(172deg, #b9e0f4 0%, #9fd0ec 40%, #cfe88a 76%, #a8d34a 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 1),
+    inset 1.5px 0 0 rgba(255, 255, 255, 0.85),
+    inset -1px 0 0 rgba(30, 90, 140, 0.3),
+    inset 0 -3px 4px rgba(40, 110, 150, 0.28),
+    0 0 0 1px rgba(46, 128, 190, 0.7),
+    0 1px 0 1px #b8c9d6,
+    0 2px 0 1px #9db4c6,
+    1px 4px 3px 0 rgba(var(--d2-shade), 0.4),
+    3px 10px 12px -3px rgba(40, 110, 170, 0.42);
+}
+
+/* title bar: frosted, not a white slab */
+html:root:not(.dark) .titlebar {
+  background-color: rgba(255, 250, 238, 0.5) !important;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 240, 215, 0.25));
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow: inset 0 -1px 0 rgba(120, 84, 30, 0.16), inset 0 1.5px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ── right panel and its empty text sit on the same glass; tab icons get small lit keys ── */
+html:root:not(.dark) .bg-sidebar [role='tab'],
+html:root:not(.dark) .bg-sidebar button[data-slot='tabs-trigger'] {
+  border-radius: 12px;
+}
+
+/* ── status bar: a glass strip, not a hairline row ── */
+html:root:not(.dark) .app-layout > div:last-child > .border-t,
+html:root:not(.dark) .app-layout .h-6.border-t {
+  min-height: 30px;
+  background-color: rgba(255, 250, 238, 0.55);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 238, 205, 0.3));
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 -1px 0 rgba(120, 84, 30, 0.2),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  color: #2a3a52;
+}
+html:root:not(.dark) .app-layout .h-6.border-t button {
+  border-radius: 10px;
+  padding: 3px 8px;
+}
+html:root:not(.dark) .app-layout .h-6.border-t button:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 1px rgba(var(--d2-shade), 0.2),
+    0 2px 4px -1px rgba(var(--d2-shade), 0.3);
+}
+
+/* ── toast: a glass tooltip pill with a lamp (F08) ── */
+[data-sonner-toast] {
+  background-color: rgba(255, 252, 244, 0.78) !important;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 240, 214, 0.4)) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  border-radius: 18px !important;
+  color: #14243a !important;
+  font-weight: 600;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -2px 3px rgba(150, 104, 40, 0.14),
+    0 0 0 1px rgba(120, 84, 30, 0.2),
+    0 2px 3px rgba(120, 70, 10, 0.16),
+    0 16px 30px -12px rgba(120, 70, 10, 0.5) !important;
+}
+
+/* ── switch: the lime lamp glows less, a tight rim instead of a halo ── */
+[data-slot='switch'][data-state='checked'],
+[data-slot='switch-indicator'][data-state='checked'] {
+  box-shadow:
+    inset 0 3px 5px rgba(34, 64, 0, 0.55),
+    inset 0 1px 1px rgba(30, 56, 0, 0.7),
+    inset -1px -1px 2px rgba(248, 255, 205, 0.7),
+    0 0 0 1px rgba(46, 78, 2, 0.9),
+    0 1px 0 rgba(var(--d2-hi), 0.9),
+    0 0 6px 0 rgba(170, 232, 50, 0.55),
+    0 4px 8px -2px rgba(140, 200, 30, 0.4);
+}
+
+/* ── segmented: the chosen thumb is brighter and raised, the other half stays in the tray ── */
+button:not([data-slot]):is([role='radio']:not([class~='size-4']), [class~='rounded-sm'][class*='px-']:is([class~='py-1'], [class~='py-0.5'])):is([aria-checked='true'], [class~='bg-accent']),
+[data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on'] {
+  color: #14243a;
+  font-weight: 700;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fff6e4 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -3px 4px rgba(150, 104, 40, 0.2),
+    0 0 0 1px rgba(120, 84, 30, 0.3),
+    0 2px 0 1px rgba(150, 110, 60, 0.35),
+    0 6px 9px -2px rgba(var(--d2-shade), 0.5);
+}
+button:not([data-slot]):is([role='radio']:not([class~='size-4']), [class~='rounded-sm'][class*='px-']:is([class~='py-1'], [class~='py-0.5'])):is([aria-checked='true'], [class~='bg-accent'])::after,
+[data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on']::after {
+  height: 4px;
+  width: 22px;
+  margin-left: -11px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #ffb066, #ff6a10);
+  box-shadow: 0 0 6px 1px rgba(255, 120, 30, 0.75);
+}
+button:not([data-slot]):is([role='radio']:not([class~='size-4']), [class~='rounded-sm'][class*='px-']:is([class~='py-1'], [class~='py-0.5'])):not([aria-checked='true']):not([class~='bg-accent']) {
+  color: #5a6a80;
+  font-weight: 600;
+}
+
+/* ── settings group card: a lit plate with a clear top light, inner dividers like seams ── */
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-lg.border > .border-t,
+html:root:not(.dark) .settings-view-shell > :not(aside) .rounded-lg.border > * + * {
+  border-top-color: rgba(120, 84, 30, 0.14);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}

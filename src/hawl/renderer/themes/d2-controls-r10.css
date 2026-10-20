@@ -1,0 +1,133 @@
+/* D2-controls round 10: dark headings readable, not-installed agents look inert, quiet "Set default" key,
+   phone width settings (nav becomes a one-line strip), Browse folder as a lit key. Loaded after r9. */
+
+/* ── dark mode: display headings were navy on near-black ── */
+html.dark .settings-view-shell h1,
+html.dark .settings-view-shell h2,
+html.dark .settings-view-shell h3,
+html.dark [data-slot='dialog-title'] {
+  color: #f6ecd8;
+}
+html.dark .settings-view-shell [role='radiogroup'].inline-flex > button[role='radio'][aria-checked='true'],
+html.dark .settings-view-shell [data-slot='toggle-group'] > [data-slot='toggle-group-item'][data-state='on'] {
+  color: #14243a;
+}
+html.dark .settings-view-shell [role='radiogroup'].inline-flex > button[role='radio']:not([aria-checked='true']),
+html.dark .settings-view-shell [data-slot='toggle-group'] > [data-slot='toggle-group-item']:not([data-state='on']) {
+  color: #cdbf9f;
+}
+
+/* ── agents not installed: a flat grey tray, no lit lamp, so they never look live ── */
+.py-3.opacity-70 [role='radiogroup'] {
+  filter: grayscale(1) opacity(0.6);
+  pointer-events: auto;
+}
+.py-3.opacity-70 [role='radiogroup'] > button[aria-checked='true']::before {
+  display: none;
+}
+.py-3.opacity-70 [role='radiogroup'] > button[aria-checked='true'] {
+  padding-left: 18px !important;
+}
+
+/* ── "Set default": a real key, not bold text ── */
+html:root:not(.dark) .grid.shrink-0 > .flex > [data-slot='button'][data-variant='ghost'] {
+  height: 30px;
+  padding-inline: 14px;
+  border-radius: 999px;
+  color: #14243a;
+  font-weight: 650;
+  background-image: linear-gradient(180deg, #fffdf6 0%, #f3e8d0 100%);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 1px rgba(110, 80, 34, 0.35),
+    0 2px 3px -1px rgba(70, 44, 8, 0.4);
+}
+html:root:not(.dark) .grid.shrink-0 > .flex > [data-slot='button'][data-variant='ghost']:hover {
+  background-image: linear-gradient(180deg, #ffffff 0%, #f8eed8 100%);
+}
+
+/* ── Browse folder: same lit key family as the two below it (no orange outline, no tan slab) ── */
+html:root:not(.dark) [data-slot='dialog-content'] .overflow-hidden.rounded-md.border.border-input > button:first-child {
+  background-image: linear-gradient(180deg, #fffdf6 0%, #f6ecd6 55%, #efe0c0 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 3px rgba(150, 105, 40, 0.22),
+    0 0 0 1px rgba(110, 80, 34, 0.4),
+    0 1px 0 1px #d6c8a8,
+    0 3px 6px -2px rgba(70, 44, 8, 0.4);
+  outline: 0;
+}
+html:root:not(.dark) [data-slot='dialog-content'] .overflow-hidden.rounded-md.border.border-input > button {
+  background-image: linear-gradient(180deg, #fffdf6 0%, #f6ecd6 55%, #efe0c0 100%);
+  border: 0;
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 3px rgba(150, 105, 40, 0.22),
+    0 0 0 1px rgba(110, 80, 34, 0.4),
+    0 1px 0 1px #d6c8a8,
+    0 3px 6px -2px rgba(70, 44, 8, 0.4);
+}
+
+/* ── phone width: settings nav is a one-line strip, the page gets the room ── */
+@media (max-width: 620px) {
+  .settings-view-shell > aside {
+    max-height: none !important;
+    overflow: visible !important;
+    flex-direction: column;
+  }
+  .settings-view-shell > aside > div:nth-child(n + 2):not(:last-child) {
+    display: none;
+  }
+  .settings-view-shell > aside > div:last-child {
+    flex: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 12px;
+  }
+  .settings-view-shell > aside > div:last-child > .space-y-5 {
+    display: flex;
+    gap: 6px;
+    width: max-content;
+  }
+  .settings-view-shell > aside > div:last-child > .space-y-5 > div,
+  .settings-view-shell > aside > div:last-child > .space-y-5 > div > .space-y-1 {
+    display: contents;
+  }
+  .settings-view-shell > aside > div:last-child p.uppercase {
+    display: none;
+  }
+  .settings-view-shell > aside > div:last-child button {
+    flex: none;
+    width: auto;
+    white-space: nowrap;
+  }
+  .settings-view-shell > :not(aside) {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .settings-view-shell .grid.shrink-0 {
+    max-width: 100%;
+  }
+  .settings-view-shell h2:first-of-type {
+    font-size: 32px !important;
+  }
+}
+
+/* ── keyboard focus: the sky-blue ring wins over every later shadow (F01 spec) ── */
+html:root body :is([data-slot='switch'], [data-slot='checkbox'], [data-slot='slider-thumb'], [role='radiogroup'] > button[role='radio'], [data-slot='toggle-group-item']):focus-visible {
+  outline: 0 !important;
+  box-shadow:
+    0 0 0 2px #fffefb,
+    0 0 0 4px var(--d2-sky, #3b93d3),
+    0 0 14px 2px rgba(59, 147, 211, 0.55) !important;
+}
+
+@media (max-width: 620px) {
+  .settings-view-shell .scrollbar-sleek,
+  .settings-view-shell > :not(aside) > div {
+    overflow-x: hidden;
+  }
+  .settings-view-shell > :not(aside) .max-w-4xl {
+    padding-inline: 14px;
+  }
+}
