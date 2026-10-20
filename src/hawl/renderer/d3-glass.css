@@ -1,0 +1,314 @@
+/* D3 glass (round 4): the F09/F10 look in full. A tall sky-blue refractive slab with an ember corner, chunky key caps with a wall
+   under them, glossy lamp orbs, a lit lime tick, a dim ground behind every sheet. Imported last, overrides rounds 1 to 3.
+   CSS only, unlayered. Source: _work/2026-10-12-cd-full/system/F09.css (.mn, .kc, .lamp), F10.css, F05.css. */
+
+html:root {
+  /* menu glass: the sky shows through, tinted from the key light (upper left) to the ember (lower right) */
+  --d3-mn-env:
+    radial-gradient(120% 50% at 104% 112%, rgba(255, 164, 92, 0.5), rgba(255, 164, 92, 0) 66%),
+    radial-gradient(80% 56% at 0% 0%, rgba(96, 176, 238, 0.7), rgba(96, 176, 238, 0) 70%),
+    linear-gradient(168deg, rgba(150, 204, 242, 0.62) 0%, rgba(190, 220, 240, 0.36) 52%, rgba(244, 214, 184, 0.3) 100%);
+  --d3-mn-a: rgba(255, 255, 255, 0.42);
+  --d3-mn-b: rgba(236, 246, 252, 0.3);
+  /* thick key cap: cream acrylic with a wall under it */
+  --d3-kc-bg: radial-gradient(14px 7px at 24% 6%, #fff, rgba(255, 255, 255, 0)), linear-gradient(180deg, #ffffff 0%, #fbf5e8 55%, #efe4cf 100%);
+  --d3-kc-sh:
+    inset 0 1.5px 0 #fff,
+    inset 1.5px 0 0 rgba(255, 255, 255, 0.95),
+    inset -1px -2px 1px rgba(150, 110, 60, 0.3),
+    0 0 0 1px rgba(70, 46, 14, 0.44),
+    0 1px 0 #e0d3b3,
+    0 2px 0 #cdbd97,
+    0 3px 0 #b9a67c,
+    0 5px 3px -1px rgba(58, 36, 10, 0.5);
+}
+html.dark {
+  --d3-mn-env:
+    radial-gradient(120% 50% at 104% 112%, rgba(255, 122, 42, 0.3), rgba(255, 122, 42, 0) 66%),
+    radial-gradient(80% 56% at 0% 0%, rgba(88, 150, 224, 0.4), rgba(88, 150, 224, 0) 70%);
+  --d3-mn-a: rgba(46, 34, 28, 0.84);
+  --d3-mn-b: rgba(26, 18, 14, 0.8);
+  --d3-kc-bg: linear-gradient(180deg, #6a5a48 0%, #4a3d30 55%, #3a2f24 100%);
+  --d3-kc-sh:
+    inset 0 1.5px 0 rgba(255, 235, 205, 0.5),
+    inset -1px -2px 1px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(10, 6, 2, 0.85),
+    0 1px 0 #1f170f,
+    0 2px 0 #170f08,
+    0 3px 0 #0d0803,
+    0 5px 3px -1px rgba(0, 0, 0, 0.6);
+}
+
+/* ── every menu, popover, select and hover card: tall sky-blue slab ── */
+html [data-slot='dropdown-menu-content'],
+html [data-slot='dropdown-menu-sub-content'],
+html [data-slot='context-menu-content'],
+html [data-slot='context-menu-sub-content'],
+html [data-slot='select-content'],
+html [data-slot='popover-content'],
+html [data-slot='hover-card-content'] {
+  --d3-env: var(--d3-mn-env);
+  --d3-glass-a: var(--d3-mn-a);
+  --d3-glass-b: var(--d3-mn-b);
+  border-radius: 24px;
+  -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
+  backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
+}
+html [data-slot='popover-content'],
+html [data-slot='hover-card-content'] {
+  padding: 8px;
+}
+/* the combobox popover is set opaque by Orca (bg-[var(--popover)]); put the glass back so no flat cream strip remains */
+html [data-slot='popover-content'][class*='bg-'] {
+  background-color: transparent;
+}
+html [data-slot='popover-content'] [role='listbox'] > div[role='presentation'] {
+  padding: 2px;
+}
+/* empty list line becomes a recessed row, not floating text */
+html [data-slot='popover-content'] [role='listbox'] p[class*='justify-center'] {
+  height: 38px;
+  margin: 2px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  font-weight: 560;
+  color: var(--muted-foreground);
+  background: linear-gradient(180deg, rgba(120, 84, 36, 0.16), rgba(255, 255, 255, 0.4));
+  box-shadow:
+    inset 0 2.5px 5px rgba(var(--d3-shade), 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.85),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.3);
+}
+html.dark [data-slot='popover-content'] [role='listbox'] p[class*='justify-center'] {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(255, 232, 214, 0.06));
+  box-shadow: inset 0 2.5px 5px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(0, 0, 0, 0.7);
+}
+html [data-slot='popover-content'] [role='option'] {
+  min-height: 38px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+html [data-slot='popover-content'] [role='option']:hover,
+html [data-slot='popover-content'] [role='option'][aria-selected='true'],
+html [data-slot='popover-content'] [role='option'][data-armed='true'] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55));
+  box-shadow:
+    inset 2px 2px 0 #fff,
+    inset 0 -5px 8px -4px rgba(var(--d3-shade), 0.16),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.42),
+    0 2px 3px rgba(var(--d3-shade), 0.28),
+    3px 8px 14px -6px rgba(var(--d3-shade), 0.32);
+}
+html.dark [data-slot='popover-content'] [role='option']:hover,
+html.dark [data-slot='popover-content'] [role='option'][aria-selected='true'] {
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.22), rgba(255, 232, 214, 0.08));
+  box-shadow: inset 1.5px 1.5px 0 rgba(255, 224, 196, 0.4), 0 0 0 0.5px rgba(0, 0, 0, 0.7), 0 3px 8px -2px rgba(0, 0, 0, 0.5);
+}
+
+/* ── context menu with a single row: the row stays a lit key, never a bare pill ── */
+html [data-slot='context-menu-content'],
+html [data-slot='dropdown-menu-content'] {
+  min-width: 14rem;
+}
+
+/* ── key caps: thick cream keys with a wall under them (menus, palette footer, dialog buttons, sheets, pages) ── */
+html [data-slot='dropdown-menu-shortcut'],
+html [data-slot='context-menu-shortcut'],
+html [data-slot='command-dialog-content'] span.rounded-full[class*='border-border'],
+html [data-slot='command-dialog-content'] kbd,
+html [data-slot='dialog-content'] [data-add-repo-action] span[class*='min-w-6'],
+html [data-slot='tooltip-content'] kbd {
+  min-width: 25px;
+  height: 24px;
+  padding: 0 7px;
+  display: inline-grid;
+  place-items: center;
+  margin-bottom: 3px;
+  border: 0;
+  border-radius: 8px;
+  font: 600 11.5px/1 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0;
+  color: var(--foreground);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: var(--d3-kc-bg);
+  box-shadow: var(--d3-kc-sh);
+}
+html.dark [data-slot='dropdown-menu-shortcut'],
+html.dark [data-slot='context-menu-shortcut'],
+html.dark [data-slot='command-dialog-content'] span.rounded-full[class*='border-border'],
+html.dark [data-slot='command-dialog-content'] kbd,
+html.dark [data-slot='dialog-content'] [data-add-repo-action] span[class*='min-w-6'],
+html.dark [data-slot='tooltip-content'] kbd {
+  color: #fff4e6;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+/* the cursor row is orange: its shortcut stays a cream key so it reads as a real key on the lit pad */
+html [data-slot='dropdown-menu-item'][data-highlighted] [data-slot$='shortcut'],
+html [data-slot='context-menu-item'][data-highlighted] [data-slot$='shortcut'] {
+  color: var(--foreground);
+  background: var(--d3-kc-bg);
+}
+/* the command palette footer keys */
+html [data-slot='command-dialog-content'] div[class*='border-t'][class*='justify-end'] {
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+
+/* ── lit lime tick for the chosen row (checked and radio items) ── */
+html [data-slot$='checkbox-item'] > span:first-child svg,
+html [data-slot$='radio-item'] > span:first-child svg,
+html [data-slot='select-item'] > span:last-child svg {
+  display: none;
+}
+html [data-slot$='checkbox-item'] > span:first-child,
+html [data-slot$='radio-item'] > span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+html [data-slot$='checkbox-item'] > span:first-child > *,
+html [data-slot$='radio-item'] > span:first-child > *,
+html [data-slot='select-item'] > span:last-child > * {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0, #e7ff9d 20%, #9bd12e 60%, #6a9a12);
+  box-shadow: 0 0 0 0.5px rgba(60, 100, 0, 0.7), 0 0 9px 2px rgba(160, 225, 50, 0.85);
+}
+
+/* ── lamp orbs: a lit bead in a metal bezel (toast lamps, status dots on rows) ── */
+html body [data-sonner-toast][data-styled='true'] [data-icon] {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  background: linear-gradient(145deg, #fff 0%, #d9d1c2 38%, #8f8672 62%, #efe9dc 100%) !important;
+  box-shadow:
+    0 0 0 1px rgba(60, 44, 16, 0.55),
+    inset 0 1px 0 #fff,
+    0 1.5px 0 #a99f89,
+    0 3px 2px rgba(var(--d3-shade), 0.45),
+    0 0 12px 1px var(--d3-lamp-glow, rgba(143, 126, 99, 0.4)) !important;
+}
+html body [data-sonner-toast][data-styled='true'] [data-icon]::before {
+  content: '';
+  position: absolute;
+  inset: 3.5px;
+  border-radius: 50%;
+  background:
+    radial-gradient(10px 7px at 32% 24%, #fff 0%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(circle at 42% 38%, var(--d3-tone-hi) 0%, var(--d3-tone) 62%, var(--d3-tone-lo, #5e4f38) 100%);
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+html body [data-sonner-toast][data-styled='true'] [data-icon] svg {
+  position: relative;
+  z-index: 1;
+  width: 17px;
+  height: 17px;
+}
+html body [data-sonner-toast][data-type='success'] { --d3-tone-lo: #5e8e0c; --d3-lamp-glow: rgba(160, 225, 50, 0.8); }
+html body [data-sonner-toast][data-type='info'],
+html body [data-sonner-toast][data-type='loading'] { --d3-tone-lo: #1c6aa8; --d3-lamp-glow: rgba(90, 170, 235, 0.8); }
+html body [data-sonner-toast][data-type='warning'] { --d3-tone-lo: #a86a00; --d3-lamp-glow: rgba(255, 190, 40, 0.8); }
+html body [data-sonner-toast][data-type='error'] { --d3-tone-lo: #a91e0c; --d3-lamp-glow: rgba(245, 90, 40, 0.85); }
+/* the neutral toast gets one lamp only (its ::after orb); no second bezel */
+html body [data-sonner-toast][data-styled='true'] {
+  --d3-tint: rgba(110, 180, 240, 0.38);
+}
+
+/* ── the segmented control: dark theme chosen segment is a glass key with ink text ── */
+html.dark [data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on'] {
+  color: #fff4e6;
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.34), rgba(255, 232, 214, 0.12));
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 224, 196, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 2px 0 rgba(0, 0, 0, 0.5);
+}
+html.dark [data-slot='toggle-group'] [data-slot='toggle-group-item'][data-state='on'] * {
+  color: inherit;
+}
+
+/* ── F07 table head, one even engraved bar. The sticky cells paint their own flat colour, so the bar is one solid tone
+   and the cells inherit it: no light and dark blocks, no stray divider. ── */
+html div[class*='sticky'][class*='top-0'][class*='uppercase'][class*='border-b'] {
+  --d3-head: #ebdfc6;
+  background: var(--d3-head);
+  color: #5e5139;
+  border-bottom: 2px solid rgba(120, 88, 44, 0.32);
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.9);
+}
+html div[class*='sticky'][class*='top-0'][class*='uppercase'][class*='border-b'] > span {
+  background: var(--d3-head);
+  border-color: transparent;
+}
+html.dark div[class*='sticky'][class*='top-0'][class*='uppercase'][class*='border-b'] {
+  --d3-head: #2c2018;
+  color: #d8c3a4;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.55);
+  box-shadow: 0 -1px 0 rgba(255, 224, 196, 0.18);
+}
+html div[class*='bg-background'][class*='rounded-md'][class*='border-t-0'] {
+  box-shadow:
+    0 0 0 0.5px rgba(var(--d3-shade), 0.3),
+    0 1.5px 2px rgba(var(--d3-shade), 0.2),
+    8px 14px 18px -10px rgba(var(--d3-shade), 0.2);
+}
+/* the task list card has no empty band under it */
+html div[class*='bg-muted/35'][class*='border'][class*='rounded-md'] + div,
+html div[class*='min-h-0'][class*='flex-initial'][class*='overflow-auto'] {
+  margin-bottom: 0;
+}
+
+/* ── dark: the filter keys, badges and plates keep ink text on a glass key ── */
+html.dark button[class*='rounded-md'][class*='border'][class*='px-2.5'][class*='py-1'][class*='text-xs'] {
+  color: #fff4e6;
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.26), rgba(255, 232, 214, 0.08));
+  box-shadow: inset 0 1.5px 0 rgba(255, 224, 196, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.6), 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+html.dark button[class*='rounded-md'][class*='border'][class*='px-2.5'][class*='py-1'][class*='text-xs'][class*='bg-foreground'] {
+  color: #fffaf0;
+  background: linear-gradient(180deg, #ffa866 0%, #f26a1b 48%, #d9560c 100%);
+}
+html.dark [data-slot='tooltip-trigger'][data-variant='outline'][class*='border'],
+html.dark [data-slot='badge'] {
+  color: #e8d6bc;
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.2), rgba(255, 232, 214, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 224, 196, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
+html.dark div[class*='bg-muted/35'][class*='border'][class*='rounded-md'] {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(255, 232, 214, 0.05));
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(255, 224, 196, 0.1);
+}
+html.dark div[class*='bg-background'][class*='rounded-md'][class*='border-t-0'] {
+  background: #1b120d;
+}
+
+/* ── the hint pill ("Workspace board moved to the bottom bar") is the same glass as the menus, tinted sky ── */
+html [data-slot='tooltip-content'] {
+  background:
+    radial-gradient(34px 11px at 14% 2%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    var(--d3-grain),
+    var(--d3-mn-env),
+    linear-gradient(142deg, var(--d3-mn-a), var(--d3-mn-b));
+}
+
+/* key caps inside menu rows must not change the row height */
+html [data-slot='dropdown-menu-shortcut'],
+html [data-slot='context-menu-shortcut'] {
+  margin-bottom: 0;
+  height: 22px;
+  font-size: 11px;
+}
+
+/* dark: sidebar nav rows light up as a warm glass key, never a white block */
+html.dark [data-contextual-tour-target='sidebar-navigation'] button:hover,
+html.dark [data-contextual-tour-target='sidebar-navigation'] [data-slot='context-menu-trigger']:hover {
+  color: #fff4e6;
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.2), rgba(255, 232, 214, 0.06));
+  box-shadow: inset 0 1.5px 0 rgba(255, 224, 196, 0.35), 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
+html.dark [data-worktree-card-surface]:not([data-worktree-card-active]):not([data-worktree-card-selected]):hover {
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.16), rgba(255, 232, 214, 0.05));
+  box-shadow: inset 0 1.5px 0 rgba(255, 224, 196, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
