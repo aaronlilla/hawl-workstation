@@ -5,6 +5,7 @@
 import './lib/react-devtools-commit-hook-shim'
 import './lib/react-commit-cascade-observer'
 import './assets/main.css'
+import { installHawlLight } from '../../hawl/renderer/theme/light-engine'
 import '../../hawl/renderer/preload-fonts'
 
 import { StrictMode } from 'react'
@@ -32,6 +33,13 @@ import.meta.hot?.dispose(disposeOsFileDropGuard)
 recordRendererCrashBreadcrumb('renderer_bootstrap_started', { dev: import.meta.env.DEV })
 installRendererCrashDiagnostics()
 installTypingLatencyDiagnostic()
+installHawlLight()
+// Hawl never had the old workspace-board spot, so the one-time "moved to the bottom bar" hint is marked seen.
+try {
+  window.localStorage.setItem('orca.workspaceBoardMovedHintSeen.v1', 'true')
+} catch {
+  /* storage unavailable: the hint stays eligible */
+}
 installAutomationHostDiagnostic()
 
 if (

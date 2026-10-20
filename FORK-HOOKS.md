@@ -1,6 +1,6 @@
 # FORK-HOOKS
 
-Every Orca file this fork edits. After each upstream merge, re-check exactly these files. All Hawl code lives in `src/hawl/`; Orca files only get the small hooks below. Last updated at piece P1-rebrand (M0).
+Every Orca file this fork edits. After each upstream merge, re-check exactly these files. All Hawl code lives in `src/hawl/`; Orca files only get the small hooks below. Last updated at piece D1-foundations round 10 (no new Orca file edits: theme CSS, light-engine.ts and the Hawl terminal theme only) (theme CSS is `src/hawl/renderer/theme/*.css`, one import list in `index.css`).
 
 Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (Orca hosted services off), `rebrandText()` and the `hawl-brand` i18next post-processor (whole-word "Orca" becomes "Hawl" in UI copy without touching any catalog).
 
@@ -198,6 +198,15 @@ Base 20fc7af55, from `node src/hawl/tools/list-fork-hooks.mjs`. Folder-level row
 - `src/shared/plugins/`: `plugin-marketplace.ts`
 - `src/shared/terminal-themes/`: `index.ts`
 
+## D1-foundations (theme)
+
+| File | Hook |
+|---|---|
+| `src/renderer/src/assets/main.css`, `src/renderer/src/main.tsx` | import `src/hawl/renderer/theme/index.css` and start the light engine |
+| `src/renderer/src/components/crash-report/CrashReportDialogSurface.tsx` | "Orca" in the crash dialog text becomes "Hawl" |
+| `src/renderer/src/components/Landing.tsx` | empty home: dark logo plate and "ORCA" text replaced by the Hawl wordmark (light and dark SVG from `src/hawl/renderer/assets/`) straight on the ground |
+| `src/renderer/src/components/Landing.tsx` | D1 round 5: class `hawl-lit` on the Add project button (lit primary on the empty home). |
+
 ## Round 5 (critic fixes)
 | File | Hook |
 |---|---|
@@ -269,3 +278,12 @@ Status 2026-10-19: only row 12 (the README) is applied; every other row is `plan
 Notes
 - Hook 1 is reached by the two callers of `buildPtyHostEnv` (`src/main/ipc/pty/provider/local-configure.ts:79` and `src/main/ipc/pty/spawn-host-env.ts:214`); the single edit inside the function covers both. Agent sessions started through the structured-session lane (`src/main/runtime/structured-session-child-env.ts`) reuse parts of the same logic without calling `buildPtyHostEnv`; whether they need a Hawl hook is not checked.
 - Line numbers are deliberately not in this file. Anchors are literal text, which `hawl-tools/check-docs.mjs` can check.
+
+## Round 11 (critic fixes)
+| File | Hook |
+|---|---|
+| `src/renderer/src/main.tsx` | marks the one-time "Workspace board moved to the bottom bar" hint as seen (Hawl never had the old spot) |
+| `src/shared/terminal-theme-selection.test.ts`, `src/renderer/src/app-shell/use-terminal-viewer-color-publication.test.tsx` | expected terminal colours follow the Hawl themes (dark paper `#1f150e`, light `#f8eedb`) |
+
+## Merge note (R2)
+`src/hawl/renderer/hawl-theme.css` was replaced by `src/hawl/renderer/theme/index.css` (D1). The D4 shell sheets still load through `hawl-pieces.css`, now imported first in `theme/index.css`. `Landing.tsx` renders `HawlLanding` (D4).

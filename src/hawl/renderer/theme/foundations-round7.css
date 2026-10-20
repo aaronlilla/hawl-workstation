@@ -1,0 +1,9 @@
+/* ═════ Round 7: the strip above the main pane is glass on the ground, not an opaque bar ═════
+   Orca paints it bg-card. Same material as the title strip in apply.css, so the ground reads as one piece. */
+html:root [class~='@container/tab-strip'] {
+  background: var(--glass-tint-clear);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border-bottom: 1px solid rgba(var(--shade), 0.12);
+  box-shadow: inset 0 -1px 0 var(--rim-hi);
+}

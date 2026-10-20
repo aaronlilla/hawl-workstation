@@ -1,0 +1,536 @@
+/* D1-foundations: tokens, type, lit ground and light engine variables. See the header further down. */
+
+@font-face {
+  font-family: 'Hawl Inter';
+  src: url('../fonts/inter-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hawl Bricolage';
+  src: url('../fonts/bricolage-grotesque-latin-wght-normal.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hawl JetBrains Mono';
+  src: url('../fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* D1-foundations. Hawl tokens, F15 type, F00 lit ground, F17 real light, applied app-wide.
+   Sources: _work/2026-10-12-cd-full/system/{tokens,type,light,hawl}.css and packages/ui/tokens.css.
+   Names match the Claude Design system (--ink, --e1..e4, --mat-orange, --well, --glass-*, --tx-*) so pieces can lift CSS
+   from it unchanged. Utility classes are prefixed `hawl-` so they cannot collide with Orca or Tailwind.
+   Selectors use `html:root` / `html.dark` (specificity 0,1,1) to beat Orca's `:root` / `.dark` without editing them.
+
+   ONE KEY LIGHT: upper left, low and warm. Every highlight sits on the top and left edge, every shadow falls lower right.
+   Dark mode keeps the same light direction: a night yard lamp instead of sun (warm rims, black shadows).
+
+   Light engine (see ./light-engine.ts): it only writes custom properties. CSS draws everything.
+     --mx --my   (%)   where the lamp sits inside a lit control; rests upper left, follows the cursor
+     --hot       (0-1) how awake the lit control is (hover); animates through @property
+     --la --ox --oy --lrgb on a .hawl-catch receiver near a lit control: amount, unit vector away from the lamp, light colour */
+
+@property --hot { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --elev { syntax: '<number>'; inherits: true; initial-value: 0.4; }
+@property --mx { syntax: '<percentage>'; inherits: true; initial-value: 30%; }
+@property --my { syntax: '<percentage>'; inherits: true; initial-value: 22%; }
+
+/* ═════ Daylight (light): cream ground, navy ink, ember-orange accent ═════ */
+html:root {
+  /* fonts (F15): Bricolage display, Inter UI, JetBrains Mono */
+  --app-font-family:
+    'Hawl Inter', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: var(--app-font-family);
+  --font-ui: var(--app-font-family);
+  --hawl-font-display: 'Hawl Bricolage', 'Hawl Inter', system-ui, sans-serif;
+  --font-display: var(--hawl-font-display);
+  --font-mono:
+    'Hawl JetBrains Mono', 'Cascadia Code', ui-monospace, Consolas, 'Liberation Mono', monospace;
+  --radius: 0.625rem;
+
+  /* grounds */
+  --ground-0: #ebddbe;
+  --ground-1: #fbf5e8;
+  --ground-2: #c8b48b;
+  --ground-3: #b9a37a;
+  --ground-sky: #eaf3f8;
+  --ground-white: #fffefb;
+
+  /* ink: deep daylight navy (F15) */
+  --ink: #14243a;
+  --ink-2: #22344a;
+  --ink-3: #374a62;
+  --ink-4: #3f5068;
+  --ink-inverse: #fffaf0;
+  --ink-accent: #a93f08;
+  --ink-link: #1a5c96;
+  --ink-ok: #3f6a06;
+  --ink-bad: #a6291a;
+  --ink-warn: #8a5200;
+  --ink-on-orange: #2b0f02;
+  --ink-on-lime: #1f3a04;
+  --ink-on-dark: #fff3e4;
+
+  /* brand */
+  --hawl-flame: #ff7a2a;
+  --hawl-ember: #c64a0e;
+  --hawl-lime: #9bd12e;
+  --orange-50: #fff1e6; --orange-100: #ffdcc2; --orange-200: #ffbf8f; --orange-300: #ff9a55;
+  --orange-400: #fa7d2e; --orange-500: #f26a1b; --orange-600: #d55510; --orange-700: #a93f08; --orange-800: #732a05;
+  --lime-50: #f4fbdf; --lime-100: #e4f6b4; --lime-200: #cfee80; --lime-300: #b6e255;
+  --lime-400: #a5d93c; --lime-500: #9bd12e; --lime-600: #78a81a; --lime-700: #55780f; --lime-800: #35500a;
+  --sky-100: #ddeffc; --sky-200: #bee0f8; --sky-300: #93cbf1; --sky-400: #62aee3; --sky-500: #3b93d3; --sky-600: #2373b0;
+
+  /* radii, spacing, motion (Hawl scale) */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 30px; --r-pill: 999px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms; --dur: 220ms; --dur-slow: 420ms;
+
+  /* the one light */
+  --light-x: -0.62; --light-y: -0.78;   /* where the lamp is: left of and above every object */
+  --cast-x: 0.62; --cast-y: 0.78;       /* where shadows go */
+  --shade: 52, 28, 6;                   /* warm shadow colour */
+  --lrgb: 255, 128, 40;                 /* default light colour (orange) */
+  --lrgb-d: 140, 50, 6;                 /* the darker thrown shadow of that light */
+  --rim-hi: rgba(255, 255, 255, 1);
+  --edge-dark: rgba(60, 36, 10, 0.28);
+  --spec-hot: radial-gradient(70% 52% at 10% 0%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 36%, rgba(255,255,255,0) 100%);
+  --spec-streak: linear-gradient(118deg, rgba(255,255,255,0) 34%, rgba(255,255,255,0.55) 42%, rgba(255,255,255,0) 50%);
+
+  /* elevation: specular top-left edge, shaded core, hard contact, long soft cast (from Hawl tokens.css) */
+  --e0: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.92), inset -1.5px -2px 0 rgba(160,120,66,.45), inset -4px -7px 10px -3px rgba(150,100,40,.26), 0 0 0 1px rgba(58,36,10,.42), 0.45px 1px 0 rgb(156, 133, 96), 1.4px 3px 2px rgba(var(--shade),.62), 2.9px 8px 10px -2px rgba(var(--shade),.42), 12px 21px 25px -4px rgba(var(--shade),.46);
+  --e1: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.92), inset -1.5px -2px 0 rgba(160,120,66,.45), inset -4px -7px 10px -3px rgba(150,100,40,.26), 0 0 0 1px rgba(58,36,10,.42), 0.45px 1px 0 rgb(205, 188, 155), 0.9px 2px 0 rgb(181, 160, 125), 1.35px 3px 0 rgb(156, 133, 96), 2.4px 5px 2px rgba(var(--shade),.62), 4.7px 12px 14px -2px rgba(var(--shade),.42), 20px 35px 39px -8px rgba(var(--shade),.46);
+  --e2: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.92), inset -1.5px -2px 0 rgba(160,120,66,.45), inset -4px -7px 10px -3px rgba(150,100,40,.26), 0 0 0 1px rgba(58,36,10,.42), 0.45px 1px 0 rgb(215, 199, 166), 0.9px 2px 0 rgb(200, 182, 149), 1.35px 3px 0 rgb(186, 166, 131), 1.8px 4px 0 rgb(171, 149, 114), 2.25px 5px 0 rgb(156, 133, 96), 3.2px 7px 2px rgba(var(--shade),.62), 6.5px 16px 18px -2px rgba(var(--shade),.42), 28px 49px 53px -12px rgba(var(--shade),.46);
+  --e3: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.92), inset -1.5px -2px 0 rgba(160,120,66,.45), inset -4px -7px 10px -3px rgba(150,100,40,.26), 0 0 0 1px rgba(58,36,10,.42), 0.45px 1px 0 rgb(219, 203, 171), 0.9px 2px 0 rgb(209, 192, 159), 1.35px 3px 0 rgb(198, 180, 146), 1.8px 4px 0 rgb(188, 168, 134), 2.25px 5px 0 rgb(177, 156, 121), 2.7px 6px 0 rgb(167, 145, 109), 3.15px 7px 0 rgb(156, 133, 96), 4.2px 9px 2px rgba(var(--shade),.62), 8.3px 20px 22px -2px rgba(var(--shade),.42), 36px 63px 67px -16px rgba(var(--shade),.46);
+  --e4: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.92), inset -1.5px -2px 0 rgba(160,120,66,.45), inset -4px -7px 10px -3px rgba(150,100,40,.26), 0 0 0 1px rgba(58,36,10,.42), 0.45px 1px 0 rgb(222, 206, 174), 0.9px 2px 0 rgb(214, 197, 164), 1.35px 3px 0 rgb(205, 188, 155), 1.8px 4px 0 rgb(197, 179, 145), 2.25px 5px 0 rgb(189, 169, 135), 2.7px 6px 0 rgb(181, 160, 125), 3.15px 7px 0 rgb(172, 151, 116), 3.6px 8px 0 rgb(164, 142, 106), 4.05px 9px 0 rgb(156, 133, 96), 5.0px 11px 2px rgba(var(--shade),.62), 10.1px 24px 26px -2px rgba(var(--shade),.42), 44px 77px 81px -20px rgba(var(--shade),.46);
+  --e5: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.92), inset -1.5px -2px 0 rgba(160,120,66,.45), inset -4px -7px 10px -3px rgba(150,100,40,.26), 0 0 0 1px rgba(58,36,10,.42), 0.45px 1px 0 rgb(223, 208, 176), 0.9px 2px 0 rgb(217, 200, 168), 1.35px 3px 0 rgb(210, 193, 160), 1.8px 4px 0 rgb(203, 185, 152), 2.25px 5px 0 rgb(196, 178, 144), 2.7px 6px 0 rgb(190, 170, 136), 3.15px 7px 0 rgb(183, 163, 128), 3.6px 8px 0 rgb(176, 155, 120), 4.05px 9px 0 rgb(169, 148, 112), 4.5px 10px 0 rgb(163, 140, 104), 4.95px 11px 0 rgb(156, 133, 96), 6.0px 13px 2px rgba(var(--shade),.62), 11.9px 28px 30px -2px rgba(var(--shade),.42), 52px 91px 95px -24px rgba(var(--shade),.46);
+  --wall-orange: 0.4px 1px 0 rgb(209, 91, 23), 0.8px 2px 0 rgb(193, 82, 19), 1.2px 3px 0 rgb(176, 73, 16), 1.6px 4px 0 rgb(160, 64, 13), 2.0px 5px 0 rgb(143, 55, 10), 2.4px 6px 0 rgb(127, 46, 6), 2.8px 7px 0 rgb(110, 37, 3);
+  --wall-lime: 0.4px 1px 0 rgb(131, 176, 34), 0.8px 2px 0 rgb(119, 161, 29), 1.2px 3px 0 rgb(107, 147, 25), 1.6px 4px 0 rgb(96, 133, 20), 2.0px 5px 0 rgb(84, 119, 16), 2.4px 6px 0 rgb(72, 104, 11), 2.8px 7px 0 rgb(60, 90, 7);
+  --wall-cream: 0.4px 1px 0 rgb(215, 199, 166), 0.8px 2px 0 rgb(200, 182, 149), 1.2px 3px 0 rgb(186, 166, 131), 1.6px 4px 0 rgb(171, 149, 114), 2.0px 5px 0 rgb(156, 133, 96);
+  --wall-metal: 0.4px 1px 0 rgb(191, 184, 170), 0.8px 2px 0 rgb(175, 168, 153), 1.2px 3px 0 rgb(159, 152, 136), 1.6px 4px 0 rgb(143, 135, 120), 2.0px 5px 0 rgb(127, 119, 104), 2.4px 6px 0 rgb(111, 103, 87);
+  --wall-ink: 0.4px 1px 0 rgb(50, 40, 29), 0.8px 2px 0 rgb(43, 34, 25), 1.2px 3px 0 rgb(35, 28, 20), 1.6px 4px 0 rgb(28, 21, 16), 2.0px 5px 0 rgb(20, 15, 11), 2.4px 6px 0 rgb(13, 9, 7), 2.8px 7px 0 rgb(5, 3, 2);
+  --deep-orange: 0.4px 1px 0 rgb(217, 95, 24), 0.8px 2px 0 rgb(208, 91, 23), 1.2px 3px 0 rgb(200, 86, 21), 1.6px 4px 0 rgb(191, 82, 20), 2.0px 5px 0 rgb(182, 77, 18), 2.4px 6px 0 rgb(173, 72, 16), 2.8px 7px 0 rgb(164, 68, 15), 3.2px 8px 0 rgb(156, 63, 13), 3.6px 9px 0 rgb(147, 59, 12), 4.0px 10px 0 rgb(138, 54, 10), 4.4px 11px 0 rgb(129, 49, 8), 4.8px 12px 0 rgb(120, 45, 7), 5.2px 13px 0 rgb(112, 40, 5), 5.6px 14px 0 rgb(103, 36, 4), 6.0px 15px 0 rgb(94, 31, 2);
+  --deep-lime: 0.4px 1px 0 rgb(137, 182, 36), 0.8px 2px 0 rgb(130, 175, 34), 1.2px 3px 0 rgb(124, 167, 32), 1.6px 4px 0 rgb(118, 159, 29), 2.0px 5px 0 rgb(111, 151, 27), 2.4px 6px 0 rgb(105, 144, 25), 2.8px 7px 0 rgb(99, 136, 23), 3.2px 8px 0 rgb(92, 128, 21), 3.6px 9px 0 rgb(86, 120, 19), 4.0px 10px 0 rgb(80, 113, 17), 4.4px 11px 0 rgb(73, 105, 15), 4.8px 12px 0 rgb(67, 97, 12), 5.2px 13px 0 rgb(61, 89, 10), 5.6px 14px 0 rgb(54, 82, 8), 6.0px 15px 0 rgb(48, 74, 6);
+  --deep-cream: 0.4px 1px 0 rgb(224, 208, 177), 0.8px 2px 0 rgb(218, 202, 170), 1.2px 3px 0 rgb(212, 195, 163), 1.6px 4px 0 rgb(205, 189, 157), 2.0px 5px 0 rgb(199, 182, 150), 2.4px 6px 0 rgb(193, 175, 143), 2.8px 7px 0 rgb(187, 169, 136), 3.2px 8px 0 rgb(181, 162, 129), 3.6px 9px 0 rgb(175, 156, 122), 4.0px 10px 0 rgb(169, 149, 115), 4.4px 11px 0 rgb(163, 142, 108), 4.8px 12px 0 rgb(156, 136, 102), 5.2px 13px 0 rgb(150, 129, 95), 5.6px 14px 0 rgb(144, 123, 88), 6.0px 15px 0 rgb(138, 116, 81);
+  --deep-metal: 0.4px 1px 0 rgb(199, 192, 178), 0.8px 2px 0 rgb(192, 185, 171), 1.2px 3px 0 rgb(184, 177, 163), 1.6px 4px 0 rgb(177, 170, 156), 2.0px 5px 0 rgb(169, 162, 148), 2.4px 6px 0 rgb(162, 155, 140), 2.8px 7px 0 rgb(154, 147, 133), 3.2px 8px 0 rgb(147, 140, 125), 3.6px 9px 0 rgb(139, 132, 118), 4.0px 10px 0 rgb(132, 125, 110), 4.4px 11px 0 rgb(124, 117, 102), 4.8px 12px 0 rgb(117, 110, 95), 5.2px 13px 0 rgb(109, 102, 87), 5.6px 14px 0 rgb(102, 95, 80), 6.0px 15px 0 rgb(94, 87, 72);
+  --deep-ink: 0.4px 1px 0 rgb(54, 43, 32), 0.8px 2px 0 rgb(51, 40, 30), 1.2px 3px 0 rgb(47, 37, 27), 1.6px 4px 0 rgb(43, 34, 25), 2.0px 5px 0 rgb(40, 31, 23), 2.4px 6px 0 rgb(36, 28, 21), 2.8px 7px 0 rgb(32, 25, 19), 3.2px 8px 0 rgb(29, 23, 16), 3.6px 9px 0 rgb(25, 20, 14), 4.0px 10px 0 rgb(21, 17, 12), 4.4px 11px 0 rgb(18, 14, 10), 4.8px 12px 0 rgb(14, 11, 8), 5.2px 13px 0 rgb(10, 8, 5), 5.6px 14px 0 rgb(7, 5, 3), 6.0px 15px 0 rgb(3, 2, 1);
+  --well: inset 0 4px 7px rgba(var(--shade),.50), inset 3px 4px 3px rgba(var(--shade),.30), inset -1px -1px 0 rgba(255,255,255,.95), 0 2px 0 rgba(255,255,255,1), 0 0 0 1px rgba(var(--shade),.30);
+
+  /* lit materials */
+  --mat-orange: linear-gradient(180deg, #ffa466 0%, #fa7f32 34%, #f06716 62%, #dc540c 86%, #c54709 100%);
+  --mat-lime: linear-gradient(180deg, #d8f58a 0%, #b7e34d 34%, #9bd12e 62%, #86bc20 86%, #70a413 100%);
+  --mat-sky: linear-gradient(180deg, #b8defa 0%, #84c3ef 40%, #5aa9e0 70%, #3f8fcb 100%);
+  --mat-acrylic: linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f3eada 100%);
+  --mat-metal: linear-gradient(180deg, #ffffff 0%, #ece6db 36%, #c9c1b3 50%, #e6dfd3 76%, #fbf8f1 100%);
+  --mat-slab: linear-gradient(145deg, #ffffff 0%, #fffdf8 30%, #f9f2e4 70%, #efe4cf 100%);
+  --mat-well: linear-gradient(180deg, #ddd1b8, #ede5d2);
+
+  /* glow */
+  --glow-orange: 0 0 0 1px rgba(255,150,70,0.35), 0 0 22px rgba(242,106,27,0.4), 0 0 60px rgba(242,106,27,0.2);
+  --glow-lime: 0 0 0 1px rgba(170,220,70,0.4), 0 0 22px rgba(155,209,46,0.45), 0 0 60px rgba(155,209,46,0.22);
+  --glow-sky: 0 0 0 1px rgba(120,190,240,0.4), 0 0 22px rgba(98,174,227,0.45), 0 0 60px rgba(98,174,227,0.22);
+
+  /* liquid glass (heavily frosted; never lower the blur) */
+  --glass-blur: 14px;
+  --glass-sat: 1.9;
+  --glass-env: linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), linear-gradient(168deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.22) 22%, rgba(255,255,255,0) 38%, rgba(255,236,200,0.18) 70%, rgba(255,214,150,0.38) 100%);
+  --glass-tint-orange: rgba(255, 120, 36, 0.42);
+  --glass-tint-lime: rgba(160, 218, 50, 0.44);
+  --glass-tint-sky: rgba(90, 170, 232, 0.42);
+  --glass-tint-clear: rgba(255, 250, 240, 0.5);
+  --glass-rim: inset 0 1.5px 0 rgba(255,255,255,0.95), inset 1.5px 0 0 rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.45), inset 0 -2px 0 rgba(255,255,255,0.35);
+  --glass-shadow: 0 0 0 1px rgba(255,255,255,0.35), 0 1px 1px rgba(var(--shade),0.3), 6px 10px 10px -4px rgba(var(--shade),0.34), 18px 30px 34px -12px rgba(var(--shade),0.46);
+
+  /* engraved text */
+  --tx-engrave: 0 1px 0 rgba(255,255,255,0.92), 0 -0.5px 0 rgba(20,36,58,0.1);
+  --tx-engrave-orange: 0 1px 0 rgba(255,222,184,0.8), 0 -0.5px 0 rgba(90,26,0,0.22);
+  --tx-engrave-lime: 0 1px 0 rgba(236,255,184,0.85), 0 -0.5px 0 rgba(30,60,0,0.2);
+  --tx-print: 0 1px 0 rgba(255,255,255,0.75);
+  --tx-glass: 0 1px 0 rgba(255,255,255,0.55), 0 0 14px rgba(255,255,255,0.55);
+
+  /* focus: sky light (kept out of Orca's own --focus) */
+  --focus-ring: 0 0 0 2px var(--ground-white), 0 0 0 4px var(--sky-500), 0 0 18px 2px rgba(59,147,211,0.45);
+
+  /* the lit ground (F00): low warm sun top left, sky in the far corner, stone desk below */
+  --ground-lit:
+    radial-gradient(1800px 1300px at 0% 0%, #fffcf2 0%, rgba(255,249,228,0.94) 16%, rgba(255,241,208,0.55) 40%, rgba(255,236,200,0) 72%),
+    radial-gradient(1100px 760px at 100% 0%, rgba(120,185,238,0.34), rgba(120,185,238,0) 64%),
+    radial-gradient(1500px 1100px at 50% 38%, rgba(0,0,0,0) 40%, rgba(110,74,30,0.12) 100%),
+    linear-gradient(180deg, #f6ecd6 0%, #efe2c4 45%, #e6d5ae 100%);
+  --ground-grain: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .42 0 0 0 0 .25 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  
+  /* ── Orca variable mapping ── */
+  /* the app stands on the lit ground (painted on html): the base pane is clear, side panes are frosted stone */
+  --background: rgb(251 245 232 / 0);
+  --background-solid: #fbf5e8;
+  --editor-surface: #fffefb;
+  --foreground: #14243a;
+  --card: #fffefb;
+  --card-foreground: #14243a;
+  --popover: #fffefb;
+  --popover-foreground: #14243a;
+  --primary: #c64a0e;
+  --primary-foreground: #fffaf0;
+  --secondary: #f6ecd8;
+  --secondary-foreground: #14243a;
+  --muted: #f6ecd8;
+  --muted-foreground: #4a5c73;
+  --accent: #fbe6d1;
+  --accent-foreground: #14243a;
+  --border: #e8dcc2;
+  --input: #e0d2b4;
+  --ring: #ff7a2a;
+  --terminal-pane-locate: #1a5c96;
+  --ai-action-accent: #c64a0e;
+  --agent-question: #d2530f;
+  --agent-question-text: #a93f08;
+  --agent-working: #e0a100;
+  --chart-1: #ffc59c;
+  --chart-2: #ff9a55;
+  --chart-3: #ff7a2a;
+  --chart-4: #c64a0e;
+  --chart-5: #7c2707;
+  --worktree-sidebar: rgb(246 236 216 / 0.5);
+  --worktree-sidebar-foreground: #14243a;
+  --worktree-sidebar-accent: #f0e1c4;
+  --worktree-sidebar-accent-foreground: #14243a;
+  --worktree-sidebar-border: #e8dcc2;
+  --worktree-sidebar-ring: #ff7a2a;
+  --sidebar: rgb(246 236 216 / 0.5);
+  --sidebar-foreground: #14243a;
+  --sidebar-primary: #c64a0e;
+  --sidebar-primary-foreground: #fffaf0;
+  --sidebar-accent: #f6ecd8;
+  --sidebar-accent-foreground: #14243a;
+  --sidebar-border: #e8dcc2;
+  --sidebar-ring: #ff7a2a;
+  --orca-security-primary: #14243a;
+  --git-graph-base-ref: #c64a0e;
+  --annotation-highlight: #e0a100;
+  --markdown-search-match-active: #ff9a55;
+  --tab-group-split-divider: #9c8a6a;
+  --tab-group-split-divider-strong: #6e5f45;
+  --destructive: #c4301c;
+  --status-success: #3f6a06;
+  --status-warning: #8a5200;
+  --callout-note: #1a5c96;
+  /* popovers, menus and dialogs are objects that sit on the ground: the Hawl cast replaces Orca's flat black shadow */
+  --shadow-floating: var(--e3);
+}
+
+/* ═════ Ember (dark): night yard. Coal ground, cream ink, flame accent, same key light ═════ */
+html.dark {
+  --ground-0: #120d09;
+  --ground-1: #17100b;
+  --ground-2: #241912;
+  --ground-3: #2e2018;
+  --ground-sky: #0f1620;
+  --ground-white: #1c140e;
+
+  --ink: #fff3e4;
+  --ink-2: #f0dcc6;
+  --ink-3: #cdb59d;
+  --ink-4: #b39b84;
+  --ink-inverse: #14243a;
+  --ink-accent: #ffb27a;
+  --ink-link: #8fb8ff;
+  --ink-ok: #a9e05a;
+  --ink-bad: #ff8573;
+  --ink-warn: #ffc24a;
+  --ink-on-orange: #2b0f02;
+  --ink-on-lime: #1f3a04;
+  --ink-on-dark: #fff3e4;
+
+  --shade: 0, 0, 0;
+  --lrgb-d: 90, 28, 0;
+  --edge-dark: rgba(0, 0, 0, 0.55);
+  --rim-hi: rgba(255, 224, 190, 0.22);
+  --spec-hot: radial-gradient(70% 52% at 10% 0%, rgba(255,226,190,0.5) 0%, rgba(255,226,190,0.18) 36%, rgba(255,226,190,0) 100%);
+  --spec-streak: linear-gradient(118deg, rgba(255,226,190,0) 34%, rgba(255,226,190,0.2) 42%, rgba(255,226,190,0) 50%);
+
+  /* elevation (night): warm rim on the lit edge, black contact and cast, same direction */
+  --e0: inset 1.5px 1.5px 0 rgba(255,226,190,.16), inset 0 0 0 1px rgba(255,226,190,.06), inset -1.5px -2px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.65), 0.5px 1px 0 #0b0704, 1.4px 3.0px 2px rgba(0,0,0,.6), 2.9px 8.0px 10px -2px rgba(0,0,0,.5), 12px 21px 25px -4px rgba(0,0,0,.55);
+  --e1: inset 1.5px 1.5px 0 rgba(255,226,190,.16), inset 0 0 0 1px rgba(255,226,190,.06), inset -1.5px -2px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.65), 0.5px 1px 0 #0b0704, 2.3px 5.4px 2px rgba(0,0,0,.6), 4.7px 11.4px 13px -2px rgba(0,0,0,.5), 20px 35px 39px -4px rgba(0,0,0,.55);
+  --e2: inset 1.5px 1.5px 0 rgba(255,226,190,.16), inset 0 0 0 1px rgba(255,226,190,.06), inset -1.5px -2px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.65), 0.5px 1px 0 #0b0704, 3.2px 7.8px 2px rgba(0,0,0,.6), 6.5px 14.8px 16px -2px rgba(0,0,0,.5), 28px 49px 53px -4px rgba(0,0,0,.55);
+  --e3: inset 1.5px 1.5px 0 rgba(255,226,190,.16), inset 0 0 0 1px rgba(255,226,190,.06), inset -1.5px -2px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.65), 0.5px 1px 0 #0b0704, 4.1px 10.2px 2px rgba(0,0,0,.6), 8.3px 18.2px 19px -2px rgba(0,0,0,.5), 36px 63px 67px -4px rgba(0,0,0,.55);
+  --e4: inset 1.5px 1.5px 0 rgba(255,226,190,.16), inset 0 0 0 1px rgba(255,226,190,.06), inset -1.5px -2px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.65), 0.5px 1px 0 #0b0704, 5.0px 12.6px 2px rgba(0,0,0,.6), 10.1px 21.6px 22px -2px rgba(0,0,0,.5), 44px 77px 81px -4px rgba(0,0,0,.55);
+  --e5: inset 1.5px 1.5px 0 rgba(255,226,190,.16), inset 0 0 0 1px rgba(255,226,190,.06), inset -1.5px -2px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.65), 0.5px 1px 0 #0b0704, 5.9px 15.0px 2px rgba(0,0,0,.6), 11.9px 25.0px 25px -2px rgba(0,0,0,.5), 52px 91px 95px -4px rgba(0,0,0,.55);
+  --well: inset 0 4px 7px rgba(0,0,0,.6), inset 3px 4px 3px rgba(0,0,0,.4), inset -1px -1px 0 rgba(255,226,190,.08), 0 1px 0 rgba(255,226,190,.07), 0 0 0 1px rgba(0,0,0,.5);
+
+  --mat-acrylic: linear-gradient(180deg, #2f2118 0%, #271a12 50%, #1f150e 100%);
+  --mat-metal: linear-gradient(180deg, #4a3a2e 0%, #33261c 36%, #1f150e 50%, #2e2218 76%, #3c2e22 100%);
+  --mat-slab: linear-gradient(145deg, #2c1f16 0%, #261a12 40%, #1e140d 100%);
+  --mat-well: linear-gradient(180deg, #0c0704, #1a110b);
+
+  --glow-orange: 0 0 0 1px rgba(255,150,70,0.4), 0 0 24px rgba(255,122,42,0.5), 0 0 70px rgba(255,122,42,0.28);
+  --glow-lime: 0 0 0 1px rgba(170,220,70,0.45), 0 0 24px rgba(155,209,46,0.5), 0 0 70px rgba(155,209,46,0.26);
+  --glow-sky: 0 0 0 1px rgba(120,190,240,0.45), 0 0 24px rgba(98,174,227,0.5), 0 0 70px rgba(98,174,227,0.26);
+
+  --glass-env: linear-gradient(rgba(255,226,190,0.05), rgba(255,226,190,0.05)), linear-gradient(168deg, rgba(255,226,190,0.3) 0%, rgba(255,226,190,0.08) 22%, rgba(255,226,190,0) 38%, rgba(255,150,70,0.06) 70%, rgba(255,140,60,0.16) 100%);
+  --glass-tint-orange: rgba(255, 120, 36, 0.3);
+  --glass-tint-lime: rgba(160, 218, 50, 0.28);
+  --glass-tint-sky: rgba(90, 170, 232, 0.28);
+  --glass-tint-clear: rgba(40, 28, 20, 0.55);
+  --glass-rim: inset 0 1.5px 0 rgba(255,226,190,0.5), inset 1.5px 0 0 rgba(255,226,190,0.28), inset 0 0 0 1px rgba(255,226,190,0.14), inset 0 -2px 0 rgba(255,226,190,0.08);
+  --glass-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 1px 1px rgba(0,0,0,0.5), 6px 10px 12px -4px rgba(0,0,0,0.5), 18px 30px 34px -12px rgba(0,0,0,0.6);
+
+  --tx-engrave: 0 -1px 0 rgba(0,0,0,0.45), 0 1px 0 rgba(255,226,190,0.06);
+  --tx-print: 0 -1px 0 rgba(0,0,0,0.4);
+  --tx-glass: 0 1px 0 rgba(0,0,0,0.35), 0 0 12px rgba(255,226,190,0.2);
+
+  --focus-ring: 0 0 0 2px var(--ground-1), 0 0 0 4px var(--sky-400), 0 0 18px 2px rgba(98,174,227,0.5);
+
+  --ground-lit:
+    radial-gradient(1500px 1000px at 0% 0%, rgba(255,150,70,0.13) 0%, rgba(255,150,70,0.05) 40%, rgba(255,150,70,0) 72%),
+    radial-gradient(1100px 760px at 100% 0%, rgba(80,130,200,0.12), rgba(80,130,200,0) 64%),
+    radial-gradient(1500px 1100px at 50% 38%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.4) 100%),
+    linear-gradient(180deg, #1a120c 0%, #150e09 55%, #100a06 100%);
+  --ground-grain: none;
+
+  --background: rgb(18 10 6 / 0);
+  --background-solid: #120a06;
+  --editor-surface: #0e0704;
+  --foreground: #ffe8d6;
+  --card: #1a100a;
+  --card-foreground: #ffe8d6;
+  --popover: #1e140f;
+  --popover-foreground: #ffe8d6;
+  --primary: #ff7a2a;
+  --primary-foreground: #1a0701;
+  --secondary: #2a1f19;
+  --secondary-foreground: #ffe8d6;
+  --muted: #2a1f19;
+  --muted-foreground: #c9a58c;
+  --accent: #3a2012;
+  --accent-foreground: #ffe8d6;
+  --border: rgb(255 232 214 / 0.1);
+  --input: rgb(255 232 214 / 0.18);
+  --ring: #ff9a55;
+  --terminal-pane-locate: #6fa2ff;
+  --ai-action-accent: #ff9a55;
+  --agent-question: #ff7a2a;
+  --agent-question-text: #ffb27a;
+  --agent-working: #ffc24a;
+  --chart-1: #ffd9be;
+  --chart-2: #ff9a55;
+  --chart-3: #ff7a2a;
+  --chart-4: #ec5a0e;
+  --chart-5: #a6370a;
+  --worktree-sidebar: rgb(30 20 15 / 0.6);
+  --worktree-sidebar-foreground: #ffe8d6;
+  --worktree-sidebar-accent: #2e2019;
+  --worktree-sidebar-accent-foreground: #ffe8d6;
+  --worktree-sidebar-border: rgb(255 232 214 / 0.1);
+  --worktree-sidebar-ring: #ff9a55;
+  --sidebar: rgb(22 12 7 / 0.6);
+  --sidebar-foreground: #ffe8d6;
+  --sidebar-primary: #ff7a2a;
+  --sidebar-primary-foreground: #1a0701;
+  --sidebar-accent: #2a1f19;
+  --sidebar-accent-foreground: #ffe8d6;
+  --sidebar-border: rgb(255 232 214 / 0.1);
+  --sidebar-ring: #ff9a55;
+  --git-graph-base-ref: #ff7a2a;
+  --annotation-highlight: #ffc24a;
+  --markdown-search-match-active: #ff9a55;
+  --tab-group-split-divider: #7a6354;
+  --tab-group-split-divider-strong: #b89a86;
+  --destructive: #ff6b57;
+  --status-success: #7df5ae;
+  --status-warning: #ffc24a;
+  --callout-note: #6fa2ff;
+}
+
+/* ═════ Type (F15) ═════
+   Bricolage Grotesque on headings only, tightened by size. Inter everywhere else, with the F15 feature set.
+   Numbers: html:root = 0,1,1 so these beat Tailwind's unlayered-over-layered defaults only where they are plain tags. */
+html:root body {
+  font-family: var(--font-ui);
+  color: var(--foreground);
+  letter-spacing: -0.006em;
+  font-feature-settings: 'calt', 'kern', 'cv05', 'ss03';
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+html h1,
+html h2,
+html h3,
+.hawl-display {
+  font-family: var(--hawl-font-display);
+  font-optical-sizing: auto;
+  font-variant-ligatures: no-common-ligatures;
+  text-wrap: balance;
+  color: var(--ink);
+}
+html h1 { font-weight: 800; letter-spacing: -0.026em; line-height: 1.02; }
+html h2 { font-weight: 800; letter-spacing: -0.02em; line-height: 1.06; }
+html h3 { font-weight: 700; letter-spacing: -0.016em; line-height: 1.14; }
+.hawl-display { font-weight: 800; letter-spacing: -0.026em; }
+.hawl-t-print { text-shadow: var(--tx-print); }
+.hawl-t-engrave { text-shadow: var(--tx-engrave); }
+.hawl-t-glass { text-shadow: var(--tx-glass); }
+.hawl-mono { font-family: var(--font-mono); }
+::selection { background: rgba(255, 154, 85, 0.5); color: var(--ink); }
+html.dark ::selection { background: rgba(255, 122, 42, 0.45); color: var(--ink); }
+
+/* ═════ Lit ground (F00) ═════
+   A real surface the whole app stands on: sun top left, sky far corner, warm stone below, fine paper grain.
+   Painted once on html (fixed, no repaint on scroll). Panes with their own solid fill stand on it. */
+html:root {
+  background-color: var(--ground-1);
+  background-image: var(--ground-grain), var(--ground-lit);
+  background-attachment: fixed;
+}
+.hawl-ground { background-color: var(--ground-1); background-image: var(--ground-grain), var(--ground-lit); }
+
+/* ═════ Real light (F17) ═════ */
+
+/* One shadow light. Same recipe for every object, depth set by --elev (0 pressed, 1 lifted, 1.6 floating). */
+.hawl-obj {
+  --elev: 0.4;
+  transition:
+    box-shadow 220ms var(--ease),
+    transform 160ms var(--ease),
+    --elev 220ms var(--ease);
+  transform: translateY(calc(var(--elev) * -3px + 1.2px));
+  box-shadow:
+    inset 0 1.5px 0 var(--rim-hi), inset 1.5px 0 0 var(--rim-hi),
+    0 0 0 1px rgba(var(--shade), 0.22),
+    calc(var(--cast-x) * (0.5px + var(--elev) * 1.2px)) calc(var(--cast-y) * (1px + var(--elev) * 1.4px)) calc(1.5px + var(--elev) * 2px) rgba(var(--shade), calc(0.62 - var(--elev) * 0.12)),
+    calc(var(--cast-x) * var(--elev) * 9px) calc(var(--cast-y) * var(--elev) * 11px) calc(4px + var(--elev) * 12px) calc(var(--elev) * -3px) rgba(var(--shade), calc(0.46 - var(--elev) * 0.06)),
+    calc(var(--cast-x) * var(--elev) * 40px) calc(var(--cast-y) * var(--elev) * 46px) calc(10px + var(--elev) * 44px) calc(var(--elev) * -14px) rgba(var(--shade), calc(0.4 - var(--elev) * 0.06));
+}
+.hawl-obj:hover, .hawl-obj.is-hover { --elev: 1; }
+.hawl-obj:active, .hawl-obj.is-pressed { --elev: 0.06; transition-duration: 90ms; }
+.hawl-obj.is-lifted { --elev: 1.6; }
+
+/* Materials. Each is a body gradient plus a stacked-wall elevation. Combine with .hawl-obj for the shadow light instead
+   when the thing moves; use these when it is a fixed slab. */
+.hawl-slab { position: relative; isolation: isolate; border-radius: var(--r-lg); background: var(--mat-slab); box-shadow: var(--e2); }
+.hawl-acrylic { position: relative; isolation: isolate; border-radius: var(--r-md); background: var(--mat-acrylic); box-shadow: var(--e1); }
+.hawl-well { border-radius: var(--r-md); background: var(--mat-well); box-shadow: var(--well); }
+.hawl-slab::before, .hawl-acrylic::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: var(--spec-hot), var(--spec-streak); opacity: 0.55;
+}
+
+/* A lit control: a real lamp behind soft-touch plastic. The hot spot sits upper left at rest and slides to the cursor
+   (--mx --my, written by light-engine.ts); --hot opens the lamp. The glow is a tight spill, never a halo.
+   Colour variants set --lrgb so receivers near it take the same light. */
+.hawl-lit,
+html :where([data-slot='button'][data-variant='default']) {
+  --lrgb: 255, 128, 40;
+  --lrgb-d: 140, 50, 6;
+  --lit-body: var(--mat-orange);
+  --lit-glow: var(--glow-orange);
+  position: relative;
+  isolation: isolate;
+  color: var(--ink-on-orange);
+  text-shadow: var(--tx-engrave-orange);
+  background:
+    radial-gradient(70% 130% at var(--mx) var(--my), rgba(255,255,255,0.95) 0%, rgba(255,246,214,calc(0.4 + 0.3 * var(--hot))) 20%, rgba(255,232,170,calc(0.1 + 0.2 * var(--hot))) 46%, rgba(255,232,170,0) 76%),
+    var(--lit-body);
+  transition: --hot 180ms var(--ease), box-shadow 220ms var(--ease), transform 160ms var(--ease);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.85), inset 2px 0 0 rgba(255,255,255,0.45),
+    inset -1.5px -2px 0 rgba(120,40,0,0.35), inset -4px -7px 10px -3px rgba(120,40,0,0.3),
+    0 0 0 1px rgba(110,37,3,0.55), var(--wall-orange),
+    0 calc(10px + 8px * var(--hot)) 12px -6px rgba(var(--lrgb), calc(0.5 + 0.25 * var(--hot))),
+    0 0 calc(14px + 12px * var(--hot)) rgba(var(--lrgb), calc(0.25 + 0.3 * var(--hot))),
+    calc(var(--cast-x) * 12px) calc(var(--cast-y) * 20px) 24px -6px rgba(var(--shade), 0.42);
+}
+.hawl-lit:active, .hawl-lit.is-pressed,
+html :where([data-slot='button'][data-variant='default']):active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 3px 6px rgba(90,26,0,0.45), inset 0 -1px 0 rgba(255,214,170,0.5),
+    0 0 0 1px rgba(110,37,3,0.6), 0 1px 0 rgba(255,255,255,0.5),
+    0 0 10px rgba(var(--lrgb), 0.25);
+}
+.hawl-lit[disabled], .hawl-lit.is-disabled, .hawl-lit[aria-disabled='true'],
+html :where([data-slot='button'][data-variant='default']):disabled {
+  --lit-body: linear-gradient(180deg, #e7dfce, #dcd2be);
+  color: var(--ink-4); text-shadow: 0 1px 0 #fff; background: var(--lit-body);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.25), 0 1px 2px rgba(var(--shade), 0.2);
+}
+html.dark .hawl-lit[disabled], html.dark .hawl-lit.is-disabled, html.dark .hawl-lit[aria-disabled='true'],
+html.dark :where([data-slot='button'][data-variant='default']):disabled {
+  --lit-body: linear-gradient(180deg, #2a1f19, #221812);
+  text-shadow: 0 -1px 0 #000;
+  box-shadow: inset 0 1px 0 rgba(255,226,190,0.1), 0 0 0 1px rgba(0,0,0,0.5);
+}
+.hawl-lit--lime {
+  --lrgb: 155, 209, 46; --lrgb-d: 50, 84, 4;
+  --lit-body: var(--mat-lime); --lit-glow: var(--glow-lime);
+  color: var(--ink-on-lime); text-shadow: var(--tx-engrave-lime);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.85), inset 2px 0 0 rgba(255,255,255,0.45),
+    inset -1.5px -2px 0 rgba(30,60,0,0.3), inset -4px -7px 10px -3px rgba(30,60,0,0.25),
+    0 0 0 1px rgba(50,84,4,0.55), var(--wall-lime),
+    0 calc(10px + 8px * var(--hot)) 12px -6px rgba(var(--lrgb), calc(0.5 + 0.25 * var(--hot))),
+    0 0 calc(14px + 12px * var(--hot)) rgba(var(--lrgb), calc(0.25 + 0.3 * var(--hot))),
+    calc(var(--cast-x) * 12px) calc(var(--cast-y) * 20px) 24px -6px rgba(var(--shade), 0.42);
+}
+.hawl-lit--sky {
+  --lrgb: 98, 174, 227; --lrgb-d: 20, 70, 120;
+  --lit-body: var(--mat-sky); --lit-glow: var(--glow-sky);
+  color: #0b2238; text-shadow: var(--tx-engrave);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.85), inset 2px 0 0 rgba(255,255,255,0.45),
+    inset -1.5px -2px 0 rgba(20,70,120,0.3), inset -4px -7px 10px -3px rgba(20,70,120,0.25),
+    0 0 0 1px rgba(30,90,150,0.55),
+    0 calc(10px + 8px * var(--hot)) 12px -6px rgba(var(--lrgb), calc(0.5 + 0.25 * var(--hot))),
+    0 0 calc(14px + 12px * var(--hot)) rgba(var(--lrgb), calc(0.25 + 0.3 * var(--hot))),
+    calc(var(--cast-x) * 12px) calc(var(--cast-y) * 20px) 24px -6px rgba(var(--shade), 0.42);
+}
+
+/* A receiver: any object near a lit control takes a lit rim on the side that faces it and throws a coloured shadow away.
+   Pure box-shadow so it stacks on top of whatever the element already has: put the element's own shadow in
+   --hawl-catch-base and it keeps it. */
+.hawl-catch {
+  --la: 0; --ox: 0; --oy: 0;
+  box-shadow:
+    var(--hawl-catch-base, 0 0 0 0 transparent),
+    inset calc(var(--ox) * -2.5px) calc(var(--oy) * -2.5px) 0 rgba(var(--lrgb), calc(var(--la) * 0.9)),
+    inset calc(var(--ox) * -10px) calc(var(--oy) * -10px) 14px -6px rgba(var(--lrgb), calc(var(--la) * 0.5)),
+    calc(var(--ox) * 5px) calc(var(--oy) * 4px + 2px) 8px -2px rgba(var(--lrgb-d), calc(var(--la) * 0.55));
+  transition: box-shadow 90ms linear;
+}
+
+/* Liquid glass (F05, lean): only where a real sheet of glass sits over real content. Frosted heavily, bright specular
+   rim top left, tint by variant. No decorative backdrop scenes. Refraction filter (#hawl-lens) is a later piece. */
+.hawl-glass {
+  --glass-tint: var(--glass-tint-clear);
+  --glass-glow: rgba(255, 255, 255, 0.55);
+  --glass-cast: rgba(var(--shade), 0.4);
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--r-xl);
+  background: var(--glass-env), linear-gradient(180deg, var(--glass-tint), var(--glass-tint));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.8)) saturate(var(--glass-sat)) brightness(1.04);
+  backdrop-filter: blur(calc(var(--glass-blur) * 1.8)) saturate(var(--glass-sat)) brightness(1.04);
+  box-shadow: var(--glass-rim), var(--glass-shadow);
+}
+.hawl-glass--orange { --glass-tint: var(--glass-tint-orange); --glass-glow: rgba(255, 140, 60, 0.7); }
+.hawl-glass--lime { --glass-tint: var(--glass-tint-lime); --glass-glow: rgba(170, 225, 60, 0.7); }
+.hawl-glass--sky { --glass-tint: var(--glass-tint-sky); --glass-glow: rgba(120, 190, 245, 0.7); }
+
+/* Focus: sky light, everywhere a control takes keyboard focus. */
+html :where(button, [role='button'], a, summary):focus-visible {
+  outline: 2px solid var(--sky-500);
+  outline-offset: 2px;
+}
+html.dark :where(button, [role='button'], a, summary):focus-visible { outline-color: var(--sky-400); }
+
+/* ═════ Reduced motion: lamp holds still, depth stays ═════ */
+@media (prefers-reduced-motion: reduce) {
+  .hawl-obj, .hawl-lit, .hawl-catch { transition: none; }
+}

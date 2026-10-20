@@ -1,0 +1,165 @@
+/* D1-foundations, round 10: every control is a lamp (F17), settings are glass cards, the work surfaces are lit glass, dark fixes.
+   CSS only; the lamp attributes come from light-engine.ts. Last theme file, so it wins ties. */
+
+/* ═════ F17 real light: any pressable control, while hot, throws a glow and a highlight that follows the cursor ═════ */
+html:root [data-hawl-lamp] {
+  transition: --hot 150ms var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  html:root [data-hawl-lamp] { transition: none; }
+}
+html:root [data-hawl-lamp-fx]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  /* the highlight sits where the cursor is; the rim and the thrown glow take the lamp colour */
+  background:
+    radial-gradient(
+      circle 64px at var(--mx) var(--my),
+      rgba(255, 255, 255, calc(0.62 * var(--hot))) 0%,
+      rgba(var(--lrgb), calc(0.2 * var(--hot))) 52%,
+      rgba(var(--lrgb), 0) 100%
+    );
+  box-shadow:
+    0 0 0 1px rgba(var(--lrgb), calc(0.4 * var(--hot))),
+    0 0 16px 1px rgba(var(--lrgb), calc(0.34 * var(--hot))),
+    0 0 38px 4px rgba(var(--lrgb), calc(0.16 * var(--hot)));
+}
+html.dark [data-hawl-lamp-fx]::after {
+  background:
+    radial-gradient(
+      circle 64px at var(--mx) var(--my),
+      rgba(255, 226, 190, calc(0.34 * var(--hot))) 0%,
+      rgba(var(--lrgb), calc(0.2 * var(--hot))) 52%,
+      rgba(var(--lrgb), 0) 100%
+    );
+}
+/* receivers near a lamp lean away from it: a lit rim on the side that faces the lamp */
+html:root [data-hawl-catch][style*='--la'],
+html:root .hawl-catch[style*='--la'] {
+  box-shadow: inset calc(var(--ox) * -1.5px) calc(var(--oy) * -1.5px) 0 rgba(var(--lrgb), calc(0.55 * var(--la)));
+}
+
+/* ═════ The sticky project header used to leave a 1px white edge beside the list (light and dark) ═════ */
+html:root .bg-worktree-sidebar .sticky { border: 0; }
+
+/* ═════ Logo in the dark: a lit cream sign, not a flat plate ═════ */
+html.dark .titlebar-logo {
+  background-color: #fff0d8;
+  background-image: linear-gradient(180deg, #fffaf0 0%, #ffe9c7 55%, #f6d3a0 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 3px rgba(190, 110, 40, 0.35),
+    0 0 0 1px rgba(255, 160, 80, 0.55),
+    0 0 18px rgba(255, 122, 42, 0.38),
+    0 3px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* ═════ Settings: the page is a stack of glass cards under display headings ═════ */
+html:root .settings-view-shell aside {
+  background: transparent;
+  border-right-color: transparent;
+}
+html:root .settings-view-shell aside.bg-worktree-sidebar button:not([class~='bg-worktree-sidebar-accent']) > svg.lucide,
+html:root .settings-view-shell aside.bg-worktree-sidebar button:not([class~='bg-worktree-sidebar-accent']) > span > svg.lucide { color: var(--ink-2); }
+html:root .settings-view-shell aside [class*='uppercase'],
+html:root .settings-view-shell aside div[class*='font-semibold'][class*='text-xs'] { color: var(--ink-3); }
+
+/* the one big Orca card goes plain, each section becomes its own card */
+html:root .settings-view-shell div[class~='rounded-xl'][class~='px-7'] {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+html:root .settings-view-shell div[class~='px-7'] > div { display: flex; flex-direction: column; gap: 22px; }
+html:root .settings-view-shell div[class~='px-7'] > div > * { margin: 0; }
+html:root .settings-view-shell div[class~='px-7'] > div > div > section,
+html:root .settings-view-shell div[class~='px-7'] > div > section {
+  position: relative;
+  padding: 22px 28px 24px;
+  border-radius: 22px;
+  background-color: rgba(255, 252, 244, 0.6);
+  background-image: var(--glass-env);
+  box-shadow: var(--glass-rim), var(--slab-cast);
+}
+html.dark .settings-view-shell div[class~='px-7'] > div > div > section,
+html.dark .settings-view-shell div[class~='px-7'] > div > section {
+  background-color: rgba(44, 29, 20, 0.62);
+}
+html:root .settings-view-shell div[class~='px-7'] > div > div > section > div:first-child h3,
+html:root .settings-view-shell div[class~='px-7'] > div > section h3[class~='text-sm'] {
+  font-family: var(--hawl-font-display);
+  font-size: 21px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+html:root .settings-view-shell div[class~='px-7'] > div > div > section > div:first-child p { color: var(--ink-3); font-size: 13px; }
+/* rows inside a card: quiet hairlines, no second box */
+html:root .settings-view-shell div[class~='px-7'] section div[class~='rounded-xl'][class~='bg-card/50'] {
+  background-color: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 1px 3px rgba(var(--shade), 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+  border-color: transparent;
+}
+html.dark .settings-view-shell div[class~='px-7'] section div[class~='rounded-xl'][class~='bg-card/50'] {
+  background-color: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 226, 190, 0.08);
+}
+/* the page header: display title */
+html:root .settings-view-shell h2[class*='text-2xl'] {
+  font-size: 40px;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+/* ═════ Create worktree and other dialogs: segmented tab row, lit toggle ═════ */
+html:root [role='dialog'] [role='tablist'] {
+  gap: 2px;
+  padding: 3px;
+  width: max-content;
+  border-radius: var(--r-pill);
+  background-color: rgba(var(--shade), 0.1);
+  box-shadow: inset 0 1.5px 3px rgba(var(--shade), 0.28), 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+html:root [role='dialog'] [role='tablist'] [role='tab'] { border-radius: var(--r-pill); padding: 5px 12px; margin: 0; }
+html:root [role='dialog'] [role='tablist'] [role='tab'][data-state='active'],
+html:root [role='dialog'] [role='tablist'] [role='tab'][aria-selected='true'] {
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.24), 1px 3px 4px -1px rgba(var(--shade), 0.3);
+}
+html.dark [role='dialog'] [role='tablist'] { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 226, 190, 0.1); }
+html.dark [role='dialog'] [role='tablist'] [role='tab'][data-state='active'],
+html.dark [role='dialog'] [role='tablist'] [role='tab'][aria-selected='true'] {
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.26), rgba(255, 190, 130, 0.08));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+/* switches off: a recessed well, not a flat grey bar */
+html:root [role='switch'][data-state='unchecked'] {
+  background-color: rgba(var(--shade), 0.18);
+  box-shadow: inset 0 2px 4px rgba(var(--shade), 0.4), 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+html.dark [role='switch'][data-state='unchecked'] {
+  background-color: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 226, 190, 0.12);
+}
+
+/* ═════ Work surface: the terminal slab is lit glass with a bezel and a sheen streak, never a white textarea ═════ */
+html:root [class~='group/tab-group']::after {
+  background: var(--spec-streak), var(--slab-sheen);
+  background-size: 220% 100%, auto;
+  background-position: -30% 0, 0 0;
+}
+html:root div.isolate.z-10.overflow-hidden:has(.pane) { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), inset 0 14px 30px -18px rgba(var(--shade), 0.32); }
+html.dark div.isolate.z-10.overflow-hidden:has(.pane) { box-shadow: inset 0 0 0 1px rgba(255, 226, 190, 0.1), inset 0 14px 30px -18px rgba(0, 0, 0, 0.7); }
+
+/* ═════ Phone width (window narrower than 700px): one column, the right panel steps aside ═════ */
+@media (max-width: 700px) {
+  html:root div.relative.flex-shrink-0.flex.flex-row.overflow-visible:has(> div.bg-sidebar) { display: none; }
+  html:root .titlebar-left + div > .bg-worktree-sidebar { width: min(280px, 72vw) !important; }
+}

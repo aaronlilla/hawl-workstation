@@ -6,10 +6,10 @@ export const HAWL_TERMINAL_THEME_LIGHT = 'Hawl Daylight'
 // Palettes from Hawl's tokens (hawl-tokens.css): coal ground, cream ink, flame cursor.
 export const HAWL_TERMINAL_THEMES: TerminalThemeMap = {
   [HAWL_TERMINAL_THEME_DARK]: {
-    background: '#0b0502',
+    background: '#1f150e',
     foreground: '#ffe8d6',
     cursor: '#ff7a2a',
-    cursorAccent: '#0b0502',
+    cursorAccent: '#1f150e',
     selectionBackground: '#ffb27a',
     selectionForeground: '#1e140f',
     black: '#1e140f',
@@ -30,10 +30,10 @@ export const HAWL_TERMINAL_THEMES: TerminalThemeMap = {
     brightWhite: '#fff3ea'
   },
   [HAWL_TERMINAL_THEME_LIGHT]: {
-    background: '#fcf6e7',
-    foreground: '#2b2318',
+    background: '#f8eedb',
+    foreground: '#14243a',
     cursor: '#c64a0e',
-    cursorAccent: '#fcf6e7',
+    cursorAccent: '#f8eedb',
     selectionBackground: '#fbd9bb',
     selectionForeground: '#14243a',
     black: '#14243a',
