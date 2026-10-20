@@ -34,6 +34,12 @@ recordRendererCrashBreadcrumb('renderer_bootstrap_started', { dev: import.meta.e
 installRendererCrashDiagnostics()
 installTypingLatencyDiagnostic()
 installHawlLight()
+// Hawl never had the old workspace-board spot, so the one-time "moved to the bottom bar" hint is marked seen.
+try {
+  window.localStorage.setItem('orca.workspaceBoardMovedHintSeen.v1', 'true')
+} catch {
+  /* storage unavailable: the hint stays eligible */
+}
 installAutomationHostDiagnostic()
 
 if (

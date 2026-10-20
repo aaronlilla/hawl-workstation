@@ -190,3 +190,9 @@ Base 20fc7af55, from `node src/hawl/tools/list-fork-hooks.mjs`. Folder-level row
 | `src/renderer/src/components/mobile/slides/HomeSlide.tsx`, `TerminalSlide.tsx`, `WorktreeListSlide.tsx` | the phone mock shows the Hawl mark and `hawl` sample repo names (no Orca whale or repo name) |
 | `config/electron-builder.config.cjs` | `copyright` carries the Orca / Lovecast credit (EXE metadata) |
 
+
+## Round 11 (critic fixes)
+| File | Hook |
+|---|---|
+| `src/renderer/src/main.tsx` | marks the one-time "Workspace board moved to the bottom bar" hint as seen (Hawl never had the old spot) |
+| `src/shared/terminal-theme-selection.test.ts`, `src/renderer/src/app-shell/use-terminal-viewer-color-publication.test.tsx` | expected terminal colours follow the Hawl themes (dark paper `#1f150e`, light `#f8eedb`) |

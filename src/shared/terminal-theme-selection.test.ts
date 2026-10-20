@@ -13,15 +13,15 @@ describe('the terminal colours a host configures', () => {
   it('uses the light theme for a light appearance, so a light user is not told dark', () => {
     expect(resolveConfiguredTerminalColors(base, false)).toEqual({
       foreground: '#14243a',
-      background: '#fffefb'
+      background: '#f8eedb'
     })
     expect(resolveConfiguredTerminalColors({ ...base, theme: 'light' }, true)).toEqual({
       foreground: '#14243a',
-      background: '#fffefb'
+      background: '#f8eedb'
     })
     expect(resolveConfiguredTerminalColors(base, true)).toEqual({
       foreground: '#ffe8d6',
-      background: '#0b0502'
+      background: '#1f150e'
     })
   })
 
@@ -41,7 +41,7 @@ describe('the terminal colours a host configures', () => {
     ).toEqual({ foreground: '#ffe8d6', background: '#101010' })
     expect(
       resolveConfiguredTerminalColors({ ...base, terminalThemeDark: 'no such theme' }, true)
-    ).toEqual({ foreground: '#ffe8d6', background: '#0b0502' })
+    ).toEqual({ foreground: '#ffe8d6', background: '#1f150e' })
   })
 
   it('keeps using the dark theme in light mode when no separate light theme is set', () => {

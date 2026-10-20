@@ -1,0 +1,337 @@
+/* D1-foundations, round 11: one continuous lit ground, raised keycap tabs, glass tooltips, lit right-panel and status controls,
+   a warm dusk dark mode, a phone drawer. CSS only. Last theme file, so it wins ties. */
+
+/* ═════ One ground: the sky corner is a hint, never a second colour field; dark is dusk, not coal ═════ */
+html:root {
+  --ground-lit:
+    radial-gradient(1800px 1300px at 0% 0%, #fffcf2 0%, rgba(255, 249, 228, 0.94) 16%, rgba(255, 241, 208, 0.55) 40%, rgba(255, 236, 200, 0) 72%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(160, 196, 224, 0.13), rgba(160, 196, 224, 0) 64%),
+    radial-gradient(1500px 1100px at 50% 38%, rgba(0, 0, 0, 0) 40%, rgba(110, 74, 30, 0.12) 100%),
+    linear-gradient(180deg, #f6ecd6 0%, #efe2c4 45%, #e6d5ae 100%);
+}
+html.dark:root {
+  --ground-lit:
+    radial-gradient(1500px 1000px at 0% 0%, rgba(255, 150, 70, 0.3) 0%, rgba(255, 150, 70, 0.1) 42%, rgba(255, 150, 70, 0) 72%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(120, 150, 200, 0.1), rgba(120, 150, 200, 0) 64%),
+    radial-gradient(1500px 1100px at 50% 38%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.28) 100%),
+    linear-gradient(180deg, #33231a 0%, #281a12 55%, #1f140d 100%);
+}
+/* the strip above the work surface is part of the ground: no band, no seam against the right panel's header */
+html:root [class~='@container/tab-strip'],
+html.dark [class~='@container/tab-strip'] {
+  background: none;
+  background-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 0;
+  box-shadow: none;
+}
+html:root .titlebar { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 0; box-shadow: none; }
+
+/* ═════ Tabs are raised keycaps; the active one is lit glass with an orange lamp underneath ═════ */
+html:root [data-testid='sortable-tab'] {
+  margin: 3px 2px 0;
+  height: calc(100% - 3px);
+  border: 0;
+  border-radius: 12px 12px 0 0;
+  background-color: transparent;
+  color: var(--ink-2);
+  font-family: var(--hawl-font-display);
+  font-weight: 650;
+  font-size: 12.5px;
+  transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+html:root [data-testid='sortable-tab']:hover { background-color: rgba(255, 253, 246, 0.5); }
+html:root [data-testid='sortable-tab'][data-active='true'] {
+  color: var(--ink);
+  background-color: rgba(255, 252, 244, 0.78);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.2), 0 -2px 6px -2px rgba(var(--shade), 0.2);
+}
+html.dark [data-testid='sortable-tab'] { color: var(--ink-2); }
+html.dark [data-testid='sortable-tab']:hover { background-color: rgba(255, 220, 190, 0.08); }
+html.dark [data-testid='sortable-tab'][data-active='true'] {
+  color: var(--ink);
+  background-color: rgba(255, 200, 150, 0.1);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.24), rgba(255, 190, 130, 0.04));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+html:root [data-testid='sortable-tab'] > span.absolute[class*='h-[2px]'] {
+  left: 18%;
+  right: 18%;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 3px;
+  background-color: var(--orange-500);
+  background-image: var(--mat-orange);
+  box-shadow: 0 0 9px rgba(242, 106, 27, 0.7);
+}
+html:root [data-testid='sortable-tab'][data-active='false'] > span.absolute[class*='h-[2px]'] { display: none; }
+
+/* new tab and Command: round lit keycaps */
+html:root [class~='@container/tab-strip'] button:is([class~='h-7'][class~='w-7'], [class*='whitespace-nowrap']) {
+  border-radius: var(--r-pill);
+  color: var(--ink-2);
+  transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+html:root [class~='@container/tab-strip'] button:is([class~='h-7'][class~='w-7'], [class*='whitespace-nowrap']):hover {
+  background-color: rgba(255, 253, 246, 0.7);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.22), 1px 3px 4px -1px rgba(var(--shade), 0.26);
+}
+html.dark [class~='@container/tab-strip'] button:is([class~='h-7'][class~='w-7'], [class*='whitespace-nowrap']):hover {
+  background-color: rgba(255, 220, 190, 0.1);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.2), rgba(255, 190, 130, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+
+/* ═════ The work slab has a real bezel: a lit outer rim, a recessed inner frame, a shade under the lip ═════ */
+html:root div.isolate.z-10.overflow-hidden:has(.pane) {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.85),
+    inset 0 0 0 5px rgba(var(--shade), 0.07),
+    inset 0 0 0 6px rgba(255, 255, 255, 0.55),
+    inset 0 16px 30px -16px rgba(var(--shade), 0.36);
+}
+html.dark div.isolate.z-10.overflow-hidden:has(.pane) {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 226, 190, 0.22),
+    inset 0 0 0 5px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 6px rgba(255, 226, 190, 0.07),
+    inset 0 16px 30px -16px rgba(0, 0, 0, 0.7);
+}
+
+/* ═════ Window controls are plain glass keys: no thrown glow, no stuck lamp fragments ═════ */
+html:root .window-controls-btn[data-hawl-lamp-fx]::after,
+html:root .window-controls-btn::after { box-shadow: none; }
+html:root .window-controls-btn { border-radius: 0; transition: background-color 120ms var(--ease); }
+html:root .window-controls-btn:hover { background-color: rgba(var(--shade), 0.12); }
+html:root .window-controls-close:hover { background-color: #d9381e; color: #fff; }
+
+/* ═════ Tooltips and the stock navy toast are glass ═════ */
+html:root [data-slot='tooltip-content']:not([class*='bg-popover']) {
+  color: var(--ink);
+  background-color: rgba(255, 252, 244, 0.86);
+  background-image: var(--mat-acrylic);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  border-radius: 12px;
+  font-family: var(--hawl-font-display);
+  font-weight: 650;
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.24), 0 8px 18px -6px rgba(var(--shade), 0.4);
+}
+html.dark [data-slot='tooltip-content']:not([class*='bg-popover']) {
+  background-color: rgba(52, 36, 26, 0.9);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.18), rgba(255, 190, 130, 0.02));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.6), 0 8px 18px -6px rgba(0, 0, 0, 0.7);
+}
+html:root [data-slot='tooltip-content'] > svg { display: none; }
+
+/* ═════ Focus: a lit orange halo, never the stock blue ring ═════ */
+html:root :is(input, textarea, [data-slot='input'], [role='searchbox'], [role='combobox']):focus,
+html:root :is(input, textarea, [data-slot='input']):focus-visible {
+  outline: none;
+  --tw-ring-color: rgba(242, 106, 27, 0.55);
+  box-shadow: inset 0 1.5px 3px rgba(var(--shade), 0.2), 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 4px rgba(242, 106, 27, 0.55), 0 0 18px 2px rgba(242, 106, 27, 0.35);
+}
+html:root div:has(> input:focus-visible),
+html:root div:has(> input:focus) { outline: none; }
+
+/* ═════ Right panel: keycap icon row, raised file rows, a recessed Names/Contents switch ═════ */
+html:root div.bg-sidebar .right-sidebar-activity-strip button {
+  border-radius: 14px;
+  margin: 0 2px;
+  transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease), color 140ms var(--ease);
+}
+html:root div.bg-sidebar .right-sidebar-activity-strip button svg { width: 18px; height: 18px; stroke-width: 2.1; filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.85)); }
+html:root div.bg-sidebar .right-sidebar-activity-strip button:hover {
+  background-color: rgba(255, 253, 246, 0.7);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.18);
+}
+html:root div.bg-sidebar .right-sidebar-activity-strip button[class*='text-foreground'] {
+  background-color: rgba(255, 255, 255, 0.7);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.22), 1px 3px 4px -1px rgba(var(--shade), 0.28);
+}
+html.dark div.bg-sidebar .right-sidebar-activity-strip button svg { filter: none; }
+html.dark div.bg-sidebar .right-sidebar-activity-strip button:hover { background-color: rgba(255, 220, 190, 0.08); box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.5); }
+html.dark div.bg-sidebar .right-sidebar-activity-strip button[class*='text-foreground'] {
+  background-color: rgba(255, 200, 150, 0.1);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.24), rgba(255, 190, 130, 0.04));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+html:root div.bg-sidebar button[class~='w-full'][class~='rounded-sm'][class~='text-left'] {
+  border-radius: 12px;
+  min-height: 30px;
+  font-weight: 560;
+  color: var(--ink);
+  transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+html:root div.bg-sidebar button[class~='w-full'][class~='rounded-sm'][class~='text-left']:hover {
+  background-color: rgba(255, 253, 246, 0.7);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.2), 1px 3px 4px -1px rgba(var(--shade), 0.24);
+}
+html.dark div.bg-sidebar button[class~='w-full'][class~='rounded-sm'][class~='text-left']:hover {
+  background-color: rgba(255, 220, 190, 0.08);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.16), rgba(255, 190, 130, 0.02));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.26), 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+html:root div.bg-sidebar [class~='group/toggle-group'] {
+  gap: 2px;
+  padding: 3px;
+  height: 34px;
+  border-radius: var(--r-pill);
+  background-color: rgba(var(--shade), 0.1);
+  box-shadow: inset 0 1.5px 3px rgba(var(--shade), 0.28), 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+html:root div.bg-sidebar [class~='group/toggle-group'] > button { border-radius: var(--r-pill); border: 0; font-family: var(--hawl-font-display); font-weight: 650; }
+html:root div.bg-sidebar [class~='group/toggle-group'] > button[data-state='on'],
+html:root div.bg-sidebar [class~='group/toggle-group'] > button[aria-pressed='true'],
+html:root div.bg-sidebar [class~='group/toggle-group'] > button[aria-checked='true'] {
+  background-color: rgba(255, 252, 244, 0.9);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.24), 1px 3px 4px -1px rgba(var(--shade), 0.3);
+}
+html.dark div.bg-sidebar [class~='group/toggle-group'] { background-color: rgba(0, 0, 0, 0.4); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 226, 190, 0.1); }
+html.dark div.bg-sidebar [class~='group/toggle-group'] > button[data-state='on'],
+html.dark div.bg-sidebar [class~='group/toggle-group'] > button[aria-pressed='true'],
+html.dark div.bg-sidebar [class~='group/toggle-group'] > button[aria-checked='true'] {
+  background-color: rgba(255, 200, 150, 0.12);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.26), rgba(255, 190, 130, 0.06));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* ═════ Status bar: a glass sill with lit chips ═════ */
+html:root div.flex.items-center.h-6[class*='border-t'][class*='select-none'] {
+  height: 30px;
+  min-height: 30px;
+  background-color: rgba(255, 252, 244, 0.5);
+  background-image: var(--mat-acrylic);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-top: 0;
+  box-shadow: inset 0 1.5px 0 #fff, inset 0 2px 0 rgba(var(--shade), 0.08), 0 -4px 12px -6px rgba(var(--shade), 0.22);
+  font-family: var(--hawl-font-display);
+  font-weight: 650;
+  color: var(--ink-2);
+}
+html.dark div.flex.items-center.h-6[class*='border-t'][class*='select-none'] {
+  background-color: rgba(30, 20, 14, 0.7);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.1), rgba(255, 190, 130, 0));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.16), 0 -4px 12px -6px rgba(0, 0, 0, 0.5);
+}
+html:root div.flex.items-center.h-6[class*='border-t'][class*='select-none'] button { border-radius: var(--r-pill); padding: 2px 9px; transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease); }
+html:root div.flex.items-center.h-6[class*='border-t'][class*='select-none'] button:hover {
+  background-color: rgba(255, 253, 246, 0.75);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.2), 1px 3px 4px -1px rgba(var(--shade), 0.24);
+}
+html.dark div.flex.items-center.h-6[class*='border-t'][class*='select-none'] button:hover {
+  background-color: rgba(255, 220, 190, 0.08);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.18), rgba(255, 190, 130, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.26), 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+/* the floating workspace button is a round keycap */
+html:root span.fixed[class~='z-[46]'] > button {
+  border-radius: 14px;
+  background-color: rgba(255, 252, 244, 0.85);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.26), 1px 4px 6px -1px rgba(var(--shade), 0.36);
+  color: var(--ink-2);
+}
+html.dark span.fixed[class~='z-[46]'] > button {
+  background-color: rgba(60, 40, 28, 0.9);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.22), rgba(255, 190, 130, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.34), 0 0 0 1px rgba(0, 0, 0, 0.6), 0 6px 12px -3px rgba(0, 0, 0, 0.6);
+  color: var(--ink);
+}
+
+/* ═════ Icons: heavier line, engraved into the cream ═════ */
+html:root svg.lucide { stroke-width: 2.1; }
+html:root:not(.dark) .bg-worktree-sidebar svg.lucide { filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.8)); }
+
+/* ═════ Dark: the neighbour glow on rows is a quiet rim, and settings rows do not become separate slabs ═════ */
+html.dark [data-hawl-catch][style*='--la'],
+html.dark .hawl-catch[style*='--la'] { box-shadow: inset calc(var(--ox) * -1px) calc(var(--oy) * -1px) 0 rgba(var(--lrgb), calc(0.16 * var(--la))); }
+html.dark .settings-view-shell aside [data-hawl-catch][style*='--la'],
+html.dark .settings-view-shell aside button[style*='--la'] { box-shadow: none; }
+
+/* ═════ Phone width: the project list is a drawer over a full-width workspace ═════ */
+@media (max-width: 700px) {
+  html:root .app-layout > div:first-child > div:first-child > div:first-child > div.flex.min-h-0.flex-col.shrink-0 {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: min(300px, 86vw);
+    background-color: rgba(255, 250, 238, 0.9);
+    background-image: var(--mat-acrylic);
+    -webkit-backdrop-filter: blur(22px) saturate(1.5);
+    backdrop-filter: blur(22px) saturate(1.5);
+    box-shadow: 0 0 0 1px rgba(var(--shade), 0.2), 14px 0 40px -10px rgba(var(--shade), 0.5);
+  }
+  html.dark:root .app-layout > div:first-child > div:first-child > div:first-child > div.flex.min-h-0.flex-col.shrink-0 {
+    background-color: rgba(38, 26, 18, 0.94);
+    background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.12), rgba(255, 190, 130, 0));
+  }
+  html:root .app-layout > div:first-child > div:first-child > div:first-child > div.flex.min-h-0.flex-col.shrink-0 .bg-worktree-sidebar { width: 100% !important; }
+  html:root .window-controls { display: none; }
+}
+
+/* ═════ Terminal paper light: warm, with one soft sheen and an ember pool; the cold sky wash is gone ═════ */
+html:root div.isolate.z-10.overflow-hidden:has(.pane)::after {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.35) 38%, rgba(255, 255, 255, 0) 46%),
+    radial-gradient(760px 440px at 100% 0%, rgba(190, 215, 230, 0.34), rgba(190, 215, 230, 0) 70%),
+    radial-gradient(860px 520px at 0% 100%, rgba(255, 176, 108, 0.5), rgba(255, 176, 108, 0) 72%),
+    linear-gradient(180deg, rgba(255, 244, 222, 0.45), rgba(255, 250, 240, 0) 36%);
+}
+html.dark div.isolate.z-10.overflow-hidden:has(.pane)::after {
+  background:
+    linear-gradient(115deg, rgba(255, 220, 180, 0) 30%, rgba(255, 220, 180, 0.07) 38%, rgba(255, 220, 180, 0) 46%),
+    radial-gradient(860px 520px at 0% 100%, rgba(255, 110, 40, 0.2), rgba(255, 110, 40, 0) 72%),
+    linear-gradient(180deg, rgba(255, 190, 130, 0.1), rgba(255, 190, 130, 0) 40%);
+}
+/* the terminal's own colour is warm dusk in the dark (was near-black) */
+
+/* ═════ Sidebar footer: round lit keys ═════ */
+html:root .bg-worktree-sidebar > div.relative.shrink-0 > div.mt-auto button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+html:root .bg-worktree-sidebar > div.relative.shrink-0 > div.mt-auto button:hover {
+  background-color: rgba(255, 253, 246, 0.8);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.22), 1px 3px 4px -1px rgba(var(--shade), 0.28);
+}
+html.dark .bg-worktree-sidebar > div.relative.shrink-0 > div.mt-auto button:hover {
+  background-color: rgba(255, 220, 190, 0.1);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.2), rgba(255, 190, 130, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+html:root .bg-worktree-sidebar > div.relative.shrink-0 > div.mt-auto > div { border-top: 0; }
+
+/* neighbours of a hot control take a quiet rim, not a second glow */
+html:root [data-hawl-catch][style*='--la'],
+html:root .hawl-catch[style*='--la'] { box-shadow: inset calc(var(--ox) * -1px) calc(var(--oy) * -1px) 0 rgba(var(--lrgb), calc(0.3 * var(--la))); }
+
+/* window controls take no lamp light at all (no rim, no highlight, no thrown glow) */
+html:root .window-controls-btn,
+html:root .window-controls-btn[style] { box-shadow: none !important; }
+html:root .window-controls-btn::after { display: none !important; }
+
+/* the left title strip is the ground too (the settings page showed it as a darker band over the nav) */
+html:root .titlebar-left,
+html:root .titlebar-left-floating { background: none; background-color: transparent; border-bottom: 0; box-shadow: none; }
+html.dark :is(input, textarea, [data-slot='input']):focus,
+html.dark :is(input, textarea, [data-slot='input']):focus-visible {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 226, 190, 0.25), 0 0 0 4px rgba(242, 106, 27, 0.6), 0 0 18px 2px rgba(242, 106, 27, 0.35);
+}

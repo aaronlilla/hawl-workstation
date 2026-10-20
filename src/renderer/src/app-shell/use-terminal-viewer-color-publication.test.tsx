@@ -41,7 +41,7 @@ describe('useTerminalViewerColorPublication', () => {
     const { unmount } = renderHook(() => useTerminalViewerColorPublication())
     expect(mocks.setColors).toHaveBeenLastCalledWith({
       foreground: '#ffe8d6',
-      background: '#0b0502'
+      background: '#1f150e'
     })
 
     act(() => {
@@ -52,7 +52,7 @@ describe('useTerminalViewerColorPublication', () => {
     expect(mocks.publishTerminalViewAttributes).toHaveBeenCalledTimes(2)
     expect(mocks.setColors).toHaveBeenLastCalledWith({
       foreground: '#14243a',
-      background: '#fffefb'
+      background: '#f8eedb'
     })
     unmount()
   })
