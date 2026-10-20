@@ -143,6 +143,26 @@ export type FetchLike = typeof fetch
 export type Sleep = (ms: number) => Promise<void>
 export const realSleep: Sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+/** Default cap on one network call. A captive portal or half-open socket must not freeze the app. */
+export const DEFAULT_TIMEOUT_MS = 20_000
+
+/** A signal that fires after `ms`, or when `signal` does, whichever is first. */
+export function timeoutSignal(ms: number, signal?: AbortSignal | null): AbortSignal {
+  const t = AbortSignal.timeout(ms)
+  return signal ? AbortSignal.any([signal, t]) : t
+}
+
+/** True when an error came from a timeout signal (not a caller cancel). */
+export function isTimeoutError(e: unknown): boolean {
+  return e instanceof Error && e.name === 'TimeoutError'
+}
+
+/** Wrap a fetch so every call carries a deadline (the caller's own signal still works). */
+export function withTimeout(f: FetchLike, ms: number = DEFAULT_TIMEOUT_MS): FetchLike {
+  return ((input: Parameters<FetchLike>[0], init?: RequestInit) =>
+    f(input, { ...init, signal: timeoutSignal(ms, init?.signal) })) as FetchLike
+}
+
 export function trimUrl(u: string): string {
   return u.replace(/\/+$/, '')
 }

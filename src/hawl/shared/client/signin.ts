@@ -2,17 +2,20 @@
 // Same flow as packages/cli/src/commands/join.ts (join/start, then join/:jrq/claim with a signed nonce).
 import { randomBytes } from 'node:crypto'
 import {
+  assertSecureRelayUrl,
   b64url,
   type Credentials,
   type FetchLike,
   generateWorkerKey,
   HawlApiError,
+  isTimeoutError,
   jcs,
   realSleep,
   signEd25519,
   type Sleep,
   trimUrl,
-  type WorkerKey
+  type WorkerKey,
+  withTimeout
 } from './core'
 
 export const DEFAULT_RELAY_URL = 'https://relay.hawl.ai'
@@ -32,6 +35,8 @@ export type SignInOptions = {
   now?: () => number
   /** Claim poll interval. Default 5 s. */
   pollMs?: number
+  /** Deadline for one call, ms. Default 20 s. */
+  timeoutMs?: number
 }
 
 export type ClaimOutcome = { state: 'pending' } | { state: 'claimed'; credentials: Credentials }
@@ -56,8 +61,9 @@ export class DeviceSignIn {
   ) {
     this.#o = o
     this.#key = key
+    assertSecureRelayUrl(o.relayUrl ?? DEFAULT_RELAY_URL)
     this.#base = trimUrl(o.relayUrl ?? DEFAULT_RELAY_URL)
-    this.#fetch = o.fetch ?? fetch
+    this.#fetch = withTimeout(o.fetch ?? fetch, o.timeoutMs)
     this.joinId = started.join_id
     this.userCode = started.user_code
     this.fingerprint = started.key_fingerprint
@@ -71,11 +77,16 @@ export class DeviceSignIn {
     const sig = b64url(
       signEd25519(this.#key.privateJwk, Buffer.from(jcs({ join_id: this.joinId, nonce, ts })))
     )
-    const res = await this.#fetch(`${this.#base}/v1/join/${this.joinId}/claim`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ nonce, ts, sig })
-    })
+    let res: Response
+    try {
+      res = await this.#fetch(`${this.#base}/v1/join/${this.joinId}/claim`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ nonce, ts, sig })
+      })
+    } catch (e) {
+      throw unreachable(e)
+    }
     if (res.status === 202) {
       return { state: 'pending' }
     }
@@ -86,24 +97,45 @@ export class DeviceSignIn {
         retryAfter: ra > 0 ? ra : null
       })
     }
-    if (!res.ok) {
+    if (res.status === 404 || res.status === 410) {
+      // The relay answers 404 for every dead end (expired, denied by the owner, unknown id, bad
+      // signature, a clock too far off), so the app cannot tell them apart.
       throw new HawlApiError(
         res.status,
         'code_expired',
-        'The code expired or was not approved. Start sign-in again.'
+        "The code expired, was refused, or this computer's clock is off. Start sign-in again."
       )
     }
-    const c = (await res.json()) as {
+    if (!res.ok) {
+      throw await claimError(res)
+    }
+    let c: {
       resident_id: string
       kid: string
       town_id: string
       relay_url?: string
       needs_owner_approval?: boolean
     }
+    try {
+      c = (await res.json()) as typeof c
+    } catch (e) {
+      if (isTimeoutError(e)) {
+        throw unreachable(e)
+      }
+      // The relay may already have handed the key over; claiming again would be refused.
+      throw new HawlApiError(
+        res.status,
+        'bad_response',
+        'The relay answered the sign-in with something unreadable. Start sign-in again.'
+      )
+    }
+    if (!c.resident_id || !c.kid || !c.town_id) {
+      throw new HawlApiError(res.status, 'bad_response', 'The relay sign-in answer was incomplete.')
+    }
     return {
       state: 'claimed',
       credentials: {
-        relayUrl: c.relay_url ?? this.#base,
+        relayUrl: this.#trustedRelayUrl(c.relay_url),
         residentId: c.resident_id,
         kid: c.kid,
         townId: c.town_id,
@@ -112,6 +144,22 @@ export class DeviceSignIn {
         needsOwnerApproval: c.needs_owner_approval === true
       }
     }
+  }
+
+  /** The relay may name its own public URL, but only on the host the person signed in against. */
+  #trustedRelayUrl(claimed: string | undefined): string {
+    if (!claimed) {
+      return this.#base
+    }
+    try {
+      assertSecureRelayUrl(claimed)
+      if (new URL(claimed).host === new URL(this.#base).host) {
+        return trimUrl(claimed)
+      }
+    } catch {
+      // fall through to the URL the person chose
+    }
+    return this.#base
   }
 
   /**
@@ -132,7 +180,11 @@ export class DeviceSignIn {
           return r.credentials
         }
       } catch (e) {
-        const transient = !(e instanceof HawlApiError) || e.code === 'relay_unavailable'
+        const transient =
+          !(e instanceof HawlApiError) ||
+          e.code === 'relay_unavailable' ||
+          e.code === 'network_error' ||
+          e.code === 'timeout'
         if (!transient) {
           throw e
         }
@@ -149,14 +201,36 @@ export class DeviceSignIn {
   }
 }
 
+function unreachable(e: unknown): HawlApiError {
+  return isTimeoutError(e)
+    ? new HawlApiError(0, 'timeout', 'The relay did not answer in time.')
+    : new HawlApiError(0, 'network_error', `Could not reach the relay: ${String(e)}`)
+}
+
+async function claimError(res: Response): Promise<HawlApiError> {
+  let code = `http_${res.status}`
+  let message = `Sign-in failed (${res.status}).`
+  try {
+    const j = (await res.json()) as { error?: { message?: string; code?: string } }
+    code = j.error?.code ?? code
+    message = j.error?.message ?? message
+  } catch {
+    // keep the status
+  }
+  return new HawlApiError(res.status, code, message)
+}
+
 /** Step 1: make a key, ask the relay for a code. Nothing is stored until the claim succeeds. */
 export async function startDeviceSignIn(o: SignInOptions): Promise<DeviceSignIn> {
+  assertSecureRelayUrl(o.relayUrl ?? DEFAULT_RELAY_URL)
   const key = generateWorkerKey()
   const base = trimUrl(o.relayUrl ?? DEFAULT_RELAY_URL)
-  const res = await (o.fetch ?? fetch)(`${base}/v1/join/start`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
+  let res: Response
+  try {
+    res = await withTimeout(o.fetch ?? fetch, o.timeoutMs)(`${base}/v1/join/start`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
       town_slug: o.site,
       public_jwk: key.publicJwk,
       platform: WORKSTATION_PLATFORM,
@@ -164,8 +238,11 @@ export async function startDeviceSignIn(o: SignInOptions): Promise<DeviceSignIn>
       folder_label: (o.folderLabel ?? 'workstation').slice(0, 120),
       machine_name: o.machineName?.slice(0, 40),
       cli_version: o.cliVersion ?? '0.0.0'
+      })
     })
-  })
+  } catch (e) {
+    throw unreachable(e)
+  }
   if (!res.ok) {
     let msg = `sign-in start failed (${res.status})`
     try {

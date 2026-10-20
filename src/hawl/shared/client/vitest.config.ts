@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   root: resolve(__dirname, '../../../..'),
+  resolve: { alias: { '@hawl/client': resolve(__dirname, 'index.ts') } },
   test: {
     environment: 'node',
     include: ['src/hawl/shared/client/**/*.test.ts'],

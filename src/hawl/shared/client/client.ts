@@ -17,6 +17,7 @@ import { Sender } from './send'
 import { createDeliveryTrust, type DeliveryTrust, type ManifestPersistence, pinnedRoots } from './verify'
 import { channelsApi } from './channels-api'
 import { FilesApi } from './files-api'
+import { MoreApi } from './more-api'
 import { SiteApi } from './site-api'
 import { ASK_SOURCES } from './types'
 import type {
@@ -49,6 +50,8 @@ export type ClientOptions = {
   fetch?: FetchLike
   sleep?: Sleep
   maxRetries?: number
+  /** Deadline for one HTTP call, ms. Default 20 s. */
+  timeoutMs?: number
   /** Sent as the Origin of the console socket; must equal the relay's web origin. Default https://hawl.ai. */
   webOrigin?: string
   version?: string
@@ -68,16 +71,21 @@ export class HawlClient {
   constructor(o: ClientOptions) {
     this.#o = o
     this.credentials = o.credentials
-    this.#agent = new AgentTokenSource(o.credentials, o.fetch ? { fetch: o.fetch } : {})
+    this.#agent = new AgentTokenSource(o.credentials, {
+      ...(o.fetch ? { fetch: o.fetch } : {}),
+      ...(o.timeoutMs !== undefined ? { timeoutMs: o.timeoutMs } : {})
+    })
     this.http = new Http({
       baseUrl: o.credentials.relayUrl,
       agent: this.#agent,
       ...(o.user ? { user: o.user } : {}),
       ...(o.fetch ? { fetch: o.fetch } : {}),
       ...(o.sleep ? { sleep: o.sleep } : {}),
-      ...(o.maxRetries !== undefined ? { maxRetries: o.maxRetries } : {})
+      ...(o.maxRetries !== undefined ? { maxRetries: o.maxRetries } : {}),
+      ...(o.timeoutMs !== undefined ? { timeoutMs: o.timeoutMs } : {})
     })
     this.site = new SiteApi(this.http)
+    this.more = new MoreApi(this.http)
     this.files = new FilesApi(this.http)
   }
 
@@ -124,6 +132,8 @@ export class HawlClient {
 
   /** Worker controls, person file upload, proof history, limit pauses, switches, meter (user plane). */
   readonly site: SiteApi
+  /** Invite links, reputation disputes, directory intros, value roll-up, exports, elevation veto. */
+  readonly more: MoreApi
 
   // ---- workers --------------------------------------------------------------------------------
 

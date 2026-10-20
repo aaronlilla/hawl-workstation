@@ -21,6 +21,7 @@ const transforms = {
   resolve: {
     alias: [
       ...createWorkspaceSourceResolver().aliases,
+      { find: '@hawl/client', replacement: resolve('src/hawl/shared/client/index.ts') },
       { find: '@renderer', replacement: resolve('src/renderer/src') },
       { find: '@', replacement: resolve('src/renderer/src') },
       { find: 'fs/promises', replacement: 'node:fs/promises' },

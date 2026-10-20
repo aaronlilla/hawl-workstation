@@ -3,11 +3,15 @@ import {
   type Credentials,
   type FetchLike,
   assertSecureRelayUrl,
+  DEFAULT_TIMEOUT_MS,
   HawlApiError,
+  isTimeoutError,
   realSleep,
   type Sleep,
   type TokenSource,
-  trimUrl
+  timeoutSignal,
+  trimUrl,
+  withTimeout
 } from './core'
 
 export type Plane = 'agent' | 'user' | 'none'
@@ -20,6 +24,8 @@ export type HttpOptions = {
   maxRetries?: number
   /** Cap on one backoff wait, ms. Default 5000. */
   maxBackoffMs?: number
+  /** Deadline for one HTTP call, headers and body, ms. Default 20 s. */
+  timeoutMs?: number
   agent?: TokenSource
   user?: TokenSource
 }
@@ -32,6 +38,8 @@ export type RequestOptions = {
   /** Retry on transient failures. Default: true for GET, false otherwise. */
   idempotent?: boolean
   signal?: AbortSignal
+  /** Deadline for this call, ms. Default: the client's timeoutMs (uploads and downloads may want more). */
+  timeoutMs?: number
   /** Raw request body (file upload). */
   rawBody?: Uint8Array
   /** Return the Response body bytes instead of parsing JSON. */
@@ -78,20 +86,26 @@ export class Http {
         payload = JSON.stringify(r.body)
       }
       let res: Response | null = null
+      let body: Uint8Array | string = ''
       let netErr: unknown = null
       try {
         const init: RequestInit = { method, headers }
         if (payload !== undefined) {
           init.body = payload as BodyInit
         }
-        if (r.signal) {
-          init.signal = r.signal
-        }
+        init.signal = timeoutSignal(r.timeoutMs ?? this.#o.timeoutMs ?? DEFAULT_TIMEOUT_MS, r.signal)
         res = await this.#fetch(this.url(path, r.query), init)
+        // Read the body inside the deadline too, so a stalled body cannot hang the call.
+        if (res.ok) {
+          body = r.asBytes
+            ? new Uint8Array(await res.arrayBuffer())
+            : await res.text()
+        }
       } catch (e) {
         if (r.signal?.aborted) {
           throw e
         }
+        res = null
         netErr = e
       }
       if (res && res.status === 401 && source && !refreshed) {
@@ -108,15 +122,15 @@ export class Http {
         continue
       }
       if (!res) {
-        throw new HawlApiError(0, 'network_error', `Could not reach the relay: ${String(netErr)}`)
+        throw netError(netErr)
       }
       if (!res.ok) {
         throw await toError(res)
       }
       if (r.asBytes) {
-        return new Uint8Array(await res.arrayBuffer()) as T
+        return body as T
       }
-      const text = await res.text()
+      const text = body as string
       if (!text) {
         return {} as T
       }
@@ -155,6 +169,12 @@ export class Http {
     }
     return u.toString()
   }
+}
+
+function netError(e: unknown): HawlApiError {
+  return isTimeoutError(e)
+    ? new HawlApiError(0, 'timeout', 'The relay did not answer in time.')
+    : new HawlApiError(0, 'network_error', `Could not reach the relay: ${String(e)}`)
 }
 
 async function toError(res: Response): Promise<HawlApiError> {
@@ -201,9 +221,12 @@ export class AgentTokenSource implements TokenSource {
   #tok: { value: string; expMs: number } | null = null
   #inflight: Promise<string> | null = null
 
-  constructor(cred: Credentials, o: { fetch?: FetchLike; now?: () => number } = {}) {
+  constructor(
+    cred: Credentials,
+    o: { fetch?: FetchLike; now?: () => number; timeoutMs?: number } = {}
+  ) {
     this.#cred = cred
-    this.#fetch = o.fetch ?? fetch
+    this.#fetch = withTimeout(o.fetch ?? fetch, o.timeoutMs)
     this.#now = o.now ?? Date.now
   }
 
@@ -241,7 +264,7 @@ export class AgentTokenSource implements TokenSource {
         body: JSON.stringify({ client_assertion: assertion })
       })
     } catch (e) {
-      throw new HawlApiError(0, 'network_error', `Could not reach the relay: ${String(e)}`)
+      throw netError(e)
     }
     if (!res.ok) {
       throw await toError(res)
@@ -249,7 +272,10 @@ export class AgentTokenSource implements TokenSource {
     let j: { access_token: string; expires_in: number }
     try {
       j = (await res.json()) as { access_token: string; expires_in: number }
-    } catch {
+    } catch (e) {
+      if (isTimeoutError(e)) {
+        throw netError(e)
+      }
       throw new HawlApiError(res.status, 'bad_response', 'The token answer was not JSON.')
     }
     this.#tok = { value: j.access_token, expMs: this.#now() + j.expires_in * 1000 }

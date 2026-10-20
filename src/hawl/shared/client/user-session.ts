@@ -3,7 +3,15 @@
 // the web app the same way the browser does: an emailed 6-digit code (Better Auth emailOTP), then
 // keeps the session cookie and trades it for 15 minute UserJWTs. A passkey or OAuth sign-in done in
 // a browser window works too: hand the cookie header to `WebSession.fromCookie`.
-import { type FetchLike, HawlApiError, type TokenSource, trimUrl } from './core'
+import {
+  assertSecureRelayUrl,
+  type FetchLike,
+  HawlApiError,
+  isTimeoutError,
+  type TokenSource,
+  trimUrl,
+  withTimeout
+} from './core'
 
 export const DEFAULT_WEB_ORIGIN = 'https://hawl.ai'
 
@@ -38,6 +46,8 @@ export function cookieHeaderFromSetCookie(setCookies: readonly string[], prior =
 export type WebSessionOptions = {
   webOrigin?: string
   fetch?: FetchLike
+  /** Deadline for one call, ms. Default 20 s. */
+  timeoutMs?: number
   now?: () => number
   /** Called whenever the cookie header changes (after sign-in, after the server rotates it). Persist it. */
   onCookie?: (cookie: string) => void
@@ -66,8 +76,9 @@ export class WebSession implements TokenSource {
 
   private constructor(cookie: string, o: WebSessionOptions) {
     this.#cookie = cookie
+    assertSecureRelayUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
     this.webOrigin = trimUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
-    this.#fetch = o.fetch ?? fetch
+    this.#fetch = withTimeout(o.fetch ?? fetch, o.timeoutMs)
     this.#now = o.now ?? Date.now
     this.#onCookie = o.onCookie
   }
@@ -79,9 +90,10 @@ export class WebSession implements TokenSource {
 
   /** Step 1 of the emailed-code sign-in. Always answers the same, whether or not the address has an account. */
   static async sendCode(email: string, o: WebSessionOptions = {}): Promise<void> {
+    assertSecureRelayUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
     const origin = trimUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
     const res = await webPost(
-      o.fetch ?? fetch,
+      withTimeout(o.fetch ?? fetch, o.timeoutMs),
       origin,
       '/api/auth/email-otp/send-verification-otp',
       {
@@ -100,8 +112,9 @@ export class WebSession implements TokenSource {
     otp: string,
     o: WebSessionOptions = {}
   ): Promise<WebSession> {
+    assertSecureRelayUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
     const origin = trimUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
-    const res = await webPost(o.fetch ?? fetch, origin, '/api/auth/sign-in/email-otp', {
+    const res = await webPost(withTimeout(o.fetch ?? fetch, o.timeoutMs), origin, '/api/auth/sign-in/email-otp', {
       email,
       otp
     })
@@ -171,7 +184,7 @@ export class WebSession implements TokenSource {
         }
       })
     } catch (e) {
-      throw new HawlApiError(0, 'network_error', `Could not reach ${this.webOrigin}: ${String(e)}`)
+      throw webNetError(e, this.webOrigin)
     }
     if (res.status === 401) {
       this.#cookie = ''
@@ -197,22 +210,32 @@ export class WebSession implements TokenSource {
   }
 }
 
-function webPost(
+function webNetError(e: unknown, origin: string): HawlApiError {
+  return isTimeoutError(e)
+    ? new HawlApiError(0, 'timeout', `${origin} did not answer in time.`)
+    : new HawlApiError(0, 'network_error', `Could not reach ${origin}: ${String(e)}`)
+}
+
+async function webPost(
   f: FetchLike,
   origin: string,
   path: string,
   body: unknown,
   cookie?: string
 ): Promise<Response> {
-  return f(origin + path, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      origin,
-      ...(cookie ? { cookie } : {})
-    },
-    body: JSON.stringify(body)
-  })
+  try {
+    return await f(origin + path, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin,
+        ...(cookie ? { cookie } : {})
+      },
+      body: JSON.stringify(body)
+    })
+  } catch (e) {
+    throw webNetError(e, origin)
+  }
 }
 
 async function webError(res: Response, fallback: string): Promise<HawlApiError> {

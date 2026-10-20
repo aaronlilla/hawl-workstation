@@ -36,10 +36,18 @@ export function aesGcmCipher(key: Buffer): Cipher {
 export class EncryptedFile {
   readonly #path: string
   readonly #cipher: Cipher
+  /** Writes (and clears) run one after another, in call order: the last call wins. */
+  #queue: Promise<unknown> = Promise.resolve()
 
   constructor(path: string, cipher: Cipher) {
     this.#path = path
     this.#cipher = cipher
+  }
+
+  #enqueue<T>(job: () => Promise<T>): Promise<T> {
+    const run = this.#queue.then(job, job)
+    this.#queue = run.catch(() => undefined)
+    return run
   }
 
   async load(): Promise<string | null> {
@@ -59,16 +67,23 @@ export class EncryptedFile {
     }
   }
 
-  async save(text: string): Promise<void> {
-    await mkdir(dirname(this.#path), { recursive: true })
-    // Write beside, then rename: a crash never leaves half a key.
-    const tmp = `${this.#path}.${process.pid}.tmp`
-    await writeFile(tmp, this.#cipher.encrypt(text), { mode: 0o600 })
-    await rename(tmp, this.#path)
+  save(text: string): Promise<void> {
+    return this.#enqueue(async () => {
+      await mkdir(dirname(this.#path), { recursive: true })
+      // Write beside, then rename: a crash never leaves half a key. A name no other save shares.
+      const tmp = `${this.#path}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`
+      try {
+        await writeFile(tmp, this.#cipher.encrypt(text), { mode: 0o600 })
+        await rename(tmp, this.#path)
+      } catch (e) {
+        await rm(tmp, { force: true })
+        throw e
+      }
+    })
   }
 
-  async clear(): Promise<void> {
-    await rm(this.#path, { force: true })
+  clear(): Promise<void> {
+    return this.#enqueue(() => rm(this.#path, { force: true }))
   }
 }
 
