@@ -98,7 +98,7 @@ describe('CliSection install failure surfacing', () => {
     })
 
     const alert = screen.getByRole('alert')
-    expect(alert.textContent).toContain('Failed to register `orca` in PATH.')
+    expect(alert.textContent).toContain('Failed to register `hws` in PATH.')
     expect(alert.textContent).toContain(
       'Refusing to replace non-Orca command at /usr/local/bin/orca.'
     )

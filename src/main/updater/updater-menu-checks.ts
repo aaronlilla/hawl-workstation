@@ -3,6 +3,7 @@ import { is } from '@electron-toolkit/utils'
 import { isMacInstallRequested } from '../updater-mac-install'
 import type { UpdateCheckOptions } from '../../shared/update-status-types'
 import type { ReleaseChannel } from '../../shared/release-channel'
+import { HAWL_RELEASE_FEED_LIVE } from '../../hawl/shared/brand'
 import { UpdaterScheduling } from './updater-scheduling'
 
 /** Handles checks initiated from the desktop menu and modifier-key variants. */
@@ -15,7 +16,7 @@ export abstract class UpdaterMenuChecks extends UpdaterScheduling {
     ) {
       return
     }
-    if (!app.isPackaged || is.dev) {
+    if (!app.isPackaged || is.dev || !HAWL_RELEASE_FEED_LIVE) {
       this.sendStatus({ state: 'not-available', userInitiated: true })
       return
     }

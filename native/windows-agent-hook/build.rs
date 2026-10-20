@@ -20,12 +20,12 @@ fn main() {
     let (major, minor, patch) = numeric_version_parts(&version);
 
     let mut resource = winresource::WindowsResource::new();
-    resource.set("ProductName", "Orca");
-    resource.set("FileDescription", "Orca Agent Hook");
-    resource.set("CompanyName", "Stably AI");
+    resource.set("ProductName", "Hawl Workstation");
+    resource.set("FileDescription", "Hawl Agent Hook");
+    resource.set("CompanyName", "Hawl");
     resource.set(
         "LegalCopyright",
-        "Copyright (C) Stably AI. All rights reserved.",
+        "Copyright (C) Hawl. Built on Orca (MIT).",
     );
     resource.set("InternalName", "orca-agent-hook.exe");
     resource.set("OriginalFilename", "orca-agent-hook.exe");

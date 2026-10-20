@@ -240,6 +240,8 @@ const ORCA_MAC_TEAM_ID = '6CX3WHS9HZ'
 module.exports = {
   appId,
   productName: 'Hawl Workstation',
+  copyright:
+    'Copyright (c) 2026 Aaron Lilla. Built on Orca (MIT), Copyright (c) 2026 Lovecast Inc.',
   protocols: [{ name: 'Hawl Workstation', schemes: ['hawl'] }],
   toolsets: { appimage: '1.0.3' },
   // Hawl: app.getName() must not be stock Orca's `orca`, or userData, the single-instance lock and
@@ -577,6 +579,15 @@ module.exports = {
       {
         from: 'resources/win32/bin/orca.cmd',
         to: 'bin/orca.cmd'
+      },
+      {
+        // Hawl: the documented command; `orca` stays beside it as the compatibility name.
+        from: 'resources/win32/bin/hws.cmd',
+        to: 'bin/hws.cmd'
+      },
+      {
+        from: 'native/windows-cli-launcher/.build/hws.exe',
+        to: 'bin/hws.exe'
       },
       {
         from: 'native/windows-cli-launcher/.build/orca.exe',
