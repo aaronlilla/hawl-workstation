@@ -10,7 +10,9 @@
 // control is entered (never per move). Nothing runs until the cursor is over a lit control.
 
 export const LIGHT_RANGE = 280
-const SOURCE = ".hawl-lit,[data-hawl-light],[data-slot='button'][data-variant='default']"
+// Every pressable control is a lamp: while the cursor is on it, it throws a glow and a highlight that follows the cursor.
+const SOURCE =
+  ".hawl-lit,[data-hawl-light],button:not(:disabled),[role='button'],[role='tab'],[role='menuitem'],[role='switch'],[role='option'],a[href],[data-slot='button'],[data-slot='input']"
 const RECEIVER =
   ".hawl-catch,[data-hawl-catch],button,[role='tab'],[data-slot='input']"
 const MAX_RECEIVERS = 60
@@ -65,16 +67,12 @@ export function installHawlLight(): () => void {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     return () => {}
   }
-  let reduce = false
-  try {
-    reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  } catch {
-    // matchMedia can be missing in odd hosts; the lamp then moves normally.
-  }
-
+  // The lamp follows the pointer directly (no animation of its own), so it stays on under reduced motion; the CSS
+  // drops the fade there. Some Windows sessions report reduced motion by default, which used to switch tracking off.
   let current: HTMLElement | null = null
   let rect: DOMRect | null = null
   let touched: HTMLElement[] = []
+  let forcedRelative = false
   let px = 0
   let py = 0
 
@@ -93,6 +91,12 @@ export function installHawlLight(): () => void {
     root.style.removeProperty('--lamp-a')
     root.style.removeProperty('--lrgb')
     if (current) {
+      current.removeAttribute('data-hawl-lamp')
+      current.removeAttribute('data-hawl-lamp-fx')
+      if (forcedRelative) {
+        current.style.removeProperty('position')
+      }
+      forcedRelative = false
       current.style.removeProperty('--hot')
       current.style.removeProperty('--mx')
       current.style.removeProperty('--my')
@@ -106,6 +110,17 @@ export function installHawlLight(): () => void {
     current = el
     rect = el.getBoundingClientRect()
     el.style.setProperty('--hot', '1')
+    el.setAttribute('data-hawl-lamp', '')
+    // The highlight is drawn on ::after; only when the control has not used that pseudo itself.
+    const after = getComputedStyle(el, '::after').content
+    const drawable = !/^(INPUT|TEXTAREA|SELECT|IMG)$/.test(el.tagName)
+    if (drawable && (!after || after === 'none' || after === 'normal')) {
+      el.setAttribute('data-hawl-lamp-fx', '')
+      if (getComputedStyle(el).position === 'static') {
+        el.style.position = 'relative'
+        forcedRelative = true
+      }
+    }
     const rgb = lampColour(el)
     root.style.setProperty('--lamp-a', '1')
     if (rgb) {
@@ -163,7 +178,7 @@ export function installHawlLight(): () => void {
         enter(target)
       }
     }
-    if (current && !reduce) {
+    if (current) {
       // Chromium delivers at most one pointermove per frame, so this is already frame-paced.
       px = e.clientX
       py = e.clientY
