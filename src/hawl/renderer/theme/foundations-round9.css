@@ -1,0 +1,244 @@
+/* D1-foundations, round 9: the shell goes open, like Claude Design H01. No boxes around the sidebar and the right panel: they sit on
+   the lit ground. The one lit slab left is the work surface (terminal / pages). Active row is the lit orange pill, status dots are
+   glossy orbs, search and nav are lit pills, the logo sits on the ground at full size. CSS only. Wins ties by coming last. */
+
+/* ═════ Open sidebar: no slab, the ground shows through ═════ */
+html:root .titlebar-left + div { padding: 0 0 10px 6px; }
+html:root .titlebar-left + div > .bg-worktree-sidebar {
+  border-radius: 0;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  border: 0;
+}
+html.dark .titlebar-left + div > .bg-worktree-sidebar { background-color: transparent; }
+html:root .bg-worktree-sidebar .sticky { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+html:root .bg-worktree-sidebar .sticky,
+html:root .bg-worktree-sidebar [class~='bg-worktree-sidebar'] { background-color: transparent; background-image: none; }
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'][class~='group'] { border: 0; box-shadow: none; background: transparent; }
+html:root .bg-worktree-sidebar .worktree-sidebar-scrollbar { scrollbar-width: none; }
+html:root .bg-worktree-sidebar .worktree-sidebar-scrollbar::-webkit-scrollbar { display: none; }
+html:root .bg-worktree-sidebar > div[class~='absolute'][class*='-right-1.5'],
+html:root .bg-worktree-sidebar ~ div[class~='absolute'] { background: transparent; }
+
+/* Search: a floating inset pill with real key caps */
+html:root .bg-worktree-sidebar > div:first-child > button:first-child {
+  height: 44px;
+  padding-left: 14px;
+  border-radius: var(--r-pill);
+  background-color: rgba(255, 252, 244, 0.7);
+  background-image: var(--mat-acrylic);
+  color: var(--ink-3);
+  font-family: var(--hawl-font-display);
+  font-weight: 650;
+  box-shadow: inset 0 1.5px 3px rgba(var(--shade), 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(var(--shade), 0.28), 0 1px 0 #fff, 1px 3px 4px -1px rgba(var(--shade), 0.3);
+}
+html:root .bg-worktree-sidebar > div:first-child > button:first-child svg { color: var(--ink-2); }
+html.dark .bg-worktree-sidebar > div:first-child > button:first-child {
+  background-color: rgba(20, 13, 9, 0.7);
+  background-image: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 226, 190, 0.14);
+}
+
+/* Nav rows: display type, navy icons, lit pill on hover */
+html:root .bg-worktree-sidebar > div:first-child {
+  gap: 4px;
+  padding: 10px 10px 4px;
+}
+html:root .bg-worktree-sidebar > div:first-child > :is(button, div.group):not(:first-child),
+html:root .bg-worktree-sidebar > div:first-child > div.group > button {
+  min-height: 42px;
+  border-radius: var(--r-pill);
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--ink);
+  transition: background-color 140ms var(--ease), box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+html:root .bg-worktree-sidebar > div:first-child > :is(button, div.group):not(:first-child) { padding-left: 4px; }
+html:root .bg-worktree-sidebar > div:first-child > :is(button, div.group):not(:first-child) svg,
+html:root .bg-worktree-sidebar > div:first-child > div.group > button svg {
+  width: 20px;
+  height: 20px;
+  color: var(--ink-2);
+  stroke-width: 2;
+}
+html:root .bg-worktree-sidebar > div:first-child > :is(button, div.group):not(:first-child):hover {
+  background-color: rgba(255, 253, 246, 0.6);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.22), 1px 3px 4px -1px rgba(var(--shade), 0.26);
+}
+html.dark .bg-worktree-sidebar > div:first-child > :is(button, div.group):not(:first-child):hover {
+  background-color: rgba(255, 220, 190, 0.08);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.16), rgba(255, 190, 130, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+/* "New" badge is a little lit orange pill */
+html:root .bg-worktree-sidebar span[class*='bg-primary'][class*='rounded-full'] {
+  font-family: var(--hawl-font-display);
+  font-weight: 800;
+  padding: 2px 9px;
+  background-image: var(--mat-orange);
+  color: var(--ink-on-orange);
+  text-shadow: var(--tx-engrave-orange);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 0 1px rgba(150, 60, 10, 0.55), 0 0 10px rgba(255, 122, 42, 0.45);
+}
+
+/* Section header: quiet caps */
+html:root .bg-worktree-sidebar div[class*='mt-2'][class*='h-8'] { margin-top: 14px; padding: 0 12px; }
+
+/* ═════ Workspace rows: open rows; the active one is the lit orange pill (H01 "Needs you") ═════ */
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'][data-worktree-card-surface] {
+  margin: 2px 6px 2px 4px;
+  width: calc(100% - 10px);
+  border-radius: var(--r-pill);
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'][data-worktree-card-surface]:hover {
+  transform: none;
+  background-color: rgba(255, 253, 246, 0.6);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.22), 1px 3px 4px -1px rgba(var(--shade), 0.26);
+}
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'][data-worktree-card-surface][data-worktree-card-active] {
+  background-color: #f06716;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 46%), var(--mat-orange);
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.75), inset 0 -2px 3px rgba(120, 40, 4, 0.45), 0 0 0 1px rgba(120, 44, 6, 0.7), 0 1px 0 rgba(255, 255, 255, 0.6), 0 3px 4px rgba(var(--shade), 0.4), 0 6px 16px -2px rgba(242, 106, 27, 0.5);
+}
+html:root .bg-worktree-sidebar [data-worktree-card-active][data-worktree-card-surface] :is(span, p, div):not([data-slot='tooltip-trigger']):not([class*='rounded-full']) {
+  color: #fffaf0;
+  text-shadow: 0 1px 1px rgba(110, 36, 2, 0.55);
+}
+html:root .bg-worktree-sidebar [data-worktree-card-active][data-worktree-card-surface] [data-slot='tooltip-trigger'][class*='border'] {
+  color: var(--ink);
+  text-shadow: none;
+}
+html:root .bg-worktree-sidebar [data-worktree-card-active][data-worktree-card-surface] svg { color: #fffaf0; }
+html.dark .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'][data-worktree-card-surface]:not([data-worktree-card-active]) {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+html.dark .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'][data-worktree-card-surface]:not([data-worktree-card-active]):hover {
+  background-color: rgba(255, 220, 190, 0.08);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.16), rgba(255, 190, 130, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* ═════ Glossy orbs: every status dot is a lit sphere (F17), not a flat fill ═════ */
+html:root :is([class~='bg-emerald-500'], [class~='bg-green-500'], [class~='bg-lime-500'])[class*='rounded-full'] {
+  background-color: #9bd12e;
+  background-image: radial-gradient(circle at 34% 28%, #fff 0, rgba(255, 255, 255, 0) 30%), radial-gradient(circle at 50% 62%, #c9ef6e 0%, #8cc21d 52%, #5f9010 100%);
+  box-shadow: inset 0 -1px 2px rgba(30, 60, 0, 0.45), 0 0 0 1px rgba(52, 84, 8, 0.65), 0 0 6px rgba(155, 209, 46, 0.65);
+  transform: scale(1.2); margin-right: 3px;
+}
+html:root :is([class~='bg-red-500'], [class~='bg-rose-500'], [class~='bg-orange-500'], [class~='bg-destructive'])[class*='rounded-full'] {
+  background-color: #f26a1b;
+  background-image: radial-gradient(circle at 34% 28%, #fff 0, rgba(255, 255, 255, 0) 30%), radial-gradient(circle at 50% 62%, #ffae70 0%, #ee6516 52%, #b9420a 100%);
+  box-shadow: inset 0 -1px 2px rgba(110, 30, 0, 0.5), 0 0 0 1px rgba(130, 44, 4, 0.7), 0 0 6px rgba(242, 106, 27, 0.65);
+  transform: scale(1.2); margin-right: 3px;
+}
+html:root :is([class~='bg-amber-500'], [class~='bg-yellow-500'], [class~='bg-amber-400'], [class~='bg-yellow-400'])[class*='rounded-full'] {
+  background-color: #f2b62a;
+  background-image: radial-gradient(circle at 34% 28%, #fff 0, rgba(255, 255, 255, 0) 30%), radial-gradient(circle at 50% 62%, #ffe07a 0%, #eeb01e 52%, #b57d08 100%);
+  box-shadow: inset 0 -1px 2px rgba(110, 70, 0, 0.5), 0 0 0 1px rgba(120, 80, 4, 0.7), 0 0 6px rgba(242, 182, 42, 0.65);
+  transform: scale(1.2); margin-right: 3px;
+}
+html:root :is([class~='bg-blue-500'], [class~='bg-sky-500'])[class*='rounded-full'] {
+  background-color: #5aa9e0;
+  background-image: radial-gradient(circle at 34% 28%, #fff 0, rgba(255, 255, 255, 0) 30%), radial-gradient(circle at 50% 62%, #a9d8f6 0%, #4f9fd8 52%, #2b6ea6 100%);
+  box-shadow: inset 0 -1px 2px rgba(10, 50, 90, 0.5), 0 0 0 1px rgba(20, 70, 120, 0.7), 0 0 6px rgba(90, 169, 224, 0.65);
+  transform: scale(1.2); margin-right: 3px;
+}
+/* idle / off dots: a glass bead */
+html:root [class*='bg-muted-foreground/40'][class*='rounded-full'] {
+  background-color: #cfc6b4;
+  background-image: radial-gradient(circle at 34% 28%, #fff 0, rgba(255, 255, 255, 0) 32%), radial-gradient(circle at 50% 62%, #e9e2d3 0%, #bdb3a0 100%);
+  box-shadow: inset 0 -1px 1.5px rgba(80, 64, 40, 0.35), 0 0 0 1px rgba(80, 64, 40, 0.4);
+}
+
+/* ═════ Logo: full size on the ground, no plate in light ═════ */
+html:root .titlebar-logo {
+  height: 30px;
+  margin-left: 12px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 1px rgba(var(--shade), 0.35));
+}
+html.dark .titlebar-logo {
+  height: 28px;
+  padding: 3px 12px;
+  border-radius: var(--r-pill);
+  background-color: #fff3e0;
+  background-image: linear-gradient(180deg, #fffaf0, #f2e3c9);
+  filter: none;
+}
+
+/* ═════ Open right panel: no slab, a lit header strip, the active tab is an orange lamp ═════ */
+html:root div.bg-sidebar[class~='overflow-hidden'][class~='flex-col'] {
+  margin: 4px 8px 10px 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+html.dark div.bg-sidebar[class~='overflow-hidden'][class~='flex-col'] { background-color: transparent; }
+html:root div.bg-sidebar .right-sidebar-header-inset { border-color: transparent; }
+html:root div.bg-sidebar .right-sidebar-activity-strip {
+  margin: 4px 6px 6px 0;
+  height: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background-color: rgba(255, 252, 244, 0.7);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 0 1.5px 3px rgba(var(--shade), 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(var(--shade), 0.26), 1px 3px 4px -1px rgba(var(--shade), 0.28);
+}
+html.dark div.bg-sidebar .right-sidebar-activity-strip {
+  background-color: rgba(20, 13, 9, 0.7);
+  background-image: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 226, 190, 0.14);
+}
+html:root div.bg-sidebar .right-sidebar-activity-strip button { height: 36px; }
+html:root div.bg-sidebar .right-sidebar-activity-strip button:hover { color: var(--ink); }
+html:root div.bg-sidebar [class*='border-b'] { border-color: rgba(var(--shade), 0.12); }
+
+/* right panel content: lit well inputs, display type, pills */
+html:root div.bg-sidebar div[class~='rounded-sm'][class~='border'][class*='bg-input'] {
+  height: 34px;
+  border-radius: var(--r-pill);
+  padding: 0 12px;
+  background-color: rgba(255, 252, 244, 0.7);
+  background-image: var(--mat-acrylic);
+  border-color: transparent;
+  box-shadow: inset 0 1.5px 3px rgba(var(--shade), 0.2), 0 0 0 1px rgba(var(--shade), 0.24), 0 1px 0 #fff;
+}
+html:root div.bg-sidebar div[class~='rounded-sm'][class~='border'][class*='bg-input'] input { background: transparent; box-shadow: none; font-size: 13px; }
+html.dark div.bg-sidebar div[class~='rounded-sm'][class~='border'][class*='bg-input'] {
+  background-color: rgba(20, 13, 9, 0.7);
+  background-image: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.7);
+}
+/* empty state: a lit orb above the line so the panel never reads as a blank rectangle */
+html:root div.bg-sidebar :is(div, p)[class*='text-center'][class*='text-muted-foreground']:not(:has(*)):not(:empty)::before {
+  content: '';
+  display: block;
+  width: 52px;
+  height: 52px;
+  margin: 26px auto 14px;
+  border-radius: 50%;
+  background-image: radial-gradient(circle at 34% 26%, #fff 0, rgba(255, 255, 255, 0) 28%), radial-gradient(circle at 50% 64%, #ffd0a0 0%, #ff8a3d 48%, #d55510 100%);
+  box-shadow: inset 0 -4px 7px rgba(120, 40, 4, 0.45), 0 0 0 1px rgba(150, 60, 10, 0.55), 0 8px 18px rgba(242, 106, 27, 0.4), 0 2px 3px rgba(var(--shade), 0.4);
+}
+html:root div.bg-sidebar :is(div, p)[class*='text-center'][class*='text-muted-foreground']:not(:has(*)):not(:empty) {
+  flex-direction: column;
+  font-family: var(--hawl-font-display);
+  font-weight: 650;
+  color: var(--ink-3);
+  font-size: 14px;
+}
