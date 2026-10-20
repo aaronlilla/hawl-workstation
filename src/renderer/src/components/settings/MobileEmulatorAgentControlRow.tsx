@@ -11,10 +11,10 @@ import { MobileEmulatorExamples } from './MobileEmulatorExamples'
 import { translate } from '@/i18n/i18n'
 
 const EMULATOR_CLI_COMMANDS = [
-  'orca emulator list --json',
-  'orca emulator attach "iPhone 16 Pro" --json',
-  'orca emulator tap 0.5 0.7 --json',
-  'orca emulator type "hello" --json'
+  'hws emulator list --json',
+  'hws emulator attach "iPhone 16 Pro" --json',
+  'hws emulator tap 0.5 0.7 --json',
+  'hws emulator type "hello" --json'
 ] as const
 
 export function MobileEmulatorAgentControlRow(): React.JSX.Element {

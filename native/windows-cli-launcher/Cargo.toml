@@ -10,6 +10,11 @@ publish = false
 name = "orca"
 path = "src/main.rs"
 
+# Hawl: the documented command (`hawl` is taken by the Hawl platform CLI). `orca` stays as the compatibility name agents and hooks already call.
+[[bin]]
+name = "hws"
+path = "src/main.rs"
+
 [[bin]]
 name = "orca-administrator-restart"
 path = "src/administrator_launcher.rs"

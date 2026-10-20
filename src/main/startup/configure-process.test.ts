@@ -17,7 +17,8 @@ vi.mock('electron', () => {
       disableHardwareAcceleration: vi.fn(),
       commandLine: {
         appendSwitch: vi.fn(),
-        getSwitchValue: vi.fn(() => '')
+        getSwitchValue: vi.fn(() => ''),
+        hasSwitch: vi.fn(() => false)
       }
     }
   }
@@ -364,6 +365,11 @@ describe('configureDevUserDataPath', () => {
 
     // Hawl: a packaged run keeps its own profile folder, never stock Orca's.
     expect(app.setPath).toHaveBeenCalledWith('userData', join('/tmp/app-data', 'hawl-workstation'))
+    // Hawl: an explicit --user-data-dir wins on packaged runs.
+    vi.mocked(app.setPath).mockClear()
+    vi.mocked(app.commandLine.hasSwitch).mockReturnValueOnce(true)
+    configureDevUserDataPath(false)
+    expect(app.setPath).not.toHaveBeenCalled()
   })
 })
 

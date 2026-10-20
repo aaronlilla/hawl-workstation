@@ -3,7 +3,7 @@ export function getOrcaCliCommandNameForPlatform(platform: NodeJS.Platform): str
     return 'orca-ide'
   }
   if (platform === 'win32') {
-    return 'orca.cmd'
+    return 'hws.cmd'
   }
   return 'orca'
 }

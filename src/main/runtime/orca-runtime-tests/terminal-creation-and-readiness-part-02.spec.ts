@@ -578,7 +578,7 @@ describe('OrcaRuntimeService', () => {
   // platform (launchCmdByPlatform), so it is what proves resolution is
   // platform-aware rather than a fixed string.
   it.each([
-    { platform: 'win32' as const, expected: 'orca.cmd claude-teams' },
+    { platform: 'win32' as const, expected: 'hws.cmd claude-teams' },
     { platform: 'linux' as const, expected: 'orca-ide claude-teams' },
     { platform: 'darwin' as const, expected: 'orca claude-teams' }
   ])(

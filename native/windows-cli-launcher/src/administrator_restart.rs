@@ -75,7 +75,7 @@ pub fn run_if_requested() {
         .status()
     {
         Ok(status) => std::process::exit(status.code().unwrap_or(1)),
-        Err(error) => crate::fail(&format!("Unable to reopen Orca: {error}")),
+        Err(error) => crate::fail(&format!("Unable to reopen Hawl: {error}")),
     }
 }
 

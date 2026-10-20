@@ -159,28 +159,136 @@ html h3,
   letter-spacing: -0.01em;
 }
 
-/* ── Hawl material (H01): raised ember controls and a warm ground, kept light on the GPU ── */
-html:not(.dark) body {
-  background-image: linear-gradient(180deg, #fffbf2 0%, #fbf0dc 100%);
+/* ── Hawl material (H01): lit stone-desk ground, warm glass panels, keys with a lit top edge ── */
+html:not(.dark) {
+  --hawl-ground:
+    radial-gradient(
+      1600px 1100px at 0% 0%,
+      #fffcf2 0%,
+      rgb(255 249 228 / 0.94) 16%,
+      rgb(255 241 208 / 0.55) 40%,
+      rgb(255 236 200 / 0) 72%
+    ),
+    radial-gradient(1000px 700px at 100% 0%, rgb(120 185 238 / 0.38), rgb(120 185 238 / 0) 64%),
+    radial-gradient(1400px 1000px at 50% 38%, rgb(0 0 0 / 0) 40%, rgb(110 74 30 / 0.14) 100%),
+    linear-gradient(180deg, #ebddbe 0%, #e0cea7 40%, #d3be95 100%);
+  --hawl-glass: linear-gradient(180deg, rgb(255 255 255 / 0.66) 0%, rgb(255 246 228 / 0.4) 100%);
+  --hawl-key:
+    radial-gradient(46px 12px at 14% 7%, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0) 100%),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 42%, #f6eedf 78%, #eadfcb 100%);
+  --hawl-key-edge:
+    inset 0 1.5px 0 #fff, inset 1px 0 0 rgb(255 255 255 / 0.9),
+    inset 0 -3px 4px rgb(150 110 60 / 0.18), 0 0 0 1px rgb(70 46 14 / 0.38),
+    0 4px 3px -1px rgb(120 84 36 / 0.3), 0 9px 12px -4px rgb(120 84 36 / 0.25);
+  --hawl-orange: linear-gradient(
+    180deg,
+    #ffaa68 0%,
+    #fc8434 28%,
+    #f36c1b 56%,
+    #e45b10 82%,
+    #d0500b 100%
+  );
 }
+html:not(.dark) body,
+html:not(.dark) .app-layout {
+  background: var(--hawl-ground);
+  background-attachment: fixed;
+}
+html.dark body {
+  background-image: radial-gradient(1400px 900px at 0% 0%, #2a1a10 0%, #120a06 60%);
+}
+
+/* Glass panels: title bar, both sidebars, the empty-state surface */
+html:not(.dark) .titlebar,
+html:not(.dark) .titlebar-left,
+html:not(.dark) .bg-worktree-sidebar,
 html:not(.dark) .bg-sidebar,
-html:not(.dark) [data-slot='sidebar'] {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.6) 0%, rgb(246 236 216 / 0) 70%);
+html:not(.dark) .settings-view-shell > aside {
+  background: var(--hawl-glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
 }
+html:not(.dark) .titlebar,
+html:not(.dark) .titlebar-left {
+  border-bottom-color: rgb(150 110 60 / 0.2);
+  box-shadow:
+    inset 0 -1px 0 rgb(150 110 60 / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+html:not(.dark) .bg-worktree-sidebar,
+html:not(.dark) .bg-sidebar {
+  box-shadow:
+    inset -1px 0 0 rgb(255 255 255 / 0.75),
+    inset 1px 0 0 rgb(255 255 255 / 0.5),
+    2px 0 14px rgb(120 80 20 / 0.1);
+}
+html:not(.dark) .settings-view-shell,
+html:not(.dark) div.absolute.inset-0.bg-background {
+  background: radial-gradient(
+    900px 520px at 50% 18%,
+    rgb(255 255 255 / 0.72),
+    rgb(255 252 244 / 0.28) 70%
+  );
+}
+html:not(.dark) .settings-view-shell > aside {
+  background: var(--hawl-glass);
+}
+
+/* Sidebar navigation rows are plain rows (H01): no key, no border; a soft lit wash on hover only */
+html:not(.dark) [data-contextual-tour-target='sidebar-navigation'] button {
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: #14243a;
+  transition: background-color 120ms ease;
+}
+html:not(.dark) [data-contextual-tour-target='sidebar-navigation'] button:hover {
+  background: rgb(255 255 255 / 0.62);
+  box-shadow: inset 0 1px 0 #fff;
+}
+html:not(.dark) [data-contextual-tour-target='sidebar-navigation'] button:active {
+  background: rgb(150 110 60 / 0.14);
+}
+
+/* The open workspace is the orange pill (H01 .nv.is-sel) */
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-active] {
+  background:
+    radial-gradient(60px 12px at 14% 7%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 100%),
+    var(--hawl-orange);
+  border-color: rgb(100 34 3 / 0.9);
+  box-shadow:
+    inset 0 2px 0 rgb(255 244 228 / 1),
+    inset 0 -5px 6px rgb(120 40 0 / 0.4),
+    0 0 0 1px rgb(100 34 3 / 0.55),
+    0 8px 14px -4px rgb(120 40 0 / 0.4),
+    0 10px 20px -8px rgb(242 106 27 / 0.55);
+  color: #fff8ee;
+}
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-active] :is(span, p, div, button) {
+  color: #fff8ee;
+  text-shadow: 0 1px 0 rgb(120 40 0 / 0.5);
+}
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-active] svg {
+  color: #fff8ee;
+}
+
+/* Inputs are recessed wells */
+html:not(.dark) input[data-slot='input'],
+html:not(.dark) textarea[data-slot='textarea'] {
+  background: linear-gradient(180deg, #efe8d8 0%, #f8f2e4 100%);
+  box-shadow:
+    inset 0 2px 3px rgb(110 78 34 / 0.22),
+    0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+/* Primary button: ember key */
 html:not(.dark) button.bg-primary,
 html:not(.dark) [data-slot='button'].bg-primary {
-  background-image: linear-gradient(
-    180deg,
-    #ffa466 0%,
-    #fa7f32 34%,
-    #f06716 62%,
-    #dc540c 86%,
-    #c54709 100%
-  );
+  background-image: var(--hawl-orange);
   color: #fffaf0;
-  text-shadow: 0 1px 0 rgb(120 40 0 / 0.35);
+  text-shadow: 0 1px 0 rgb(120 40 0 / 0.4);
   box-shadow:
-    inset 0 1px 0 rgb(255 244 228 / 0.9),
+    inset 0 1.5px 0 rgb(255 244 228 / 0.95),
     inset 0 -3px 4px rgb(120 40 0 / 0.35),
     0 0 0 1px rgb(100 34 3 / 0.85),
     0 3px 6px -1px rgb(120 40 0 / 0.45),
@@ -188,7 +296,7 @@ html:not(.dark) [data-slot='button'].bg-primary {
 }
 html:not(.dark) button.bg-primary:hover,
 html:not(.dark) [data-slot='button'].bg-primary:hover {
-  filter: brightness(1.04);
+  filter: brightness(1.05);
   transform: translateY(-1px);
 }
 html:not(.dark) button.bg-primary:active,
@@ -199,29 +307,61 @@ html:not(.dark) [data-slot='button'].bg-primary:active {
     inset 0 2px 5px rgb(110 36 0 / 0.5),
     0 0 0 1px rgb(100 34 3 / 0.85);
 }
-
-/* Titlebar wordmark (F16 horizontal lockup) */
-html .titlebar-logo {
-  height: 20px;
-  width: auto;
-}
-
-/* Raised glass for outline and secondary buttons (H01 material) */
+/* Raised glass for outline and secondary buttons */
 html:not(.dark) [data-slot='button'].border:not(.bg-primary),
 html:not(.dark) [data-slot='button'].bg-secondary {
-  background-image: linear-gradient(180deg, #ffffff 0%, #fbf3e4 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.95),
-    inset 0 -1px 2px rgb(120 80 20 / 0.12),
-    0 1px 2px rgb(120 80 20 / 0.18);
+  background-image: linear-gradient(180deg, #ffffff 0%, #fffcf6 42%, #f6eedf 100%);
+  box-shadow: var(--hawl-key-edge);
 }
 html:not(.dark) [data-slot='button'].border:not(.bg-primary):hover,
 html:not(.dark) [data-slot='button'].bg-secondary:hover {
   background-image: linear-gradient(180deg, #ffffff 0%, #f8ecd6 100%);
 }
-/* Sidebar: soft glass edge */
-html:not(.dark) .bg-sidebar {
+
+/* Dark (Ember): same shapes, coal materials */
+html.dark .bg-worktree-sidebar,
+html.dark .bg-sidebar,
+html.dark .titlebar,
+html.dark .titlebar-left {
+  background: linear-gradient(180deg, rgb(42 28 20 / 0.82), rgb(22 12 7 / 0.9));
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+html.dark [data-worktree-card-surface][data-worktree-card-active] {
+  background: linear-gradient(180deg, #ff9a55 0%, #ec5a0e 100%);
+  color: #1a0701;
+}
+
+/* Titlebar wordmark (F16 horizontal lockup) */
+html .titlebar-logo {
+  height: 26px;
+  width: auto;
+  margin: 0 6px 0 10px;
+  object-fit: contain;
+}
+
+/* Dark: the navy wordmark sits on a cream tab so it stays readable on coal */
+html.dark .titlebar-logo {
+  background: #fbf4e3;
+  border-radius: 8px;
+  padding: 2px 8px;
+  height: 24px;
   box-shadow:
-    inset -1px 0 0 rgb(255 255 255 / 0.7),
-    1px 0 8px rgb(120 80 20 / 0.06);
+    inset 0 1px 0 #fff,
+    0 1px 3px rgb(0 0 0 / 0.5);
+}
+
+/* Dark: every line on the orange active row stays dark enough to read (subtitle included) */
+html.dark [data-worktree-card-surface][data-worktree-card-active] :is(span, p, div, button, svg) {
+  color: #1a0701;
+}
+
+/* Dark: the empty-state wordmark (navy letters) also sits on a cream tab */
+html.dark img[src*='hawl-wordmark']:not(.titlebar-logo) {
+  background: #fbf4e3;
+  border-radius: 20px;
+  padding: 10px 22px;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 6px 20px rgb(0 0 0 / 0.5);
 }
