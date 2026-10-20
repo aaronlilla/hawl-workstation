@@ -169,7 +169,6 @@ button:not([data-slot])[class~='bg-destructive'] {
 }
 [data-slot='switch'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'],
 [data-slot='switch-indicator'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'] {
-  translate: 20px 0 !important;
 }
 [data-slot='switch'][class~='h-3.5'],
 [data-slot='switch-indicator'][class~='h-3.5'] {
@@ -183,7 +182,6 @@ button:not([data-slot])[class~='bg-destructive'] {
 }
 [data-slot='switch'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'],
 [data-slot='switch-indicator'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'] {
-  translate: 14px 0 !important;
 }
 [data-slot='switch'][data-state='checked'],
 [data-slot='switch-indicator'][data-state='checked'] {

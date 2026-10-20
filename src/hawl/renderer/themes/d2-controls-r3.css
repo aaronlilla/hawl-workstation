@@ -94,7 +94,6 @@
 }
 [data-slot='switch'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'],
 [data-slot='switch-indicator'][data-state='checked']:not([class~='h-3.5']) [data-slot='switch-thumb'] {
-  translate: 26px 0 !important;
 }
 [data-slot='switch'][class~='h-3.5'],
 [data-slot='switch-indicator'][class~='h-3.5'] {
@@ -109,7 +108,6 @@
 }
 [data-slot='switch'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'],
 [data-slot='switch-indicator'][data-state='checked'][class~='h-3.5'] [data-slot='switch-thumb'] {
-  translate: 20px 0 !important;
 }
 /* the lamp: a small round light at the empty end of the track, lit when on, dark when off */
 [data-slot='switch']:not([class~='h-3.5']) {
