@@ -1,0 +1,406 @@
+/* D3 workspace (round 6): the workspace screen itself, F05 / F07.
+   Sidebar navigation and project rows are raised keys, the tab strip is a row of keys, the terminal is a lit slab on a
+   coloured ground (so glass bends something), the right panel header is a key strip, popovers keep a margin.
+   Unlayered, imported last from hawl-pieces.css. CSS only. */
+
+/* ───────────── sidebar navigation: Search is a sunken well, the rest are F05 key rows ───────────── */
+html [data-contextual-tour-target='sidebar-navigation'] {
+  gap: 6px;
+  padding: 10px 10px 8px;
+}
+html [data-contextual-tour-target='sidebar-navigation'] > button,
+html [data-contextual-tour-target='sidebar-navigation'] > div > button[data-contextual-tour-target],
+html [data-contextual-tour-target='sidebar-navigation'] > div > button:first-child {
+  position: relative;
+  min-height: 38px;
+  gap: 10px;
+  padding: 4px 12px 4px 8px;
+  border-radius: 14px;
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition:
+    transform 0.15s var(--d3-ease),
+    box-shadow 0.15s var(--d3-ease),
+    background 0.15s var(--d3-ease);
+}
+/* the key rows (everything but Search) */
+html [data-contextual-tour-target='sidebar-navigation'] > div > button:first-child,
+html [data-contextual-tour-target='sidebar-navigation'] > button:not([aria-label^='Search']) {
+  background:
+    radial-gradient(60px 14px at 14% 6%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 44%, #f6eedf 80%, #ebdfc9 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 1px 0 0 rgba(255, 255, 255, 0.9),
+    inset 0 -3px 4px rgba(150, 110, 60, 0.18),
+    0 0 0 1px rgba(70, 46, 14, 0.34),
+    0 3px 2px -1px rgba(120, 84, 36, 0.28),
+    0 8px 10px -4px rgba(120, 84, 36, 0.22);
+}
+html [data-contextual-tour-target='sidebar-navigation'] > div > button:first-child:hover,
+html [data-contextual-tour-target='sidebar-navigation'] > button:not([aria-label^='Search']):hover {
+  background:
+    radial-gradient(120px 40px at 20% 50%, rgba(255, 190, 120, 0.5), rgba(255, 220, 180, 0) 70%),
+    linear-gradient(180deg, #ffffff 0%, #fff6e8 50%, #f8e6c8 100%);
+  transform: translateY(-1px);
+}
+html [data-contextual-tour-target='sidebar-navigation'] > div > button:first-child:active,
+html [data-contextual-tour-target='sidebar-navigation'] > button:not([aria-label^='Search']):active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(70, 44, 12, 0.4),
+    0 0 0 1px rgba(70, 46, 14, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.6);
+}
+/* Search: a sunken well in the glass */
+html [data-contextual-tour-target='sidebar-navigation'] > button[aria-label^='Search'] {
+  color: rgba(52, 34, 10, 0.62);
+  font-weight: 500;
+  background: linear-gradient(180deg, rgba(170, 130, 78, 0.22), rgba(255, 244, 224, 0.5));
+  box-shadow:
+    inset 0 2px 5px rgba(80, 52, 16, 0.38),
+    inset 0 0 0 1px rgba(90, 60, 20, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.85);
+}
+html [data-contextual-tour-target='sidebar-navigation'] > button[aria-label^='Search']:hover {
+  background: linear-gradient(180deg, rgba(170, 130, 78, 0.3), rgba(255, 240, 214, 0.62));
+}
+/* icons are round-cornered chips */
+html [data-contextual-tour-target='sidebar-navigation'] button > svg:first-child {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 5px;
+  flex: none;
+  border-radius: 10px;
+  color: #4a3416;
+  background: radial-gradient(18px 10px at 30% 12%, #fff, rgba(255, 255, 255, 0)), linear-gradient(180deg, #fffdf8, #ecdfc7);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -1.5px 2px rgba(150, 110, 60, 0.3),
+    0 0 0 1px rgba(70, 46, 14, 0.3);
+}
+html [data-contextual-tour-target='sidebar-navigation'] button[aria-label^='Search'] > svg:first-child {
+  background: transparent;
+  box-shadow: none;
+  padding: 5px 4px;
+  width: 15px;
+  height: 15px;
+}
+/* the hover-only hint caps stay small */
+html [data-contextual-tour-target='sidebar-navigation'] [class*='border-worktree-sidebar-border'] {
+  background: linear-gradient(180deg, #fff, #f1e7d3);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(70, 46, 14, 0.28), 0 1.5px 0 rgba(120, 84, 36, 0.35);
+  color: #4a3416;
+}
+/* the New pill and other badges inside the nav stay lit */
+html [data-contextual-tour-target='sidebar-navigation'] [class*='bg-orange'],
+html [data-contextual-tour-target='sidebar-navigation'] [class*='rounded-full'] {
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.7), 0 0 0 1px rgba(150, 60, 8, 0.5), 0 2px 5px rgba(255, 110, 30, 0.35);
+}
+
+/* ───────────── project header rows and workspace rows are keys on the ground ───────────── */
+html [data-repo-header-id] {
+  height: 34px;
+  margin: 6px 8px 2px;
+  width: calc(100% - 16px);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(250, 238, 214, 0.55));
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 0 rgba(160, 120, 66, 0.2),
+    0 0 0 1px rgba(70, 46, 14, 0.2),
+    0 4px 8px -4px rgba(120, 84, 36, 0.25);
+}
+html [data-repo-header-id]:hover {
+  background: linear-gradient(180deg, #ffffff, #fdf1dc);
+}
+html [data-worktree-card-surface]:not([data-worktree-card-active]):not([data-worktree-card-selected]) {
+  margin-top: 4px;
+  background:
+    radial-gradient(70px 12px at 16% 6%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffbf3 46%, #f5ecdb 84%, #ebdfc9 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -3px 4px rgba(150, 110, 60, 0.15),
+    0 0 0 1px rgba(70, 46, 14, 0.26),
+    0 3px 2px -1px rgba(120, 84, 36, 0.24),
+    0 7px 9px -4px rgba(120, 84, 36, 0.2);
+}
+
+/* ───────────── tab strip: tabs are keys, the active tab is lit ───────────── */
+html .terminal-tab-strip {
+  padding: 4px 4px 0;
+  gap: 4px;
+  border-right-color: transparent;
+}
+html [data-tab-strip-slot] {
+  height: 100%;
+}
+html [data-testid='sortable-tab'] {
+  height: calc(100% - 4px);
+  margin-top: 0;
+  border-top: 0;
+  border-radius: 12px 12px 6px 6px;
+  color: rgba(52, 34, 10, 0.74);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(246, 236, 216, 0.5));
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 0 -2px 3px rgba(150, 110, 60, 0.18),
+    0 0 0 1px rgba(70, 46, 14, 0.22);
+  transition: background 0.15s var(--d3-ease), box-shadow 0.15s var(--d3-ease);
+}
+html [data-testid='sortable-tab']:hover {
+  background: linear-gradient(180deg, #ffffff, #fdf1dc);
+}
+html [data-testid='sortable-tab'][data-active='true'] {
+  color: #2a1406;
+  background:
+    radial-gradient(90px 14px at 18% 4%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffaf0 60%, #fbeed2 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(70, 46, 14, 0.34),
+    0 -1px 0 rgba(255, 255, 255, 0.8),
+    0 0 20px 1px rgba(255, 140, 50, 0.22);
+}
+/* the active bar under the tab is an orange lamp */
+html [data-testid='sortable-tab'] > span.absolute.bottom-0[class*='bg-foreground'] {
+  left: 14px;
+  right: 14px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #ffb070, #f26a1b);
+  box-shadow: 0 0 8px 1px rgba(255, 120, 30, 0.7);
+}
+html [data-tab-close-button] {
+  border-radius: 7px;
+}
+html [data-tab-close-button]:hover {
+  background: linear-gradient(180deg, #fff, #f1e7d3);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(70, 46, 14, 0.25);
+}
+/* "Command" and the + button beside the strip */
+html button[aria-label='Add quick command'] {
+  height: 28px;
+  padding: 0 10px 0 8px;
+  border-radius: 12px;
+  color: #2a1406;
+  background: linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset -1px -2px 2px rgba(150, 110, 60, 0.28),
+    0 0 0 1px rgba(52, 34, 10, 0.4),
+    0 2px 0 #cdbb93,
+    0 4px 4px -1px rgba(8, 4, 0, 0.25);
+  transition: transform 0.15s var(--d3-ease), box-shadow 0.15s var(--d3-ease);
+}
+html button[aria-label='Add quick command']:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #fff4e4 50%, #f6e2c2 100%);
+}
+html button[aria-label='Add quick command']:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 4px rgba(70, 44, 12, 0.45), 0 0 0 1px rgba(52, 34, 10, 0.55);
+}
+
+/* ───────────── terminal: a lit slab on the coloured ground ─────────────
+   A light terminal is glass over the ground (data-pane-title-surface='light'); a dark one is a dark slab with a lit rim. */
+html {
+  --d3-ground-art:
+    linear-gradient(118deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.7) 30.3%, rgba(255, 255, 255, 0.7) 31.4%, rgba(255, 255, 255, 0) 31.8%),
+    radial-gradient(75% 65% at 100% 0%, rgba(255, 128, 36, 0.62), rgba(255, 128, 36, 0) 72%),
+    radial-gradient(70% 60% at 0% 100%, rgba(88, 172, 238, 0.6), rgba(88, 172, 238, 0) 72%),
+    radial-gradient(50% 45% at 58% 58%, rgba(150, 210, 50, 0.45), rgba(150, 210, 50, 0) 72%),
+    linear-gradient(180deg, #fff6e2, #f3e2bd);
+}
+html [data-retained-pane-host]:has([data-terminal-tab-id]) {
+  background:
+    repeating-linear-gradient(-45deg, rgba(255, 122, 42, 0.9) 0 14px, rgba(255, 252, 244, 0.95) 14px 28px) bottom / 100% 26px no-repeat,
+    var(--d3-ground-art);
+}
+html [data-terminal-tab-id] {
+  inset: 8px 10px 10px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 0 0 1px rgba(70, 46, 14, 0.45),
+    0 1.5px 0 rgba(255, 255, 255, 0.7),
+    0 14px 28px -12px rgba(110, 70, 20, 0.5);
+}
+html [data-terminal-tab-id][data-pane-title-surface='light'] {
+  background:
+    linear-gradient(rgba(255, 253, 247, 0.34), rgba(255, 253, 247, 0.34)),
+    var(--d3-ground-art) !important;
+}
+html [data-terminal-tab-id][data-pane-title-surface='light'] :is(.xterm, .xterm-viewport, .xterm-screen, .xterm-rows, .xterm-scrollable-element) {
+  background-color: transparent !important;
+}
+/* the renderer paints an opaque canvas: the whole pane multiplies onto the ground, so the paper colour lets it through and the ink stays dark */
+html [data-terminal-tab-id][data-pane-title-surface='light'] .pane {
+  mix-blend-mode: multiply;
+}
+html.dark [data-retained-pane-host]:has([data-terminal-tab-id]) {
+  background:
+    radial-gradient(70% 60% at 100% 0%, rgba(255, 120, 36, 0.22), rgba(255, 120, 36, 0) 70%),
+    radial-gradient(60% 55% at 0% 100%, rgba(80, 150, 230, 0.2), rgba(80, 150, 230, 0) 70%);
+}
+
+/* ───────────── right panel header: icon keys, the open one is lit ───────────── */
+html button.right-sidebar-header-no-drag {
+  height: 30px;
+  width: 34px;
+  margin: 3px 2px;
+  border-radius: 11px;
+  color: rgba(52, 34, 10, 0.6);
+  transition: background 0.15s var(--d3-ease), box-shadow 0.15s var(--d3-ease);
+}
+html button.right-sidebar-header-no-drag:hover {
+  color: #2a1406;
+  background: linear-gradient(180deg, #ffffff, #f8ecd6);
+  box-shadow: inset 0 1.5px 0 #fff, 0 0 0 1px rgba(70, 46, 14, 0.22);
+}
+html button.right-sidebar-header-no-drag[class*='text-foreground']:not([class*='hover']) {
+  color: #2a1406;
+  background:
+    radial-gradient(30px 10px at 30% 8%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff, #fbeed2);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    0 0 0 1px rgba(70, 46, 14, 0.32),
+    0 3px 3px -1px rgba(120, 84, 36, 0.25);
+}
+html button.right-sidebar-header-no-drag > div.absolute.bottom-0 {
+  left: 30%;
+  right: 30%;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ffb070, #f26a1b);
+  box-shadow: 0 0 6px 1px rgba(255, 120, 30, 0.7);
+}
+
+/* ───────────── menus that open upward from the status bar keep a margin from the window edge ───────────── */
+html [data-radix-popper-content-wrapper]:has(> [data-side='top'][data-slot$='menu-content']) {
+  padding-right: 14px;
+}
+/* small text buttons inside menus (Connect, Disconnect) are lit keys */
+html [data-slot='dropdown-menu-content'] button[class*='text-[10px]'] {
+  padding: 3px 10px;
+  border-radius: 9px;
+  color: #2a1406;
+  background: linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset -1px -2px 2px rgba(150, 110, 60, 0.28),
+    0 0 0 1px rgba(52, 34, 10, 0.4),
+    0 1.5px 0 #cdbb93;
+}
+html [data-slot='dropdown-menu-content'] button[class*='text-[10px]']:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #fff0d8 50%, #f8d9a8 100%);
+}
+html [data-slot='dropdown-menu-content'] button[class*='text-[10px]']:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 3px rgba(70, 44, 12, 0.4), 0 0 0 1px rgba(52, 34, 10, 0.5);
+}
+
+/* ───────────── the open file row is a lit row, not a muddy stripe ───────────── */
+html button[class*='rounded-sm'][class*='text-accent-foreground'][class*='w-full'] {
+  border-radius: 10px;
+  color: #2a1406;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0) 16%, rgba(255, 255, 255, 0.5) 16.5%, rgba(255, 255, 255, 0.5) 19%, rgba(255, 255, 255, 0) 19.6%),
+    linear-gradient(100deg, rgba(255, 128, 48, 0.42) 0%, rgba(255, 170, 96, 0.3) 55%, rgba(255, 204, 140, 0.34) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -2px 0 rgba(225, 90, 10, 0.5),
+    0 0 0 0.5px rgba(150, 60, 8, 0.4),
+    0 0 16px 1px rgba(255, 120, 30, 0.18);
+}
+
+/* ───────────── sidebars bend the same ground art as the terminal ───────────── */
+html:not(.dark) .bg-worktree-sidebar,
+html:not(.dark) .bg-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 251, 240, 0.52), rgba(255, 245, 226, 0.3)),
+    var(--d3-ground-art);
+}
+
+/* ───────────── full pages (Tasks, Automations, Hawl Mobile): the ground art behind a glass card ───────────── */
+html:not(.dark) div.relative.flex.h-full.min-h-0.flex-1.overflow-hidden[class*='bg-background'][class*='text-foreground'] {
+  background:
+    linear-gradient(rgba(255, 252, 244, 0.5), rgba(255, 252, 244, 0.5)),
+    var(--d3-ground-art);
+}
+html:not(.dark) div.flex.min-h-0.min-w-0.flex-col.overflow-hidden.rounded-md[class*='bg-background'][class*='shadow-sm'] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 248, 232, 0.55));
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  backdrop-filter: blur(14px) saturate(1.25);
+  border: 0;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset 1px 0 0 rgba(255, 255, 255, 0.8),
+    0 0 0 1px rgba(70, 46, 14, 0.28),
+    0 14px 26px -12px rgba(110, 70, 20, 0.4);
+}
+html:not(.dark) div.sticky.top-0.z-40.grid.h-8[class*='uppercase'],
+html:not(.dark) div.sticky.top-0.z-40.grid.h-8[class*='uppercase'] > span {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 236, 214, 0.8));
+  color: rgba(52, 34, 10, 0.72);
+}
+html:not(.dark) div.sticky.top-0.z-40.grid.h-8[class*='uppercase'] {
+  box-shadow: inset 0 1.5px 0 #fff, 0 1px 0 rgba(70, 46, 14, 0.2);
+  border-radius: 18px 18px 0 0;
+}
+
+/* ───────────── Hawl Mobile page: lit ground instead of the dotted wash; the phone has a lit bezel ───────────── */
+html:not(.dark) .mobile-page-root .mp-hero {
+  background:
+    linear-gradient(rgba(255, 252, 244, 0.45), rgba(255, 252, 244, 0.45)),
+    var(--d3-ground-art);
+  background-size: auto;
+}
+html .mobile-page-root .mp-phone-frame {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.35),
+    0 0 0 1px rgba(70, 46, 14, 0.5),
+    0 22px 40px -14px rgba(90, 56, 16, 0.55);
+}
+html:not(.dark) div.flex.min-w-0.flex-col.rounded-md.rounded-b-none[class*='bg-muted'] {
+  border: 0;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(251, 241, 220, 0.62));
+  box-shadow: inset 0 1.5px 0 #fff, 0 0 0 1px rgba(70, 46, 14, 0.24);
+}
+
+/* ───────────── settings: the same lit ground behind the glass cards ───────────── */
+html:not(.dark) .settings-view-shell {
+  background:
+    linear-gradient(rgba(255, 252, 244, 0.5), rgba(255, 252, 244, 0.5)),
+    var(--d3-ground-art);
+}
+
+html:not(.dark) .settings-view-shell > aside {
+  background:
+    linear-gradient(180deg, rgba(255, 251, 240, 0.52), rgba(255, 245, 226, 0.3)),
+    var(--d3-ground-art);
+}
+
+/* ───────────── a menu opens with its first row lit (F09), until the pointer or arrows move the light ───────────── */
+html [data-slot$='menu-content']:not(:has([data-highlighted])):not(:has([data-state='open'])) > :is(:first-child, [data-slot$='-label'] + *):is([data-slot$='-item'], [data-slot$='sub-trigger']) {
+  color: #fffaf0;
+  background: linear-gradient(180deg, #ff9a55 0%, #f26a1b 48%, #d9560c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 214, 170, 0.55),
+    inset 1.5px 1.5px 0 rgba(255, 238, 215, 0.95),
+    inset -1px -1.5px 0 rgba(150, 52, 0, 0.55),
+    0 0 0 0.5px rgba(130, 48, 0, 0.65),
+    0 6px 16px -4px rgba(242, 106, 27, 0.7);
+}
+html [data-slot$='menu-content']:not(:has([data-highlighted])):not(:has([data-state='open'])) > :is(:first-child, [data-slot$='-label'] + *):is([data-slot$='-item'], [data-slot$='sub-trigger']) :not([data-slot$='shortcut']):not([data-slot$='shortcut'] *) {
+  color: #fffaf0;
+}

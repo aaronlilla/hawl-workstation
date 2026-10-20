@@ -140,6 +140,13 @@ CSS: `d4-shell-r3.css` (pages: heading, ground, pills, wells, keys) and `d4-shel
 | `src/renderer/src/components/sidebar/SidebarToolbar.tsx` (+ test) | the "Workspace board moved" first-launch hint is off (`WORKSPACE_BOARD_MOVED_HINT_ENABLED = false`) |
 | `src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx` (+ test) | Send Feedback, Milestones and Onboarding are behind `HAWL_HELP_ORCA_ITEMS = false`; stale Discord, X and Restart tests updated |
 | `src/hawl/shared/terminal-themes.ts` | Hawl Daylight terminal is a cream well (`#fcf6e7`, ink `#2b2318`) instead of white |
+## D3-surfaces (glass surfaces, menus, command menu, toasts, dialogs, drawers, cards)
+All styling lives in `src/hawl/renderer/d3-surfaces.css`, imported through `src/hawl/renderer/hawl-pieces.css` (single hook, one `@import` per piece), which `hawl-theme.css` imports first. It targets Orca's own `data-slot` / Radix / cmdk / sonner attributes, so no component is restyled in TSX. Round 2 added a lit scene behind dialogs and sheets (overlay gradients), chunky menu rows and key caps, tinted toasts with a timer line, recessed fields and lit primary key inside dialogs, and glass lanes in the workspace board. Round 3 (`d3-pages.css`, `d3-rows.css`, both imported from `hawl-pieces.css`) takes the same recipes to the page itself: card slabs by class family (rounded + border + bg-card), lit sidebar rows (`data-worktree-card-surface`), recessed wells, segmented controls, 3D switches, glass tooltips, engraved table heads, the floating terminal (`data-floating-terminal-panel`), outline buttons as cream keys, a lit orb on the update card, and menu layout fixes. CSS only.
+| File | Hook |
+|---|---|
+| `src/hawl/renderer/hawl-theme.css` | one `@import './hawl-pieces.css'` at the top |
+| `src/renderer/src/components/ui/command.tsx` | `data-slot="command-dialog-overlay"` and `data-slot="command-dialog-content"` on `CommandDialog` (it had no slot, so the Jump palette could not be reached by CSS) |
+| `src/shared/client-environment-info.ts` (+ its two tests) | the feedback / bug report footer line reads `Hawl: <version>`; the footer matcher accepts both `Hawl:` and `Orca:` so old drafts still strip |
 
 ## Complete list of edited Orca files (generated)
 
@@ -292,3 +299,13 @@ Notes
 
 ## Merge note (R2)
 `src/hawl/renderer/hawl-theme.css` was replaced by `src/hawl/renderer/theme/index.css` (D1). The D4 shell sheets still load through `hawl-pieces.css`, now imported first in `theme/index.css`. `Landing.tsx` renders `HawlLanding` (D4).
+## D3 surfaces (round 5)
+| File | Hook |
+|---|---|
+| `src/renderer/src/components/ui/context-menu.tsx`, `src/renderer/src/components/ui/dropdown-menu.tsx` | the Shortcut component renders its combo through `splitShortcutKeys` (`src/hawl/renderer/HawlShortcutKeys.tsx`) so `Ctrl+Shift+K` shows as separate key caps; strings without `+` are unchanged |
+
+## D3 surfaces (round 6)
+| File | Hook |
+|---|---|
+| `src/renderer/src/components/mobile/slides/HomeSlide.tsx`, `WorktreeListSlide.tsx`, `src/renderer/src/i18n/locales/en.json` | the phone mock shows `Work PC` / `hawl-box` hosts and `you@hawl.ai` / `team@hawl.ai` accounts instead of MacBook Pro, M1 Mini and example.com addresses |
+| `src/hawl/renderer/d3-workspace.css` (new, imported from `hawl-pieces.css`) | CSS only: sidebar key rows, tab strip keys, terminal ground slab, right panel keys, full-page ground and glass cards |

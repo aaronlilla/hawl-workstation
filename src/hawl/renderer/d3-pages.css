@@ -1,0 +1,324 @@
+/* D3 pages (round 3): everything that sits on the page, not only the floating glass.
+   F07 cards, list rows, tables, segmented controls, switches, tooltips, the floating terminal, notice cards.
+   Plus the dim scrim (the app stays visible behind dialogs) and the menu layout fixes.
+   CSS only, unlayered (beats Tailwind's layered utilities). Imported after d3-surfaces.css.
+   Source: _work/2026-10-12-cd-full/system/F07.css, F05.css, F09.css, F10.css. */
+
+/* ───────────── F10: a warm dim layer, the app stays recognisable behind the dialog ───────────── */
+html:root {
+  --d3-scrim: rgba(84, 52, 20, 0.34);
+}
+html.dark {
+  --d3-scrim: rgba(8, 4, 2, 0.6);
+}
+html [data-slot='dialog-overlay'],
+html [data-slot='command-dialog-overlay'],
+html [data-slot='sheet-overlay'] {
+  background:
+    radial-gradient(90% 70% at 16% 0%, rgba(255, 196, 130, 0.26), rgba(255, 196, 130, 0)),
+    radial-gradient(70% 60% at 100% 100%, rgba(255, 120, 40, 0.18), rgba(255, 120, 40, 0)),
+    var(--d3-scrim);
+  -webkit-backdrop-filter: blur(3px) saturate(1.25);
+  backdrop-filter: blur(3px) saturate(1.25);
+}
+/* glass over the live app: less orange wash at the bottom so text keeps its contrast */
+html [data-slot='dropdown-menu-content'],
+html [data-slot='dropdown-menu-sub-content'],
+html [data-slot='context-menu-content'],
+html [data-slot='context-menu-sub-content'],
+html [data-slot='select-content'],
+html [data-slot='popover-content'] {
+  --d3-env:
+    radial-gradient(120% 60% at 100% 118%, rgba(255, 170, 100, 0.22), rgba(255, 170, 100, 0) 64%),
+    radial-gradient(90% 60% at 0% 0%, rgba(150, 204, 242, 0.5), rgba(150, 204, 242, 0) 66%);
+  --d3-glass-a: rgba(255, 253, 247, 0.8);
+  --d3-glass-b: rgba(250, 242, 226, 0.72);
+}
+html.dark [data-slot='dropdown-menu-content'],
+html.dark [data-slot='dropdown-menu-sub-content'],
+html.dark [data-slot='context-menu-content'],
+html.dark [data-slot='context-menu-sub-content'],
+html.dark [data-slot='select-content'],
+html.dark [data-slot='popover-content'] {
+  --d3-glass-a: rgba(46, 32, 24, 0.86);
+  --d3-glass-b: rgba(28, 18, 12, 0.8);
+}
+
+/* ───────────── menu layout fixes ───────────── */
+html [data-slot='dropdown-menu-content'],
+html [data-slot='context-menu-content'] {
+  width: max-content;
+  max-width: min(26rem, calc(100vw - 16px));
+}
+html [data-slot='dropdown-menu-item'],
+html [data-slot='dropdown-menu-checkbox-item'],
+html [data-slot='dropdown-menu-radio-item'],
+html [data-slot='dropdown-menu-sub-trigger'],
+html [data-slot='context-menu-item'],
+html [data-slot='context-menu-checkbox-item'],
+html [data-slot='context-menu-radio-item'],
+html [data-slot='context-menu-sub-trigger'] {
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 20px;
+  align-items: center;
+}
+html [data-slot='dropdown-menu-item'] > svg,
+html [data-slot='context-menu-item'] > svg,
+html [data-slot='dropdown-menu-sub-trigger'] > svg,
+html [data-slot='context-menu-sub-trigger'] > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+/* check / radio indicator sits in its own gutter, never on the label */
+html [data-slot='dropdown-menu-checkbox-item'],
+html [data-slot='dropdown-menu-radio-item'],
+html [data-slot='context-menu-checkbox-item'],
+html [data-slot='context-menu-radio-item'] {
+  padding-left: 38px;
+}
+html [data-slot='dropdown-menu-checkbox-item'] > span:first-child,
+html [data-slot='dropdown-menu-radio-item'] > span:first-child,
+html [data-slot='context-menu-checkbox-item'] > span:first-child,
+html [data-slot='context-menu-radio-item'] > span:first-child {
+  left: 12px;
+}
+html [data-slot='select-item'] {
+  padding-right: 34px;
+}
+/* disabled rows stay readable: dimmer, not washed out, and the red keeps its red */
+html [data-slot$='menu-item'][data-disabled],
+html [data-slot$='menu-checkbox-item'][data-disabled],
+html [data-slot$='menu-radio-item'][data-disabled] {
+  opacity: 0.62;
+}
+/* one calm icon colour inside menus: the ink of the row, not Orca's pale blues */
+html [data-slot='dropdown-menu-item'] svg:not([class*='text-destructive']):not([class*='text-red']),
+html [data-slot='context-menu-item'] svg:not([class*='text-destructive']):not([class*='text-red']),
+html [data-slot='dropdown-menu-sub-trigger'] svg,
+html [data-slot='context-menu-sub-trigger'] svg {
+  color: color-mix(in srgb, var(--foreground) 78%, #b8470c);
+}
+
+/* ───────────── F05/F09 tooltips: a small glass bead with a lit rim ───────────── */
+html [data-slot='tooltip-content'] {
+  color: var(--foreground);
+  border: 0;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 580;
+  background:
+    radial-gradient(34px 11px at 14% 2%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    var(--d3-grain),
+    linear-gradient(142deg, rgba(255, 253, 247, 0.88), rgba(250, 240, 222, 0.78));
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  backdrop-filter: blur(22px) saturate(1.7);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95),
+    inset 2px 2.5px 1px -1.5px #fff,
+    inset -6px -8px 12px -8px rgba(150, 100, 40, 0.22),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.4),
+    0 1.5px 2px rgba(var(--d3-shade), 0.28),
+    6px 12px 18px -8px rgba(var(--d3-shade), 0.32);
+}
+html.dark [data-slot='tooltip-content'] {
+  background:
+    radial-gradient(34px 11px at 14% 2%, rgba(255, 220, 190, 0.3), rgba(255, 220, 190, 0)),
+    var(--d3-grain),
+    linear-gradient(142deg, rgba(52, 38, 28, 0.92), rgba(30, 20, 14, 0.88));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 214, 180, 0.3),
+    inset 2px 2.5px 1px -1.5px rgba(255, 224, 196, 0.45),
+    0 0 0 0.5px rgba(0, 0, 0, 0.7),
+    0 1.5px 2px rgba(0, 0, 0, 0.5),
+    8px 14px 22px -8px rgba(0, 0, 0, 0.6);
+}
+html [data-slot='tooltip-content'] svg.fill-foreground,
+html [data-slot='tooltip-content'] [class*='rotate-45'] {
+  display: none;
+}
+html [data-slot='tooltip-content'] kbd,
+html [data-slot='tooltip-content'] [class*='kbd'] {
+  color: var(--foreground);
+  background: linear-gradient(180deg, #fffefb, #f2e6cc);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 0.5px rgba(var(--d3-shade), 0.4), 0 1.5px 0 rgba(176, 140, 84, 0.6);
+  border-radius: 6px;
+}
+
+/* ───────────── F07 switches: recessed track, glass bead, lit orange when on (everywhere) ───────────── */
+html [data-slot='switch'],
+html [data-slot='switch-indicator']:not([class*='h-3.5']) {
+  height: 24px;
+  width: 42px;
+  border: 0;
+  padding: 3px;
+  background: linear-gradient(180deg, rgba(var(--d3-shade), 0.3), rgba(var(--d3-shade), 0.12));
+  box-shadow:
+    inset 0 2.5px 5px rgba(var(--d3-shade), 0.4),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.85);
+}
+html [data-slot='switch-indicator'][class*='h-3.5'] {
+  background: linear-gradient(180deg, rgba(var(--d3-shade), 0.3), rgba(var(--d3-shade), 0.12));
+  box-shadow: inset 0 2px 3px rgba(var(--d3-shade), 0.4), 0 0 0 0.5px rgba(var(--d3-shade), 0.4);
+}
+html [data-slot='switch'][data-state='checked'],
+html [data-slot='switch-indicator'][data-state='checked'] {
+  background: linear-gradient(180deg, #d9560c, #f26a1b 50%, #ff9a55);
+  box-shadow:
+    inset 0 2.5px 5px rgba(120, 40, 0, 0.5),
+    0 0 0 0.5px rgba(130, 48, 0, 0.7),
+    0 0 12px 1px rgba(242, 106, 27, 0.5);
+}
+html [data-slot='switch-thumb'] {
+  background:
+    radial-gradient(circle at 32% 26%, #fff 0, rgba(255, 255, 255, 0.75) 22%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, #fffefb, #e9dcc0);
+  box-shadow:
+    inset 0 -3px 4px rgba(var(--d3-shade), 0.22),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.5),
+    0 2px 3px rgba(var(--d3-shade), 0.4);
+}
+html [data-slot='switch'] [data-slot='switch-thumb'],
+html [data-slot='switch-indicator']:not([class*='h-3.5']) [data-slot='switch-thumb'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+html [data-slot='switch'] [data-slot='switch-thumb'][data-state='checked'],
+html [data-slot='switch-indicator']:not([class*='h-3.5']) [data-slot='switch-thumb'][data-state='checked'] {
+  transform: translateX(18px);
+}
+html [data-slot='switch'] [data-slot='switch-thumb'][data-state='unchecked'],
+html [data-slot='switch-indicator']:not([class*='h-3.5']) [data-slot='switch-thumb'][data-state='unchecked'] {
+  transform: translateX(0);
+}
+html [data-slot='switch']:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring),
+    0 0 14px 2px rgba(242, 106, 27, 0.5);
+}
+
+/* ───────────── F07 segmented controls: a recessed well, the chosen segment a lit key ───────────── */
+html [data-slot='toggle-group'][data-variant='segmented'],
+html [data-slot='tabs-list'][data-variant='default'] {
+  padding: 4px;
+  gap: 3px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(150, 120, 70, 0.34), rgba(150, 120, 70, 0.18));
+  box-shadow:
+    inset 0 3px 6px rgba(var(--d3-shade), 0.4),
+    inset 0 1px 1px rgba(var(--d3-shade), 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 1px rgba(var(--d3-shade), 0.16);
+}
+html.dark [data-slot='toggle-group'][data-variant='segmented'],
+html.dark [data-slot='tabs-list'][data-variant='default'] {
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 224, 196, 0.12);
+}
+html [data-slot='toggle-group-item'][data-variant='segmented'],
+html [data-slot='tabs-trigger'] {
+  border-radius: 10px;
+  border: 0;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: transparent;
+  transition:
+    color 0.2s var(--d3-ease),
+    box-shadow 0.2s var(--d3-ease),
+    transform 0.15s var(--d3-ease);
+}
+html [data-slot='toggle-group-item'][data-variant='segmented']:hover,
+html [data-slot='tabs-trigger']:hover {
+  color: var(--foreground);
+  background: transparent;
+}
+html [data-slot='toggle-group-item'][data-variant='segmented'][data-state='on'],
+html [data-slot='tabs-list'][data-variant='default'] [data-slot='tabs-trigger'][data-state='active'] {
+  color: var(--foreground);
+  background:
+    radial-gradient(40px 14px at 28% 0%, #fff, rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 50%, #f0e6d3 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff,
+    inset -1px -2px 2px rgba(150, 110, 60, 0.3),
+    0 0 0 1px rgba(52, 34, 10, 0.5),
+    0 1px 0 #cdbb93,
+    0 2px 0 #a89268,
+    1px 5px 3px -1px rgba(8, 4, 0, 0.4);
+}
+html.dark [data-slot='toggle-group-item'][data-variant='segmented'][data-state='on'],
+html.dark [data-slot='tabs-list'][data-variant='default'] [data-slot='tabs-trigger'][data-state='active'] {
+  color: var(--foreground);
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.28), rgba(255, 232, 214, 0.1));
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 224, 196, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 2px 0 rgba(0, 0, 0, 0.5);
+}
+html [data-slot='tabs-list'][data-variant='line'] [data-slot='tabs-trigger'][data-state='active']::after {
+  background: linear-gradient(180deg, #ff9a55, #f26a1b);
+  box-shadow: 0 0 10px 2px rgba(242, 106, 27, 0.6);
+}
+
+/* ───────────── F09 neutral toast: a lit blue orb so every toast has its lamp ───────────── */
+html body [data-sonner-toast][data-styled='true']:not([data-type='success']):not([data-type='error']):not([data-type='warning']):not([data-type='info']):not([data-type='loading']) {
+  --d3-tone: #3f8fd6;
+  --d3-tone-hi: #7fbcf0;
+  --d3-tint: rgba(110, 180, 240, 0.3);
+  padding-left: 62px !important;
+}
+html body [data-sonner-toast][data-styled='true']:not([data-type='success']):not([data-type='error']):not([data-type='warning']):not([data-type='info']):not([data-type='loading'])::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 26%, #fff 0 8%, rgba(255, 255, 255, 0) 34%),
+    radial-gradient(circle at 50% 120%, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, #7fbcf0, #2f78bd);
+  box-shadow:
+    inset 0 -2px 3px rgba(0, 0, 0, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    0 0 0 2px rgba(255, 255, 255, 0.8),
+    0 0 0 3px rgba(var(--d3-shade), 0.4),
+    0 0 14px 3px rgba(63, 143, 214, 0.55);
+}
+
+/* ───────────── F07 cards: every bordered card on the page becomes a lit slab ─────────────
+   Orca builds cards from plain divs (rounded + border + bg-card/popover), so the hook is the class family. */
+html :is([class*='rounded-xl'], [class*='rounded-2xl'], [class*='rounded-lg']):is([class*='bg-card'], [class*='bg-popover']):is([class*='border']):not([data-slot]):not([data-radix-popper-content-wrapper] *):not([data-sonner-toast] *):not(.xterm *) {
+  border-color: transparent;
+  border-radius: 20px;
+  background:
+    radial-gradient(60% 40% at 6% 0%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0)),
+    var(--d3-grain),
+    linear-gradient(160deg, #fffefb 0%, #fbf3e3 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95),
+    inset 2.5px 3px 1px -1.5px #fff,
+    inset -2px -3px 4px -2px rgba(150, 100, 40, 0.16),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.3),
+    0 1.5px 2px rgba(var(--d3-shade), 0.22),
+    4px 10px 14px -6px rgba(var(--d3-shade), 0.18),
+    14px 28px 36px -14px rgba(var(--d3-shade), 0.22);
+}
+html.dark :is([class*='rounded-xl'], [class*='rounded-2xl'], [class*='rounded-lg']):is([class*='bg-card'], [class*='bg-popover']):is([class*='border']):not([data-slot]):not([data-radix-popper-content-wrapper] *):not([data-sonner-toast] *):not(.xterm *) {
+  background:
+    radial-gradient(60% 40% at 6% 0%, rgba(255, 200, 150, 0.1), rgba(255, 200, 150, 0)),
+    var(--d3-grain),
+    linear-gradient(160deg, #2a1d15 0%, #1a100a 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 224, 196, 0.1),
+    inset 2px 2.5px 1px -1.5px rgba(255, 224, 196, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.7),
+    0 1.5px 2px rgba(0, 0, 0, 0.5),
+    14px 28px 36px -14px rgba(0, 0, 0, 0.6);
+}

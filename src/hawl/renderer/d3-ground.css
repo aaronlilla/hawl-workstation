@@ -1,0 +1,363 @@
+/* D3 ground (round 5): the content surfaces get the F07 look. A lit ground (warm sand, sage left, sky bottom right) shows through
+   glass panes; settings and table rows are 56px raised keys; the terminal error banner is an F09 toast (lamp orb, bezel, sans type).
+   CSS only, unlayered, imported last. Source: _work/2026-10-12-cd-full/system/F07.css (.wo rows), F09.css (.toast). */
+
+/* ───────────── the ground: lit, with sage on the left and sky at the lower right ───────────── */
+html:not(.dark) {
+  --hawl-ground:
+    radial-gradient(1500px 1000px at 0% 0%, #fffcf2 0%, rgb(255 249 228 / 0.9) 14%, rgb(255 241 208 / 0.45) 38%, rgb(255 236 200 / 0) 68%),
+    radial-gradient(900px 700px at 0% 70%, rgb(176 204 120 / 0.42), rgb(176 204 120 / 0) 70%),
+    radial-gradient(1100px 800px at 100% 100%, rgb(132 184 226 / 0.5), rgb(132 184 226 / 0) 66%),
+    radial-gradient(1000px 700px at 100% 0%, rgb(255 200 150 / 0.3), rgb(255 200 150 / 0) 64%),
+    linear-gradient(180deg, #eadcb8 0%, #e0cea5 46%, #d6c398 100%);
+}
+html.dark body,
+html.dark .app-layout {
+  background-image:
+    radial-gradient(900px 700px at 0% 70%, rgba(110, 140, 60, 0.16), rgba(110, 140, 60, 0) 70%),
+    radial-gradient(1100px 800px at 100% 100%, rgba(70, 120, 190, 0.22), rgba(70, 120, 190, 0) 66%),
+    radial-gradient(1400px 900px at 0% 0%, #2a1a10 0%, #120a06 60%);
+  background-attachment: fixed;
+}
+
+/* panes that sit on the ground are glass, not paint */
+html:not(.dark) .settings-view-shell {
+  background: transparent;
+}
+html.dark .settings-view-shell {
+  background: transparent;
+}
+html:not(.dark) .settings-view-shell > aside {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 246, 228, 0.32));
+  border-right-color: rgba(150, 110, 60, 0.2);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.8), 6px 0 24px -12px rgba(var(--d3-shade), 0.25);
+}
+/* the right sidebar and the title strip over the ground */
+html:not(.dark) [data-right-sidebar],
+html:not(.dark) aside[class*='border-l'] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 246, 228, 0.34));
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
+}
+
+/* ───────────── settings and tables: cards are glass, rows are raised keys ───────────── */
+html:not(.dark) .settings-view-shell :is([class*='rounded-xl'], [class*='rounded-2xl'], [class*='rounded-lg']):is([class*='bg-card'], [class*='bg-popover']):is([class*='border']):not([data-slot]) {
+  background:
+    radial-gradient(50% 30% at 8% 0%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 246, 226, 0.26) 100%);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+html.dark .settings-view-shell :is([class*='rounded-xl'], [class*='rounded-2xl'], [class*='rounded-lg']):is([class*='bg-card'], [class*='bg-popover']):is([class*='border']):not([data-slot]) {
+  background: linear-gradient(160deg, rgba(60, 42, 30, 0.7), rgba(30, 20, 14, 0.6));
+}
+
+/* each setting row is its own key */
+html .settings-view-shell [class*='divide-y'] > div {
+  border-top-width: 0;
+  border-bottom-width: 0;
+  min-height: 56px;
+  margin: 8px 0;
+  padding-left: 16px;
+  padding-right: 14px;
+  border-radius: 14px;
+  background:
+    radial-gradient(160px 14px at 12% 0%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 46%, #f7eedf 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -2px 0 rgba(160, 120, 66, 0.26),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.28),
+    0 1.5px 0 #e2d4b2,
+    0 6px 10px -5px rgba(var(--d3-shade), 0.3);
+  transition:
+    box-shadow 0.18s var(--d3-ease),
+    transform 0.18s var(--d3-ease);
+}
+html .settings-view-shell [class*='divide-y'] > div:hover {
+  background:
+    radial-gradient(240px 70px at 22% 50%, rgba(255, 196, 130, 0.45), rgba(255, 226, 190, 0.12) 64%, rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffbf2 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -2px 0 rgba(160, 120, 66, 0.3),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.3),
+    0 1.5px 0 #e2d4b2,
+    0 0 22px 2px rgba(255, 150, 70, 0.2);
+}
+html.dark .settings-view-shell [class*='divide-y'] > div {
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.1), rgba(255, 232, 214, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 224, 196, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+/* a raised row gets a lamp: the section title line leads with a small lit orb */
+html:not(.dark) .settings-view-shell [class*='divide-y'] > div > :first-child {
+  position: relative;
+}
+
+/* the shortcuts and stats lists: rows as keys on the page */
+html:not(.dark) .settings-view-shell table {
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+html:not(.dark) .settings-view-shell table tbody tr > * {
+  background: linear-gradient(180deg, #ffffff 0%, #f9f1e2 100%);
+  border: 0;
+  box-shadow: inset 0 2px 0 #fff, inset 0 -2px 0 rgba(160, 120, 66, 0.22);
+}
+html:not(.dark) .settings-view-shell table tbody tr > :first-child {
+  border-radius: 12px 0 0 12px;
+}
+html:not(.dark) .settings-view-shell table tbody tr > :last-child {
+  border-radius: 0 12px 12px 0;
+}
+
+/* ───────────── the terminal error banner is an F09 toast ───────────── */
+html body [data-terminal-error-toast] {
+  right: auto !important;
+  left: 16px !important;
+  bottom: 18px !important;
+  width: min(520px, calc(100% - 32px));
+  box-sizing: border-box;
+  padding: 14px 44px 18px 62px !important;
+  border: 0 !important;
+  border-radius: 20px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12.5px !important;
+  line-height: 1.5;
+  color: #14243a !important;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(90% 70% at 100% 110%, rgba(255, 164, 112, 0.42), rgba(255, 164, 112, 0) 70%),
+    linear-gradient(168deg, rgba(190, 220, 240, 0.9) 0%, rgba(228, 238, 242, 0.92) 55%, rgba(246, 226, 208, 0.92) 100%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.92),
+    inset 2px 3px 1px -1.5px #fff,
+    inset -2px -4px 5px -2px rgba(70, 110, 150, 0.35),
+    0 0 0 1.5px rgba(218, 70, 40, 0.55),
+    0 0 0 3px rgba(255, 255, 255, 0.45),
+    4px 12px 18px -6px rgba(var(--d3-shade), 0.35),
+    16px 30px 40px -14px rgba(var(--d3-shade), 0.35),
+    0 0 26px 2px rgba(240, 90, 50, 0.22);
+  overflow: hidden;
+}
+html body [data-terminal-error-toast][data-terminal-error-kind='ssh'],
+html body [data-terminal-error-toast][data-terminal-error-kind='owner-unverified'] {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.92),
+    inset 2px 3px 1px -1.5px #fff,
+    inset -2px -4px 5px -2px rgba(70, 110, 150, 0.35),
+    0 0 0 1.5px rgba(214, 140, 20, 0.6),
+    0 0 0 3px rgba(255, 255, 255, 0.45),
+    4px 12px 18px -6px rgba(var(--d3-shade), 0.35),
+    16px 30px 40px -14px rgba(var(--d3-shade), 0.35),
+    0 0 26px 2px rgba(240, 170, 40, 0.24);
+}
+/* lamp orb */
+html body [data-terminal-error-toast]::before {
+  content: '!';
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 800 16px/1 var(--font-sans);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(100, 20, 4, 0.6);
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.95) 0 9%, rgba(255, 255, 255, 0) 30%),
+    radial-gradient(circle at 50% 120%, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, #ff9a7a, #d9341a);
+  box-shadow:
+    inset 0 -2px 3px rgba(0, 0, 0, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    0 0 0 2px rgba(255, 255, 255, 0.85),
+    0 0 0 3px rgba(var(--d3-shade), 0.4),
+    0 0 14px 3px rgba(240, 90, 50, 0.55);
+}
+html body [data-terminal-error-toast][data-terminal-error-kind='ssh']::before,
+html body [data-terminal-error-toast][data-terminal-error-kind='owner-unverified']::before {
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.95) 0 9%, rgba(255, 255, 255, 0) 30%),
+    radial-gradient(circle at 50% 120%, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, #ffd47a, #e09a10);
+  box-shadow:
+    inset 0 -2px 3px rgba(0, 0, 0, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    0 0 0 2px rgba(255, 255, 255, 0.85),
+    0 0 0 3px rgba(var(--d3-shade), 0.4),
+    0 0 14px 3px rgba(255, 190, 40, 0.6);
+}
+/* the lit bar along the bottom edge: an error stays until you act, so it is full */
+html body [data-terminal-error-toast]::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 8px;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ffb08a, #e0431f 60%, #b32a10);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25), 0 0 8px 1px rgba(240, 90, 50, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+/* message text: first line is the title weight, the rest plain; the monospace dump is the details */
+html body [data-terminal-error-toast] > div > span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 150px;
+  overflow: auto;
+  font-weight: 600;
+}
+html body [data-terminal-error-toast] a {
+  color: #a93f08;
+  font-weight: 700;
+}
+/* dismiss x: a round glass key */
+html body [data-terminal-error-toast] > div > button:last-child {
+  position: absolute !important;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+  border-radius: 50% !important;
+  font-size: 13px !important;
+  font-weight: 700;
+  color: #14243a !important;
+  background: linear-gradient(180deg, #ffffff, #efe5d0) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(var(--d3-shade), 0.4), 0 1.5px 0 #cdbb93, 0 3px 4px -1px rgba(var(--d3-shade), 0.4);
+}
+/* Restart daemon: a lit orange key */
+html body [data-terminal-error-toast] > div > span ~ button:not(:last-child) {
+  color: #fffaf0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(120, 40, 0, 0.45);
+  background: linear-gradient(180deg, #ffa866 0%, #f26a1b 48%, #d9560c 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 220, 0.9), 0 0 0 1px rgba(130, 48, 0, 0.7), 0 2px 0 rgba(130, 48, 0, 0.55), 0 6px 10px -3px rgba(242, 106, 27, 0.6);
+}
+html.dark body [data-terminal-error-toast] {
+  color: #fff4e6 !important;
+  background:
+    radial-gradient(90% 70% at 100% 110%, rgba(255, 122, 42, 0.3), rgba(255, 122, 42, 0) 70%),
+    linear-gradient(168deg, rgba(58, 74, 96, 0.94), rgba(38, 30, 28, 0.95)) !important;
+}
+html.dark body [data-terminal-error-toast] a {
+  color: #ffb27a;
+}
+html.dark body [data-terminal-error-toast] > div > button:last-child {
+  color: #fff4e6 !important;
+  background: linear-gradient(180deg, #6a5a48, #3a2f24) !important;
+}
+
+/* General-style rows: the innermost row that holds a switch, select or button is a key too */
+html .settings-view-shell div[class*='justify-between']:has(> * [data-slot='switch'], > [data-slot='switch'], > * [data-slot='select-trigger'], > [data-slot='select-trigger']):not(:has(div[class*='justify-between'])):not([class*='divide-y'] > div) {
+  min-height: 56px;
+  margin: 8px 0;
+  padding: 10px 14px 10px 16px;
+  border-radius: 14px;
+  background:
+    radial-gradient(160px 14px at 12% 0%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #ffffff 0%, #fffcf6 46%, #f7eedf 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -2px 0 rgba(160, 120, 66, 0.26),
+    0 0 0 0.5px rgba(var(--d3-shade), 0.28),
+    0 1.5px 0 #e2d4b2,
+    0 6px 10px -5px rgba(var(--d3-shade), 0.3);
+}
+html.dark .settings-view-shell div[class*='justify-between']:has(> * [data-slot='switch'], > [data-slot='switch'], > * [data-slot='select-trigger'], > [data-slot='select-trigger']):not(:has(div[class*='justify-between'])):not([class*='divide-y'] > div) {
+  background: linear-gradient(180deg, rgba(255, 232, 214, 0.1), rgba(255, 232, 214, 0.03));
+  box-shadow: inset 0 1.5px 0 rgba(255, 224, 196, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ───────────── menus: one size for every row, a real title, no doubled eyebrow ───────────── */
+html [data-slot='dropdown-menu-sub-trigger'],
+html [data-slot='dropdown-menu-item'],
+html [data-slot='dropdown-menu-checkbox-item'],
+html [data-slot='dropdown-menu-sub-trigger'] > span,
+html [data-slot='dropdown-menu-item'] > span {
+  font-size: 13px;
+}
+html [data-slot='dropdown-menu-content'] [data-slot='dropdown-menu-label']:first-child,
+html [data-slot='dropdown-menu-sub-content'] [data-slot='dropdown-menu-label']:first-child {
+  font-family: var(--hawl-font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #14243a;
+}
+html [data-slot='dropdown-menu-label']:first-child + [data-slot='dropdown-menu-label'] {
+  display: none;
+}
+html [data-slot='dropdown-menu-content'] [data-slot='switch-indicator'][class*='h-3.5'] {
+  transform: scale(1.1);
+  transform-origin: right center;
+}
+
+/* ───────────── sidebar: only the open row is lit, and it is a glowing key, not a solid slab ───────────── */
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-active][data-worktree-card-surface],
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-selected][data-worktree-card-surface] {
+  border-color: transparent;
+  color: #2a1406;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0) 18%, rgba(255, 255, 255, 0.55) 18.5%, rgba(255, 255, 255, 0.55) 21%, rgba(255, 255, 255, 0) 21.6%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0, rgba(255, 255, 255, 0.5) 52%, rgba(255, 210, 160, 0.55) 100%),
+    linear-gradient(100deg, rgba(255, 168, 96, 0.5) 0%, rgba(255, 214, 170, 0.4) 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -3px 0 rgba(235, 120, 40, 0.55),
+    0 0 0 0.5px rgba(150, 70, 14, 0.4),
+    0 0 18px 1px rgba(255, 130, 40, 0.22);
+}
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-active][data-worktree-card-surface] :is(span, p, div, button),
+html:not(.dark) [data-worktree-card-surface][data-worktree-card-active][data-worktree-card-surface] svg {
+  color: #2a1406;
+  text-shadow: none;
+}
+
+/* ───────────── split key caps: Ctrl + Shift + K is three keys (F09 .kc) ───────────── */
+html [data-hawl-keys],
+html.dark [data-hawl-keys],
+html [data-slot='dropdown-menu-item'][data-highlighted] [data-hawl-keys],
+html [data-slot='context-menu-item'][data-highlighted] [data-hawl-keys] {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+html [data-hawl-keys] .hawl-key {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 7px;
+  font: 600 11px/1 var(--font-mono, ui-monospace, monospace);
+  color: var(--foreground);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: var(--d3-kc-bg);
+  box-shadow: var(--d3-kc-sh);
+  margin-bottom: 3px;
+}
+html.dark [data-hawl-keys] .hawl-key {
+  color: #fff4e6;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+html [data-hawl-keys] .hawl-key-plus {
+  font-size: 11px;
+  opacity: 0.6;
+}

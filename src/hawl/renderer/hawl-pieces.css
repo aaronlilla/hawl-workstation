@@ -1,2 +1,8 @@
-/* One @import per redesign piece. Each piece owns its own theme file; this is the only hook. */
+/* Single hook for every Hawl design piece, one line per piece. Imported last from theme/index.css so these win over the foundations. */
+@import './d3-surfaces.css';
+@import './d3-pages.css';
+@import './d3-rows.css';
+@import './d3-glass.css';
+@import './d3-ground.css';
+@import './d3-workspace.css';
 @import './d4-shell.css';
