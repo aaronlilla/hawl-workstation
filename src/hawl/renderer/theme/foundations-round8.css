@@ -1,0 +1,295 @@
+/* D1-foundations, round 8: the main shell wears the Claude Design look (H01 / F15 / F17), CSS only.
+   Floating lit slabs on the ground, lit workspace rows, display type on the shell, a real logo plate, glass status rail,
+   dark theme with a clean night ground. Later than every other theme file, so it wins ties.
+   No backdrop-filter on big panes: a blur over a static gradient shows nothing and costs a frame budget. */
+
+/* ═════ Slabs: the sidebar, terminal and right panel are three lit objects on one ground ═════ */
+html:root {
+  --slab-rim: inset 0 1.5px 0 rgba(255, 255, 255, 0.95), inset 1.5px 0 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.5), inset -1px -2px 0 rgba(160, 120, 66, 0.28);
+  --slab-cast: 0 0 0 1px rgba(var(--shade), 0.3), 0.6px 1.4px 0 rgba(var(--shade), 0.5), 2px 5px 4px -1px rgba(var(--shade), 0.36), 5px 9px 10px -4px rgba(var(--shade), 0.3);
+  --slab-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.12) 18%, rgba(255, 255, 255, 0) 38%), radial-gradient(520px 340px at 100% 100%, rgba(255, 150, 80, 0.16), rgba(255, 150, 80, 0) 70%);
+}
+html.dark {
+  --slab-rim: inset 0 1.5px 0 rgba(255, 226, 190, 0.34), inset 1.5px 0 0 rgba(255, 226, 190, 0.18), inset 0 0 0 1px rgba(255, 226, 190, 0.08);
+  --slab-cast: 0 0 0 1px rgba(0, 0, 0, 0.7), 1px 2px 0 rgba(0, 0, 0, 0.6), 3px 6px 6px -1px rgba(0, 0, 0, 0.55), 6px 10px 12px -4px rgba(0, 0, 0, 0.5);
+  --slab-sheen: linear-gradient(135deg, rgba(255, 190, 130, 0.14) 0%, rgba(255, 190, 130, 0.03) 22%, rgba(255, 190, 130, 0) 40%), radial-gradient(520px 340px at 100% 100%, rgba(255, 110, 40, 0.12), rgba(255, 110, 40, 0) 70%);
+}
+
+/* the terminal column */
+html:root div[class~='border-l'][class~='border-border'][class~='overflow-hidden'][class~='flex-col'] { border-left-color: transparent; }
+html:root [class~='group/tab-group'] {
+  margin: 0 10px 10px 8px;
+  border-radius: 20px;
+  box-shadow: var(--slab-rim), var(--slab-cast);
+  isolation: isolate;
+}
+html:root [class~='group/tab-group']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--slab-sheen);
+  box-shadow: var(--slab-rim);
+}
+/* the terminal paper: transparent so the slab material shows, the glyphs stay navy ink */
+html:root [class~='group/tab-group'] > div:not([class~='@container/tab-strip']) {
+  background-color: rgba(255, 250, 236, 0.5);
+  background-image: radial-gradient(760px 440px at 100% 0%, rgba(120, 190, 236, 0.3), rgba(120, 190, 236, 0) 70%), radial-gradient(860px 520px at 0% 100%, rgba(255, 170, 100, 0.34), rgba(255, 170, 100, 0) 70%), linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 250, 236, 0.12) 30%, rgba(255, 226, 190, 0.2) 100%);
+  box-shadow: inset 0 0 70px rgba(255, 255, 255, 0.45);
+}
+html.dark [class~='group/tab-group'] > div:not([class~='@container/tab-strip']) {
+  background-color: rgba(26, 17, 11, 0.62);
+  background-image: radial-gradient(760px 440px at 100% 0%, rgba(80, 150, 220, 0.2), rgba(80, 150, 220, 0) 70%), radial-gradient(860px 520px at 0% 100%, rgba(255, 120, 50, 0.2), rgba(255, 120, 50, 0) 70%), linear-gradient(180deg, rgba(255, 190, 130, 0.1), rgba(0, 0, 0, 0) 40%);
+  box-shadow: inset 0 0 70px rgba(255, 150, 80, 0.06);
+}
+
+/* tab strip is the slab's header: glass, display type, lit active tab */
+html:root [class~='@container/tab-strip'] {
+  background-color: rgba(255, 250, 238, 0.7);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 1px solid rgba(var(--shade), 0.16);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+html.dark [class~='@container/tab-strip'] {
+  background-color: rgba(44, 29, 20, 0.85);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.12), rgba(255, 190, 130, 0));
+  border-bottom-color: rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 226, 190, 0.14);
+}
+html:root [class~='@container/tab-strip'] :is([role='tab'], [data-tab], [class*='cursor-pointer'][class*='group']) {
+  font-family: var(--hawl-font-display);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* the right panel */
+html:root div.bg-sidebar[class~='overflow-hidden'][class~='flex-col'] {
+  margin: 4px 10px 10px 0;
+  border-radius: 20px;
+  background-color: rgba(255, 252, 244, 0.74);
+  background-image: var(--slab-sheen);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--slab-rim), var(--slab-cast);
+}
+html.dark div.bg-sidebar[class~='overflow-hidden'][class~='flex-col'] {
+  background-color: rgba(40, 27, 19, 0.82);
+}
+html:root div.bg-sidebar .right-sidebar-activity-strip,
+html:root div.bg-sidebar .right-sidebar-header-inset { border-color: rgba(var(--shade), 0.14); }
+html:root div.bg-sidebar .right-sidebar-activity-strip button { color: var(--ink-3); }
+html:root div.bg-sidebar .right-sidebar-activity-strip button:first-child,
+html:root div.bg-sidebar .right-sidebar-activity-strip button[class*='text-foreground'] { color: var(--ink); }
+html:root div.bg-sidebar [class*='bg-foreground'][class*='h-[2px]'] {
+  background-image: var(--mat-orange);
+  background-color: var(--orange-500);
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 10px rgba(242, 106, 27, 0.6);
+}
+/* window controls sit on the slab header: one top bar */
+html:root .window-controls { background: transparent; }
+html:root .window-controls-btn { color: var(--ink-2); }
+
+/* ═════ Left sidebar slab ═════ */
+html:root .titlebar-left + div { padding: 0 0 10px 10px; }
+html:root .titlebar-left + div > .bg-worktree-sidebar {
+  border-radius: 20px;
+  border-right: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgba(255, 252, 244, 0.74);
+  background-image: var(--slab-sheen);
+  box-shadow: var(--slab-rim), var(--slab-cast);
+}
+html.dark .titlebar-left + div > .bg-worktree-sidebar { background-color: rgba(40, 27, 19, 0.82); }
+
+/* ═════ Display type on the shell (F15): Bricolage for names, nav and headings; Inter for reading ═════ */
+html:root .bg-worktree-sidebar :is(button, [role='button']):not([class*='bg-worktree-sidebar-foreground/5']),
+html:root .bg-worktree-sidebar [data-sidebar-section-title],
+html:root .bg-worktree-sidebar [class*='font-semibold'] {
+  font-family: var(--hawl-font-display);
+}
+html:root .bg-worktree-sidebar :is(button, [role='button']):not([class*='bg-worktree-sidebar-foreground/5']) {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+}
+html:root .bg-worktree-sidebar span.select-none.text-xs.font-semibold {
+  font-family: var(--hawl-font-display);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+html:root .bg-worktree-sidebar [class*='text-[13px]'][class*='font-semibold'] {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+html:root :is(h1, h2, h3, [data-slot='dialog-title'], [data-slot='card-title']) { font-family: var(--hawl-font-display); color: var(--ink); }
+
+/* project row: engraved header; workspace card: a lit, raised row (white acrylic) with hover lift */
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'][class~='group'] { color: var(--ink); }
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'] {
+  margin: 3px 6px 3px 2px;
+  border-radius: var(--r-md);
+  background-color: rgba(255, 255, 255, 0.5);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 2px 2px 0 #fff, inset 0 0 0 1px rgba(255, 255, 255, 0.9), inset -1.5px -2px 0 rgba(160, 120, 66, 0.38), 0 0 0 1px rgba(58, 36, 10, 0.34), 0.5px 1px 0 rgb(205, 188, 155), 1px 2px 0 rgb(181, 160, 125), 2px 5px 3px rgba(var(--shade), 0.4), 5px 10px 12px -4px rgba(var(--shade), 0.34);
+  transition: transform 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative']:hover { transform: translateY(-1px); }
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'] [class*='font-medium'],
+html:root .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'] [class*='truncate'] { font-family: var(--hawl-font-display); font-weight: 700; color: var(--ink); }
+html.dark .bg-worktree-sidebar div[id^='worktree-list-option-project'] div[class~='cursor-pointer'][class~='flex-col'][class~='relative'] {
+  background-color: rgba(255, 220, 190, 0.07);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.14), rgba(255, 190, 130, 0.02));
+  box-shadow: inset 0 1.5px 0 rgba(255, 226, 190, 0.3), inset 0 0 0 1px rgba(255, 226, 190, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.65), 1px 2px 0 rgba(0, 0, 0, 0.6), 3px 7px 8px -2px rgba(0, 0, 0, 0.5);
+}
+
+/* tiny "primary" / branch pill */
+html:root .bg-worktree-sidebar span[class*='rounded'][class*='border'][class*='text-[10px]'],
+html:root .bg-worktree-sidebar span[class*='rounded'][class*='border'][class*='text-[9px]'] {
+  font-family: var(--hawl-font-display);
+  font-weight: 700;
+  color: var(--ink-3);
+  border-radius: var(--r-pill);
+  background-image: var(--mat-metal);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.3);
+}
+
+/* the setup-script card is a lit glass tile, its button a lit pill */
+html:root .bg-worktree-sidebar div[class~='pointer-events-auto'][class*='bg-popover'] {
+  border-color: transparent;
+  border-radius: var(--r-lg);
+  background-color: rgba(255, 253, 246, 0.92);
+  background-image: var(--mat-slab);
+  box-shadow: var(--e1);
+  color: var(--ink);
+}
+html:root .bg-worktree-sidebar div[class~='pointer-events-auto'][class*='bg-popover'] button { font-family: var(--hawl-font-display); }
+html:root .bg-worktree-sidebar div[class~='pointer-events-auto'][class*='bg-popover'] [class*='font-semibold'],
+html:root .bg-worktree-sidebar div[class~='pointer-events-auto'][class*='bg-popover'] [class*='font-medium'] { font-family: var(--hawl-font-display); color: var(--ink); }
+html:root .bg-worktree-sidebar div[class~='pointer-events-auto'][class*='bg-popover'] button[data-slot='button']:not([class*='size-']) {
+  border-radius: var(--r-pill);
+  background-image: var(--mat-orange);
+  color: var(--ink-on-orange);
+  font-weight: 750;
+  text-shadow: var(--tx-engrave-orange);
+}
+html.dark .bg-worktree-sidebar div[class~='pointer-events-auto'][class*='bg-popover'] {
+  background-color: rgba(52, 36, 26, 0.95);
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.12), rgba(255, 190, 130, 0.02));
+  color: var(--ink);
+}
+
+/* sidebar footer: a hairline and quiet round icon buttons */
+html:root .bg-worktree-sidebar .mt-auto > div { border-top-color: rgba(var(--shade), 0.14); }
+
+/* ═════ Logo: a real plate in the title bar, readable in both themes ═════ */
+html:root .titlebar-logo {
+  height: 24px;
+  width: auto;
+  margin-left: 10px;
+  padding: 3px 9px;
+  box-sizing: content-box;
+  border-radius: var(--r-pill);
+  background-color: rgba(255, 253, 246, 0.9);
+  background-image: var(--mat-acrylic);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(var(--shade), 0.3), 1px 2px 2px rgba(var(--shade), 0.34);
+}
+html.dark .titlebar-logo {
+  background-color: #fff3e0;
+  background-image: linear-gradient(180deg, #fffaf0, #f2e3c9);
+  box-shadow: inset 1.5px 1.5px 0 #fff, 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 14px rgba(255, 150, 70, 0.34), 1px 2px 2px rgba(0, 0, 0, 0.5);
+}
+html:root .titlebar-left > div > div:first-child { gap: 6px; }
+
+/* ═════ Status rail: glass with lit chips ═════ */
+html:root .app-layout > div[class*='min-h-[24px]'] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgba(255, 250, 238, 0.7);
+  font-family: var(--hawl-font-display);
+}
+html:root .app-layout > div[class*='min-h-[24px]'] :is(span, button) { font-family: var(--hawl-font-display); font-weight: 650; }
+html:root .app-layout > div[class*='min-h-[24px]'] button {
+  border-radius: var(--r-pill);
+  padding-left: 9px;
+  padding-right: 9px;
+  transition: box-shadow 140ms var(--ease), background-color 140ms var(--ease);
+}
+html:root .app-layout > div[class*='min-h-[24px]'] button:hover {
+  background-color: transparent;
+  background-image: var(--mat-acrylic);
+  box-shadow: var(--e0);
+}
+html.dark .app-layout > div[class*='min-h-[24px]'] { background-color: rgba(30, 20, 14, 0.9); }
+html.dark .app-layout > div[class*='min-h-[24px]'] button:hover {
+  background-image: linear-gradient(180deg, rgba(255, 190, 130, 0.2), rgba(255, 190, 130, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 226, 190, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* ═════ Dark: a clean night ground, one warm lamp top left, one cool pool top right ═════ */
+html.dark {
+  --ground-lit:
+    radial-gradient(1300px 900px at -4% -12%, rgba(255, 150, 70, 0.3) 0%, rgba(255, 150, 70, 0.09) 44%, rgba(255, 150, 70, 0) 72%),
+    radial-gradient(1100px 760px at 108% -8%, rgba(70, 140, 215, 0.3) 0%, rgba(70, 140, 215, 0.09) 46%, rgba(70, 140, 215, 0) 72%),
+    radial-gradient(900px 600px at 100% 106%, rgba(255, 110, 40, 0.16), rgba(255, 110, 40, 0) 70%),
+    linear-gradient(180deg, #1c1511 0%, #16100c 60%, #120d0a 100%);
+}
+
+/* ═════ Tasks and lists: lit orange tabs, navy ink ═════ */
+html:root [class*='gap-3.5'][class*='px-4'] [class*='font-medium'] { font-family: var(--hawl-font-display); }
+
+/* terminal paper is glass: the panes live in an overlay above the tab group, so they are selected on their own.
+   Orca sets the terminal theme background inline; the rule wins by !important. */
+html:root .terminal.xterm,
+html:root .xterm-scrollable-element,
+html:root .xterm-viewport,
+html:root div.absolute.inset-0:has(> .pane) { background-color: transparent !important; }
+html:root div.isolate.z-10.overflow-hidden:has(.pane) { border-radius: 0 0 20px 20px; }
+
+/* full pages (Tasks, Automations, Settings...) are the same slab as the terminal */
+html:root div[class~='bg-background'][class~='text-foreground'][class~='overflow-hidden'][class~='h-full'][class~='flex-1'] {
+  margin: 4px 10px 10px 8px;
+  border-radius: 20px;
+  box-shadow: var(--slab-rim), var(--slab-cast);
+  background-color: rgba(255, 250, 236, 0.5);
+  background-image: radial-gradient(760px 440px at 100% 0%, rgba(120, 190, 236, 0.3), rgba(120, 190, 236, 0) 70%), radial-gradient(860px 520px at 0% 100%, rgba(255, 170, 100, 0.34), rgba(255, 170, 100, 0) 70%), linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 250, 236, 0.12) 30%, rgba(255, 226, 190, 0.2) 100%);
+}
+html.dark div[class~='bg-background'][class~='text-foreground'][class~='overflow-hidden'][class~='h-full'][class~='flex-1'] {
+  background-color: rgba(26, 17, 11, 0.62);
+  background-image: radial-gradient(760px 440px at 100% 0%, rgba(80, 150, 220, 0.2), rgba(80, 150, 220, 0) 70%), radial-gradient(860px 520px at 0% 100%, rgba(255, 120, 50, 0.2), rgba(255, 120, 50, 0) 70%), linear-gradient(180deg, rgba(255, 190, 130, 0.1), rgba(0, 0, 0, 0) 40%);
+}
+
+/* The terminal canvas paints its own opaque theme background (xterm allowTransparency is off for speed), so the slab's
+   light is thrown over it instead: sky field top right, ember pool bottom left, a soft sheen top left. Multiply keeps the
+   glyph contrast; screen does the same job on the dark paper. */
+html:root div.isolate.z-10.overflow-hidden:has(.pane)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(760px 440px at 100% 0%, rgba(120, 190, 236, 0.5), rgba(120, 190, 236, 0) 70%),
+    radial-gradient(860px 520px at 0% 100%, rgba(255, 176, 108, 0.6), rgba(255, 176, 108, 0) 72%),
+    linear-gradient(180deg, rgba(255, 244, 222, 0.5), rgba(255, 250, 240, 0) 36%);
+}
+html.dark div.isolate.z-10.overflow-hidden:has(.pane)::after {
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(760px 440px at 100% 0%, rgba(70, 140, 215, 0.2), rgba(70, 140, 215, 0) 70%),
+    radial-gradient(860px 520px at 0% 100%, rgba(255, 110, 40, 0.2), rgba(255, 110, 40, 0) 72%),
+    linear-gradient(180deg, rgba(255, 190, 130, 0.08), rgba(255, 190, 130, 0) 40%);
+}
