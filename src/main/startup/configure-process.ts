@@ -214,6 +214,10 @@ export function configureDevUserDataPath(isDev: boolean): void {
   }
 
   if (!isDev) {
+    // Hawl: an explicit --user-data-dir (testing, portable use) wins over the default profile folder.
+    if (app.commandLine.hasSwitch('user-data-dir')) {
+      return
+    }
     // Hawl: a packaged Hawl Workstation keeps its own profile folder, never stock Orca's %APPDATA%\orca.
     app.setPath('userData', join(app.getPath('appData'), HAWL_USER_DATA_DIR))
     return

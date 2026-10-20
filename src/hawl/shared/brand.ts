@@ -24,12 +24,33 @@ export const HAWL_VENDOR_SERVICES_ENABLED =
   process.env?.VITEST === 'true' &&
   process.env?.HAWL_VENDOR_SERVICES_FOR_TESTS === '1'
 
+/**
+ * Our release repo (aaronlilla/hawl-workstation) is not published yet, so every request to it would be a 404.
+ * While false the updater, the update menu check and the agent-rule downloads make no request. Flip to true
+ * in the same commit that publishes the repo and its first release.
+ */
+export const HAWL_RELEASE_FEED_LIVE = HAWL_VENDOR_SERVICES_ENABLED
+
 /** The star-on-GitHub prompt is off in the fork. */
 export const HAWL_STAR_NAG_ENABLED = false
 
-/** Whole-word "Orca" in UI copy becomes "Hawl". Lowercase command names (`orca ...`) are untouched. */
+/** Whole-word "Orca" in UI copy becomes "Hawl". A backticked `orca` command becomes `hws` (`hawl` is the Hawl platform CLI, so the workstation command is `hws`). */
 export function rebrandText(text: string): string {
-  return text.replace(/\bOrca\b/g, HAWL_SHORT_NAME).replace(/\bORCA\b/g, 'HAWL')
+  return text
+    .replace(/\bOrca\b/g, HAWL_SHORT_NAME)
+    .replace(/\bORCA\b/g, 'HAWL')
+    .replace(/\bORCA_(BITBUCKET|AZURE_DEVOPS|GITEA)_/g, 'HAWL_$1_')
+    .replace(/`orca(?=[ `])/g, '`hws')
+}
+
+/** The CLI command shown to users. Windows ships `hws` beside the internal `orca` compatibility name. */
+export function displayCommandName(commandName: string): string {
+  return commandName === 'orca' ? 'hws' : commandName
+}
+
+/** Windows launcher names shown to users: `orca.exe` / `orca.cmd` (internal compatibility names) display as `hws.*`, which sits in the same folder. */
+export function displayCliText(text: string): string {
+  return text.replace(/orca(\.(?:exe|cmd))/gi, 'hws$1')
 }
 
 /** i18next post-processor module: runs on every translated or default-value string. */

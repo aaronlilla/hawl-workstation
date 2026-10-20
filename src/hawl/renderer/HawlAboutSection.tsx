@@ -7,6 +7,7 @@ import { SettingsSubsectionHeader } from '@/components/settings/SettingsFormCont
 import logo from '../../../resources/logo.svg'
 import {
   HAWL_PRODUCT_NAME,
+  HAWL_RELEASE_FEED_LIVE,
   HAWL_REPO_URL,
   HAWL_SITE_URL,
   ORCA_UPSTREAM_LICENSE,
@@ -52,10 +53,12 @@ export function HawlAboutSection({
             <ExternalLink className="size-3.5" />
             hawl.ai
           </Button>
-          <Button variant="outline" size="sm" onClick={() => open(HAWL_REPO_URL)}>
-            <ExternalLink className="size-3.5" />
-            {HAWL_PRODUCT_NAME} on GitHub
-          </Button>
+          {HAWL_RELEASE_FEED_LIVE ? (
+            <Button variant="outline" size="sm" onClick={() => open(HAWL_REPO_URL)}>
+              <ExternalLink className="size-3.5" />
+              {HAWL_PRODUCT_NAME} on GitHub
+            </Button>
+          ) : null}
           <Button variant="outline" size="sm" onClick={() => open(ORCA_UPSTREAM_URL)}>
             <ExternalLink className="size-3.5" />
             Orca on GitHub

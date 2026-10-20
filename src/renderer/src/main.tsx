@@ -5,6 +5,7 @@
 import './lib/react-devtools-commit-hook-shim'
 import './lib/react-commit-cascade-observer'
 import './assets/main.css'
+import '../../hawl/renderer/preload-fonts'
 import '../../hawl/renderer/themes/d2-controls'
 
 import { StrictMode } from 'react'
