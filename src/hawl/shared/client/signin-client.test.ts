@@ -107,6 +107,7 @@ describe('device-code sign-in', () => {
     const s = await startDeviceSignIn({
       site: 'aarons-site',
       relayUrl: relay.url,
+      devicePage: 'https://hawl.ai/device',
       sleep: async () => {
         sleeps++
       }

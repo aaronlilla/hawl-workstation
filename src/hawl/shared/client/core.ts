@@ -167,6 +167,15 @@ export function trimUrl(u: string): string {
   return u.replace(/\/+$/, '')
 }
 
+/** Exactly localhost, ::1 or a dotted-quad IPv4 in 127.0.0.0/8. A prefix match would admit 127.evil.com. */
+export function isLoopbackHost(host: string): boolean {
+  if (host === 'localhost' || host === '::1') {
+    return true
+  }
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host)
+  return !!m && m.slice(1).every((o) => Number(o) <= 255) && Number(m[1]) === 127
+}
+
 /** Loopback hosts may use plain http/ws (local stack). Anything else must be https/wss. */
 export function assertSecureRelayUrl(relayUrl: string): void {
   let u: URL
@@ -176,7 +185,7 @@ export function assertSecureRelayUrl(relayUrl: string): void {
     throw new HawlApiError(0, 'bad_relay_url', 'The relay URL is not a valid URL.')
   }
   const host = u.hostname.replace(/^\[|\]$/g, '')
-  const loopback = host === 'localhost' || host === '::1' || host.startsWith('127.')
+  const loopback = isLoopbackHost(host)
   if (u.protocol !== 'https:' && u.protocol !== 'wss:' && !loopback) {
     throw new HawlApiError(
       0,

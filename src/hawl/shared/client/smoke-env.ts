@@ -126,8 +126,19 @@ async function pg(database: string): Promise<PgClient> {
 
 export type Owner = { slug: string; userId: string; email: string }
 
-/** A local site with an active owner, newest-slug first is not needed: any works. Read-only. */
-export async function findOwner(): Promise<Owner> {
+/**
+ * A local site with an active owner and a test address. Read-only. The relay lists at most 500 workers and 100
+ * pending approvals per site with no cursor, and every smoke run adds workers, so among the sites the tests can
+ * use (a second member and a peer agent exist) the one with the fewest of both is chosen: runs spread over the sites and the lists stay under their caps however often this is run.
+ */
+export function findOwner(): Promise<Owner> {
+  // One site per test file: the load changes as the tests add workers, so asking again must not move to another site.
+  ownerOnce ??= pickOwner()
+  return ownerOnce
+}
+let ownerOnce: Promise<Owner> | null = null
+
+async function pickOwner(): Promise<Owner> {
   const relay = await pg('relay_local')
   const accounts = await pg('accounts_local')
   try {
@@ -135,7 +146,14 @@ export async function findOwner(): Promise<Owner> {
       await relay.query(
         `SELECT s.slug, m.user_id FROM sites s JOIN members m ON m.town_id = s.id
           WHERE m.role = 'owner' AND m.status = 'active' AND s.status = 'active'
-          ORDER BY s.slug LIMIT 20`
+            AND (m.cooldown_until IS NULL OR m.cooldown_until < now() - interval '1 hour')
+            AND EXISTS (SELECT 1 FROM members m2 WHERE m2.town_id = s.id AND m2.role = 'member' AND m2.status = 'active'
+                          AND (m2.cooldown_until IS NULL OR m2.cooldown_until < now() - interval '1 hour'))
+            AND EXISTS (SELECT 1 FROM workers p WHERE p.town_id = s.id AND p.kind = 'agent' AND p.status = 'active'
+                          AND p.platform NOT IN ('system', 'hawl_workstation'))
+          ORDER BY (SELECT count(*) FROM workers w WHERE w.town_id = s.id)
+                 + 5 * (SELECT count(*) FROM approvals a WHERE a.town_id = s.id AND a.state = 'pending'), s.slug
+          LIMIT 20`
       )
     ).rows as { slug: string; user_id: string }[]
     for (const r of rows) {

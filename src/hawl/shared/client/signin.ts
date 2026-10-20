@@ -37,6 +37,11 @@ export type SignInOptions = {
   pollMs?: number
   /** Deadline for one call, ms. Default 20 s. */
   timeoutMs?: number
+  /**
+   * The page where the person types the code. Defaults to hawl.ai/device only when the relay is the
+   * production one; for any other relay the page is unknown, so `verificationUri` is null unless given.
+   */
+  devicePage?: string
 }
 
 export type ClaimOutcome = { state: 'pending' } | { state: 'claimed'; credentials: Credentials }
@@ -48,7 +53,8 @@ export class DeviceSignIn {
   /** Must match what the page shows. */
   readonly fingerprint: string
   readonly expiresAt: number
-  readonly verificationUri = DEVICE_PAGE
+  /** Where the person types the code; null when the relay is not production and no page was given. */
+  readonly verificationUri: string | null
   readonly #key: WorkerKey
   readonly #o: Required<Pick<SignInOptions, 'site'>> & SignInOptions
   readonly #base: string
@@ -64,6 +70,8 @@ export class DeviceSignIn {
     assertSecureRelayUrl(o.relayUrl ?? DEFAULT_RELAY_URL)
     this.#base = trimUrl(o.relayUrl ?? DEFAULT_RELAY_URL)
     this.#fetch = withTimeout(o.fetch ?? fetch, o.timeoutMs)
+    this.verificationUri =
+      o.devicePage ?? (this.#base === trimUrl(DEFAULT_RELAY_URL) ? DEVICE_PAGE : null)
     this.joinId = started.join_id
     this.userCode = started.user_code
     this.fingerprint = started.key_fingerprint
@@ -71,7 +79,7 @@ export class DeviceSignIn {
   }
 
   /** One claim attempt. 202 is pending; any other 4xx means expired, denied or unknown. */
-  async claim(): Promise<ClaimOutcome> {
+  async claim(signal?: AbortSignal): Promise<ClaimOutcome> {
     const ts = Math.floor((this.#o.now ?? Date.now)() / 1000)
     const nonce = randomBytes(16).toString('hex')
     const sig = b64url(
@@ -82,7 +90,8 @@ export class DeviceSignIn {
       res = await this.#fetch(`${this.#base}/v1/join/${this.joinId}/claim`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ nonce, ts, sig })
+        body: JSON.stringify({ nonce, ts, sig }),
+        ...(signal ? { signal } : {})
       })
     } catch (e) {
       throw unreachable(e)
@@ -172,14 +181,17 @@ export class DeviceSignIn {
     let retryAfterMs = 0
     for (;;) {
       if (o.signal?.aborted) {
-        throw new HawlApiError(0, 'cancelled', 'Sign-in cancelled.')
+        throw cancelled()
       }
       try {
-        const r = await this.claim()
+        const r = await this.claim(o.signal)
         if (r.state === 'claimed') {
           return r.credentials
         }
       } catch (e) {
+        if (o.signal?.aborted) {
+          throw cancelled()
+        }
         const transient =
           !(e instanceof HawlApiError) ||
           e.code === 'relay_unavailable' ||
@@ -195,10 +207,38 @@ export class DeviceSignIn {
       }
       o.onTick?.()
       // A rate-limited relay says how long to leave it alone.
-      await sleep(Math.max(this.#o.pollMs ?? 5000, retryAfterMs))
+      await abortable(sleep(Math.max(this.#o.pollMs ?? 5000, retryAfterMs)), o.signal)
       retryAfterMs = 0
     }
   }
+}
+
+function cancelled(): HawlApiError {
+  return new HawlApiError(0, 'cancelled', 'Sign-in cancelled.')
+}
+
+/** Resolves with `p`, or rejects as cancelled the moment `signal` aborts (the sleep itself keeps running). */
+function abortable(p: Promise<void>, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return p
+  }
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => reject(cancelled())
+    if (signal.aborted) {
+      return onAbort()
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+    p.then(
+      () => {
+        signal.removeEventListener('abort', onAbort)
+        resolve()
+      },
+      (e) => {
+        signal.removeEventListener('abort', onAbort)
+        reject(e)
+      }
+    )
+  })
 }
 
 function unreachable(e: unknown): HawlApiError {
@@ -256,5 +296,36 @@ export async function startDeviceSignIn(o: SignInOptions): Promise<DeviceSignIn>
       throw new HawlApiError(res.status, `http_${res.status}`, msg)
     }
   }
-  return new DeviceSignIn(o, key, await res.json())
+  let started: { join_id?: unknown; user_code?: unknown; key_fingerprint?: unknown; expires_in?: unknown }
+  try {
+    started = (await res.json()) as typeof started
+  } catch (e) {
+    if (isTimeoutError(e)) {
+      throw unreachable(e)
+    }
+    throw badStart(res.status)
+  }
+  if (
+    typeof started?.join_id !== 'string' ||
+    typeof started.user_code !== 'string' ||
+    typeof started.key_fingerprint !== 'string' ||
+    typeof started.expires_in !== 'number' ||
+    !(started.expires_in > 0)
+  ) {
+    throw badStart(res.status)
+  }
+  return new DeviceSignIn(o, key, {
+    join_id: started.join_id,
+    user_code: started.user_code,
+    key_fingerprint: started.key_fingerprint,
+    expires_in: started.expires_in
+  })
+}
+
+function badStart(status: number): HawlApiError {
+  return new HawlApiError(
+    status,
+    'bad_response',
+    'The relay answered the sign-in start with something unreadable. Check the relay URL and try again.'
+  )
 }
