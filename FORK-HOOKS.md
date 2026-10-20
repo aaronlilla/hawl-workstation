@@ -1,6 +1,6 @@
 # FORK-HOOKS
 
-Every Orca file this fork edits. After each upstream merge, re-check exactly these files. All Hawl code lives in `src/hawl/`; Orca files only get the small hooks below. Last updated at piece D1-foundations round 6 (still no new Orca edits: `foundations-round6.css` is one more import in `src/hawl/renderer/theme/index.css`; `apply.css` styles Orca primitives by `data-slot` and class; `light-engine.ts` source/receiver selectors cover them).
+Every Orca file this fork edits. After each upstream merge, re-check exactly these files. All Hawl code lives in `src/hawl/`; Orca files only get the small hooks below. Last updated at piece D1-foundations round 7 (still no new Orca edits: `foundations-round7.css` is one more import in `index.css` (tab strip glass); `foundations-round6.css` is one more import in `src/hawl/renderer/theme/index.css`; `apply.css` styles Orca primitives by `data-slot` and class; `light-engine.ts` source/receiver selectors cover them).
 
 Switches in `src/hawl/shared/brand.ts`: `HAWL_VENDOR_SERVICES_ENABLED = false` (Orca hosted services off), `rebrandText()` and the `hawl-brand` i18next post-processor (whole-word "Orca" becomes "Hawl" in UI copy without touching any catalog).
 
