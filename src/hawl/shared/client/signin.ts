@@ -271,13 +271,13 @@ export async function startDeviceSignIn(o: SignInOptions): Promise<DeviceSignIn>
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-      town_slug: o.site,
-      public_jwk: key.publicJwk,
-      platform: WORKSTATION_PLATFORM,
-      host_hint: 'Hawl Workstation',
-      folder_label: (o.folderLabel ?? 'workstation').slice(0, 120),
-      machine_name: o.machineName?.slice(0, 40),
-      cli_version: o.cliVersion ?? '0.0.0'
+        town_slug: o.site,
+        public_jwk: key.publicJwk,
+        platform: WORKSTATION_PLATFORM,
+        host_hint: 'Hawl Workstation',
+        folder_label: (o.folderLabel ?? 'workstation').slice(0, 120),
+        machine_name: o.machineName?.slice(0, 40),
+        cli_version: o.cliVersion ?? '0.0.0'
       })
     })
   } catch (e) {
@@ -296,7 +296,12 @@ export async function startDeviceSignIn(o: SignInOptions): Promise<DeviceSignIn>
       throw new HawlApiError(res.status, `http_${res.status}`, msg)
     }
   }
-  let started: { join_id?: unknown; user_code?: unknown; key_fingerprint?: unknown; expires_in?: unknown }
+  let started: {
+    join_id?: unknown
+    user_code?: unknown
+    key_fingerprint?: unknown
+    expires_in?: unknown
+  }
   try {
     started = (await res.json()) as typeof started
   } catch (e) {

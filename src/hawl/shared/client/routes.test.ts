@@ -151,7 +151,12 @@ describe('route table', () => {
     [
       'handoffs.send',
       (c) => c.handoffs.send(T, { to: 'auto', spec: 'do it' }),
-      { method: 'POST', path: `/v1/towns/${T}/handoffs`, auth: U, body: { to: 'auto', spec: 'do it' } }
+      {
+        method: 'POST',
+        path: `/v1/towns/${T}/handoffs`,
+        auth: U,
+        body: { to: 'auto', spec: 'do it' }
+      }
     ],
     [
       'handoffs.byPerson',

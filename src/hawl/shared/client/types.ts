@@ -271,4 +271,10 @@ export type HandoffSent = {
 }
 
 /** A file attached to a message: the fields of the upload that the sender signs over. */
-export type FilePart = { file_id: string; name: string; mime: string; bytes: number; sha256: string }
+export type FilePart = {
+  file_id: string
+  name: string
+  mime: string
+  bytes: number
+  sha256: string
+}

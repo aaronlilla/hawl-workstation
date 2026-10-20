@@ -344,7 +344,8 @@ describe('web session (UserJWT)', () => {
     expect(f.calls.length).toBe(1)
     expect(f.calls[0]?.url).toBe('https://hawl.test/api/relay-token')
     expect(hdr(f.calls[0] as Call, 'cookie')).toBe('sid=1')
-    expect(hdr(f.calls[0] as Call, 'sec-fetch-site')).toBe('same-origin')
+    expect(hdr(f.calls[0] as Call, 'origin')).toBe('https://hawl.test')
+    expect(hdr(f.calls[0] as Call, 'sec-fetch-site')).toBeNull()
     now += 900_000 - 30_000 // inside the 60 s renew window
     expect(await s.token()).not.toBe(a)
     s.invalidate()

@@ -30,7 +30,12 @@ beforeEach(async () => {
   sender = makeSender('key_sender1')
   relay.senderKeys.set(sender.kid, { public_jwk: sender.jwk })
   cred = await (
-    await startDeviceSignIn({ site: 'aarons-site', relayUrl: relay.url, sleep: async () => {}, pollMs: 1 })
+    await startDeviceSignIn({
+      site: 'aarons-site',
+      relayUrl: relay.url,
+      sleep: async () => {},
+      pollMs: 1
+    })
   ).wait()
 })
 afterEach(async () => {
@@ -64,7 +69,11 @@ describe('a passing sender-key failure does not lose the delivery', () => {
   it('asks the relay again and hands it over once the key lookup works', async () => {
     relay.inbox.push(fx.envelope({ seq: 1, recipient: cred.residentId, sender }))
     relay.failNext(/\/v1\/keys\//, 503, 6)
-    const s = mkClient().socket({ reconnectMs: { min: 10, max: 40 }, random: () => 0, retryDeliveryMs: 20 })
+    const s = mkClient().socket({
+      reconnectMs: { min: 10, max: 40 },
+      random: () => 0,
+      retryDeliveryMs: 20
+    })
     stoppers.push(() => s.stop())
     const got: unknown[] = []
     const dropped: string[] = []
@@ -78,8 +87,14 @@ describe('a passing sender-key failure does not lose the delivery', () => {
   })
 
   it('a 404 for the key is still a permanent sender_sig drop and is not retried', async () => {
-    relay.inbox.push(fx.envelope({ seq: 1, recipient: cred.residentId, sender: makeSender('key_nobody') }))
-    const s = mkClient().socket({ reconnectMs: { min: 10, max: 40 }, random: () => 0, retryDeliveryMs: 20 })
+    relay.inbox.push(
+      fx.envelope({ seq: 1, recipient: cred.residentId, sender: makeSender('key_nobody') })
+    )
+    const s = mkClient().socket({
+      reconnectMs: { min: 10, max: 40 },
+      random: () => 0,
+      retryDeliveryMs: 20
+    })
     stoppers.push(() => s.stop())
     const dropped: string[] = []
     s.on('dropped', (d) => dropped.push(d.reason))
@@ -101,7 +116,10 @@ describe('a passing sender-key failure does not lose the delivery', () => {
       if (mode === 'missing') {
         throw new HawlApiError(404, 'not_found', 'x')
       }
-      return { public_jwk: sender.jwk, compromised_at: mode === 'compromised' ? new Date(1000).toISOString() : null }
+      return {
+        public_jwk: sender.jwk,
+        compromised_at: mode === 'compromised' ? new Date(1000).toISOString() : null
+      }
     }
     const f = senderKeyFetcher(get, { ttlMs: 1000, now: () => now })
     const at = new Date(5000).toISOString()
@@ -162,7 +180,14 @@ describe('frames are not lost or repeated quietly', () => {
       )
       ws.on('message', () => {
         ws.send(
-          JSON.stringify({ t: 'ready', session_id: 's', resident_id: cred.residentId, pending: 0, heartbeat_s: 25, relay_sig: 'x' })
+          JSON.stringify({
+            t: 'ready',
+            session_id: 's',
+            resident_id: cred.residentId,
+            pending: 0,
+            heartbeat_s: 25,
+            relay_sig: 'x'
+          })
         )
         for (let i = 0; i < 2100; i++) {
           ws.send(JSON.stringify({ t: 'notice', unread: i, needs_action: 0 }))
@@ -193,7 +218,9 @@ describe('town events', () => {
     await new Promise<void>((r) => wss.on('listening', r))
     stoppers.push(() => wss.close())
     wss.on('connection', (ws) =>
-      ws.on('message', () => ws.send(JSON.stringify({ t: 'error', error: { code: 'boom', message: 'boom' } })))
+      ws.on('message', () =>
+        ws.send(JSON.stringify({ t: 'error', error: { code: 'boom', message: 'boom' } }))
+      )
     )
     const seen: unknown[] = []
     const on = (e: unknown) => seen.push(e)
@@ -220,7 +247,14 @@ describe('town events', () => {
   it('a manual replay with the socket live does not emit an event twice', async () => {
     relay.addEvent({ seq: 1, event: 'a' })
     const http = new Http({ baseUrl: relay.url, user, fetch })
-    const st = new TownEventStream({ relayUrl: relay.url, townId: relay.townId, user, http, settleMs: 20, origin: relay.webOrigin })
+    const st = new TownEventStream({
+      relayUrl: relay.url,
+      townId: relay.townId,
+      user,
+      http,
+      settleMs: 20,
+      origin: relay.webOrigin
+    })
     stoppers.push(() => st.stop())
     const got: number[] = []
     st.on('event', (e) => got.push(e.seq))
@@ -244,7 +278,10 @@ describe('transport', () => {
       fetch: (async () => new Response('<html>captcha</html>', { status: 200 })) as typeof fetch,
       agent: user
     })
-    await expect(http.get('/v1/me')).rejects.toMatchObject({ name: 'HawlApiError', code: 'bad_response' })
+    await expect(http.get('/v1/me')).rejects.toMatchObject({
+      name: 'HawlApiError',
+      code: 'bad_response'
+    })
   })
 
   it('refuses plain http to a non-loopback relay, allows loopback', () => {
@@ -261,8 +298,13 @@ describe('success paths', () => {
   it('channels.thread, discussHandoff, limits.resume, handoffs.send auto', async () => {
     const c = mkClient()
     const t = relay.townId
-    expect(await c.channels.thread(t, 'chn_1', 'msg_1')).toMatchObject({ root: { message_id: 'msg_1' } })
-    expect(await c.channels.discussHandoff(t, 'hnd_1')).toMatchObject({ channel_id: 'chn_1', created: true })
+    expect(await c.channels.thread(t, 'chn_1', 'msg_1')).toMatchObject({
+      root: { message_id: 'msg_1' }
+    })
+    expect(await c.channels.discussHandoff(t, 'hnd_1')).toMatchObject({
+      channel_id: 'chn_1',
+      created: true
+    })
     expect(await c.site.limits.resume(t, 'hnd_1')).toEqual({ resumed: true })
     expect(await c.handoffs.send(t, { to: 'auto', spec: 'do it' })).toMatchObject({
       handoff_id: 'hnd_9',

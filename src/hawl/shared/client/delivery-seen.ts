@@ -14,7 +14,11 @@ function keyOf(env: Env): number | string | null {
 }
 
 /** Drops that say "not yet", not "never": the delivery is asked for again. */
-export const RETRYABLE = new Set(['manifest_unusable', 'relay_key_unknown', 'sender_key_unavailable'])
+export const RETRYABLE = new Set([
+  'manifest_unusable',
+  'relay_key_unknown',
+  'sender_key_unavailable'
+])
 
 export class DeliverySeen {
   readonly #keys = new Set<number | string>()
@@ -56,10 +60,13 @@ export class DeliveryRetry {
       return
     }
     this.#tries.set(seq, n + 1)
-    const t = setTimeout(() => {
-      this.#timers.delete(t)
-      again()
-    }, Math.min(baseMs * 2 ** n, 30_000))
+    const t = setTimeout(
+      () => {
+        this.#timers.delete(t)
+        again()
+      },
+      Math.min(baseMs * 2 ** n, 30_000)
+    )
     t.unref?.()
     this.#timers.add(t)
   }

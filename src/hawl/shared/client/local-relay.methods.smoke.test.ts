@@ -4,7 +4,15 @@
 import { createHash } from 'node:crypto'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { HawlClient, WebSession } from './index'
-import { findMember, findOwner, stackUp, itUploads, until, webSignIn, workerSignIn } from './smoke-env'
+import {
+  findMember,
+  findOwner,
+  stackUp,
+  itUploads,
+  until,
+  webSignIn,
+  workerSignIn
+} from './smoke-env'
 
 if (!stackUp && process.env.HAWL_SMOKE_REQUIRE === '1') {
   throw new Error('HAWL_SMOKE_REQUIRE=1 but no loopback relay and web answered')
@@ -97,7 +105,9 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
     try {
       const find = async (tab: 'needs' | 'later' | 'done') =>
         (await c.needs.list(twn, tab)).items.find(
-          (n) => n.message_id === sent.message_id || (n.held as { message_id?: string } | undefined)?.message_id === sent.message_id
+          (n) =>
+            n.message_id === sent.message_id ||
+            (n.held as { message_id?: string } | undefined)?.message_id === sent.message_id
         )
       let item = undefined as Awaited<ReturnType<typeof find>>
       const t0 = Date.now()
@@ -109,7 +119,9 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
       }
       // The held message shows as an approval row; match by approval id when the row carries no message id.
       if (!item) {
-        const apr = (await c.approvals.list(twn)).items.find((a) => a.card.message_id === sent.message_id)
+        const apr = (await c.approvals.list(twn)).items.find(
+          (a) => a.card.message_id === sent.message_id
+        )
         item = (await c.needs.list(twn)).items.find((n) => n.approval_id === apr?.approval_id)
       }
       expect(item, 'a needs-action row').toBeTruthy()
@@ -153,7 +165,9 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
       await c.needs.done(twn, askId) // leave the owner's list as it was
     } finally {
       // Clean up: the approval itself is still pending (the relay lists only the oldest 100).
-      const apr = (await c.approvals.list(twn)).items.find((a) => a.card.message_id === sent.message_id)
+      const apr = (await c.approvals.list(twn)).items.find(
+        (a) => a.card.message_id === sent.message_id
+      )
       if (apr) {
         await c.approvals.deny(apr.approval_id, 'client smoke cleanup')
       }
@@ -169,7 +183,9 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
     await expect(c.asks.askOwner(twn, 'stuck')).rejects.toMatchObject({ status: 400 })
     // The old untyped call shapes now fail before any request.
     // @ts-expect-error not one of the relay's sources
-    await expect(c.asks.askOwner(twn, 'nonsense')).rejects.toMatchObject({ code: 'invalid_request' })
+    await expect(c.asks.askOwner(twn, 'nonsense')).rejects.toMatchObject({
+      code: 'invalid_request'
+    })
     // @ts-expect-error a handle is not an id
     await expect(c.handoffs.send(twn, { to: '@dispatcher', spec: 'x' })).rejects.toMatchObject({
       code: 'invalid_request'
@@ -186,7 +202,11 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
 
     // "auto" needs an owner-approved routing rule for the task type; this site has none, and says so.
     await expect(
-      c.handoffs.send(twn, { to: 'auto', spec: `Auto send from the smoke ${RUN}. Ignore.`, task_type: 'smoke' })
+      c.handoffs.send(twn, {
+        to: 'auto',
+        spec: `Auto send from the smoke ${RUN}. Ignore.`,
+        task_type: 'smoke'
+      })
     ).rejects.toMatchObject({
       status: 400,
       message: 'No agent can take that kind of work right now. Pick an agent.'
@@ -204,43 +224,48 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
     expect(hist).toContain('cancel')
   })
 
-  itUploads('a person gets a signed link for a file one of their workers received, and it serves the bytes', async () => {
-    const { owner, session, client: a } = await signedIn('client-link-a')
-    const b = await workerSignIn(owner, session, 'client-link-b')
-    workers.push(b.client)
-    const sock = b.client.socket({ reconnectMs: { min: 50, max: 200 } })
-    const got: Record<string, unknown>[] = []
-    sock.on('deliver', (e) => got.push(e))
-    sock.start()
-    try {
-      await until(() => sock.state === 'connected')
-      const text = `link file ${RUN}
+  itUploads(
+    'a person gets a signed link for a file one of their workers received, and it serves the bytes',
+    async () => {
+      const { owner, session, client: a } = await signedIn('client-link-a')
+      const b = await workerSignIn(owner, session, 'client-link-b')
+      workers.push(b.client)
+      const sock = b.client.socket({ reconnectMs: { min: 50, max: 200 } })
+      const got: Record<string, unknown>[] = []
+      sock.on('deliver', (e) => got.push(e))
+      sock.start()
+      try {
+        await until(() => sock.state === 'connected')
+        const text = `link file ${RUN}
 `
-      const up = await a.files.upload('link.txt', new TextEncoder().encode(text), 'text/plain')
-      let meta = await a.files.meta(up.file.file_id)
-      const t0 = Date.now()
-      while (meta.state !== 'clean' && Date.now() - t0 < 25_000) {
-        await new Promise((r) => setTimeout(r, 300))
-        meta = await a.files.meta(up.file.file_id)
+        const up = await a.files.upload('link.txt', new TextEncoder().encode(text), 'text/plain')
+        let meta = await a.files.meta(up.file.file_id)
+        const t0 = Date.now()
+        while (meta.state !== 'clean' && Date.now() - t0 < 25_000) {
+          await new Promise((r) => setTimeout(r, 300))
+          meta = await a.files.meta(up.file.file_id)
+        }
+        expect(meta.state).toBe('clean')
+        // Before any worker of this person received it, there is nothing to link to.
+        await expect(a.files.link(up.file.file_id)).rejects.toMatchObject({ status: 404 })
+        const bHandle = (await a.workers.who()).workers.find(
+          (w) => w.resident_id === b.cred.residentId
+        )?.handle
+        await a.send.dm(bHandle as string, `file for you ${RUN}`, { files: [up.file] })
+        await until(() => got.length >= 1, 10_000)
+        const l = await a.files.link(up.file.file_id)
+        expect(l.expires_in).toBeGreaterThan(0)
+        const res = await fetch(l.url)
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe(text)
+        // The receiving worker downloads the same bytes over the agent plane.
+        expect(new TextDecoder().decode(await b.client.files.download(up.file.file_id))).toBe(text)
+        await a.site.files.delete(up.file.file_id)
+      } finally {
+        sock.stop()
       }
-      expect(meta.state).toBe('clean')
-      // Before any worker of this person received it, there is nothing to link to.
-      await expect(a.files.link(up.file.file_id)).rejects.toMatchObject({ status: 404 })
-      const bHandle = (await a.workers.who()).workers.find((w) => w.resident_id === b.cred.residentId)?.handle
-      await a.send.dm(bHandle as string, `file for you ${RUN}`, { files: [up.file] })
-      await until(() => got.length >= 1, 10_000)
-      const l = await a.files.link(up.file.file_id)
-      expect(l.expires_in).toBeGreaterThan(0)
-      const res = await fetch(l.url)
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe(text)
-      // The receiving worker downloads the same bytes over the agent plane.
-      expect(new TextDecoder().decode(await b.client.files.download(up.file.file_id))).toBe(text)
-      await a.site.files.delete(up.file.file_id)
-    } finally {
-      sock.stop()
     }
-  })
+  )
 
   it('deciding a join: approve one new worker and deny another', async () => {
     const { owner, cred, client: c } = await signedIn('client-joins')
@@ -270,35 +295,43 @@ describe.skipIf(!stackUp)('local stack: person-plane methods left unrun before',
     }
   })
 
-  itUploads('uploads: 3 MB of text goes through intact, an empty file is refused here, one over the plan limit is refused by the relay', async () => {
-    const { client: c } = await signedIn('client-bigfile')
-    const big = new Uint8Array(3 * 1024 * 1024).fill(97)
-    const up = await c.files.upload('big.txt', big, 'text/plain')
-    const filId = String((up.result as { file_id?: string }).file_id)
-    expect(filId).toMatch(/^fil_/)
-    let meta = await c.files.meta(filId)
-    const t0 = Date.now()
-    while (['scanning', 'gate_check', 'uploading'].includes(meta.state) && Date.now() - t0 < 30_000) {
-      await new Promise((r) => setTimeout(r, 300))
-      meta = await c.files.meta(filId)
-    }
-    expect(meta).toMatchObject({ bytes: big.length, state: 'clean' })
-    expect(meta.sha256).toBe(createHash('sha256').update(big).digest('base64url'))
+  itUploads(
+    'uploads: 3 MB of text goes through intact, an empty file is refused here, one over the plan limit is refused by the relay',
+    async () => {
+      const { client: c } = await signedIn('client-bigfile')
+      const big = new Uint8Array(3 * 1024 * 1024).fill(97)
+      const up = await c.files.upload('big.txt', big, 'text/plain')
+      const filId = String((up.result as { file_id?: string }).file_id)
+      expect(filId).toMatch(/^fil_/)
+      let meta = await c.files.meta(filId)
+      const t0 = Date.now()
+      while (
+        ['scanning', 'gate_check', 'uploading'].includes(meta.state) &&
+        Date.now() - t0 < 30_000
+      ) {
+        await new Promise((r) => setTimeout(r, 300))
+        meta = await c.files.meta(filId)
+      }
+      expect(meta).toMatchObject({ bytes: big.length, state: 'clean' })
+      expect(meta.sha256).toBe(createHash('sha256').update(big).digest('base64url'))
 
-    await expect(c.files.upload('empty.txt', new Uint8Array(0), 'text/plain')).rejects.toMatchObject({
-      status: 400,
-      code: 'invalid_request'
-    })
-    // A size no plan allows is refused at the declare step, before any bytes move.
-    await expect(
-      c.http.post('/v1/files/uploads', {
-        name: 'x.txt',
-        mime: 'text/plain',
-        bytes: 5 * 1024 ** 4,
-        sha256: createHash('sha256').update('x').digest('base64url')
+      await expect(
+        c.files.upload('empty.txt', new Uint8Array(0), 'text/plain')
+      ).rejects.toMatchObject({
+        status: 400,
+        code: 'invalid_request'
       })
-    ).rejects.toMatchObject({ status: 413 })
-    // Leave nothing behind: the site has a storage quota and an hourly upload cap shared by every run.
-    await c.site.files.delete(filId)
-  })
+      // A size no plan allows is refused at the declare step, before any bytes move.
+      await expect(
+        c.http.post('/v1/files/uploads', {
+          name: 'x.txt',
+          mime: 'text/plain',
+          bytes: 5 * 1024 ** 4,
+          sha256: createHash('sha256').update('x').digest('base64url')
+        })
+      ).rejects.toMatchObject({ status: 413 })
+      // Leave nothing behind: the site has a storage quota and an hourly upload cap shared by every run.
+      await c.site.files.delete(filId)
+    }
+  )
 })

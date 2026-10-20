@@ -3,9 +3,11 @@
 // the web app the same way the browser does: an emailed 6-digit code (Better Auth emailOTP), then
 // keeps the session cookie and trades it for 15 minute UserJWTs. A passkey or OAuth sign-in done in
 // a browser window works too: hand the cookie header to `WebSession.fromCookie`.
+import { withRetry, type RetryOptions } from './retry'
 import {
   assertSecureRelayUrl,
   type FetchLike,
+  type Sleep,
   HawlApiError,
   isTimeoutError,
   type TokenSource,
@@ -49,6 +51,8 @@ export type WebSessionOptions = {
   /** Deadline for one call, ms. Default 20 s. */
   timeoutMs?: number
   now?: () => number
+  sleep?: Sleep
+  maxRetries?: number
   /** Called whenever the cookie header changes (after sign-in, after the server rotates it). Persist it. */
   onCookie?: (cookie: string) => void
 }
@@ -73,6 +77,7 @@ export class WebSession implements TokenSource {
   #cookie: string
   #tok: { value: string; expMs: number } | null = null
   #inflight: Promise<string> | null = null
+  readonly #retry: RetryOptions
 
   private constructor(cookie: string, o: WebSessionOptions) {
     this.#cookie = cookie
@@ -81,6 +86,7 @@ export class WebSession implements TokenSource {
     this.#fetch = withTimeout(o.fetch ?? fetch, o.timeoutMs)
     this.#now = o.now ?? Date.now
     this.#onCookie = o.onCookie
+    this.#retry = o
   }
 
   /** A session you already hold (restored from storage, or read from a browser window). */
@@ -114,10 +120,15 @@ export class WebSession implements TokenSource {
   ): Promise<WebSession> {
     assertSecureRelayUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
     const origin = trimUrl(o.webOrigin ?? DEFAULT_WEB_ORIGIN)
-    const res = await webPost(withTimeout(o.fetch ?? fetch, o.timeoutMs), origin, '/api/auth/sign-in/email-otp', {
-      email,
-      otp
-    })
+    const res = await webPost(
+      withTimeout(o.fetch ?? fetch, o.timeoutMs),
+      origin,
+      '/api/auth/sign-in/email-otp',
+      {
+        email,
+        otp
+      }
+    )
     if (!res.ok) {
       throw await webError(res, 'That code did not work.')
     }
@@ -144,7 +155,7 @@ export class WebSession implements TokenSource {
     if (t && t.expMs - 60_000 > this.#now()) {
       return t.value
     }
-    this.#inflight ??= this.#mint().finally(() => {
+    this.#inflight ??= withRetry(() => this.#mint(), this.#retry).finally(() => {
       this.#inflight = null
     })
     return this.#inflight
@@ -178,9 +189,9 @@ export class WebSession implements TokenSource {
       res = await this.#fetch(`${this.webOrigin}/api/relay-token`, {
         headers: {
           cookie: this.#cookie,
-          origin: this.webOrigin,
-          // The route accepts only same-origin calls; this app is the web app's own client.
-          'sec-fetch-site': 'same-origin'
+          // The route accepts only same-origin calls; it falls back to Origin when no
+          // Sec-Fetch-Site is sent (lib/auth/relay-token.ts isSameOrigin), which is the honest case here.
+          origin: this.webOrigin
         }
       })
     } catch (e) {
@@ -248,5 +259,6 @@ async function webError(res: Response, fallback: string): Promise<HawlApiError> 
   } catch {
     // not JSON
   }
-  return new HawlApiError(res.status, code, message)
+  const ra = Number(res.headers.get('retry-after'))
+  return new HawlApiError(res.status, code, message, { retryAfter: ra > 0 ? ra : null })
 }

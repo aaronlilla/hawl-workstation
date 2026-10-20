@@ -1,3 +1,4 @@
+import { withRetry, type RetryOptions } from './retry'
 import {
   clientAssertion,
   type Credentials,
@@ -93,13 +94,14 @@ export class Http {
         if (payload !== undefined) {
           init.body = payload as BodyInit
         }
-        init.signal = timeoutSignal(r.timeoutMs ?? this.#o.timeoutMs ?? DEFAULT_TIMEOUT_MS, r.signal)
+        init.signal = timeoutSignal(
+          r.timeoutMs ?? this.#o.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+          r.signal
+        )
         res = await this.#fetch(this.url(path, r.query), init)
         // Read the body inside the deadline too, so a stalled body cannot hang the call.
         if (res.ok) {
-          body = r.asBytes
-            ? new Uint8Array(await res.arrayBuffer())
-            : await res.text()
+          body = r.asBytes ? new Uint8Array(await res.arrayBuffer()) : await res.text()
         }
       } catch (e) {
         if (r.signal?.aborted) {
@@ -220,14 +222,16 @@ export class AgentTokenSource implements TokenSource {
   readonly #now: () => number
   #tok: { value: string; expMs: number } | null = null
   #inflight: Promise<string> | null = null
+  readonly #retry: RetryOptions
 
   constructor(
     cred: Credentials,
-    o: { fetch?: FetchLike; now?: () => number; timeoutMs?: number } = {}
+    o: { fetch?: FetchLike; now?: () => number; timeoutMs?: number } & RetryOptions = {}
   ) {
     this.#cred = cred
     this.#fetch = withTimeout(o.fetch ?? fetch, o.timeoutMs)
     this.#now = o.now ?? Date.now
+    this.#retry = o
   }
 
   async token(): Promise<string> {
@@ -236,7 +240,7 @@ export class AgentTokenSource implements TokenSource {
     if (t && t.expMs - 30_000 > this.#now()) {
       return t.value
     }
-    this.#inflight ??= this.#exchange().finally(() => {
+    this.#inflight ??= withRetry(() => this.#exchange(), this.#retry).finally(() => {
       this.#inflight = null
     })
     return this.#inflight

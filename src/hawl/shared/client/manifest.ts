@@ -59,7 +59,7 @@ export type AcceptResult =
 
 /** Where the accepted manifest is kept between runs. A planted copy is re-verified on load. */
 export type ManifestPersistence = {
-  load(): Promise<unknown | null>
+  load(): Promise<unknown>
   save(m: KeyManifest): Promise<void>
 }
 
@@ -67,7 +67,7 @@ export const isStr = (v: unknown): v is string => typeof v === 'string' && v.len
 export const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
-function manifestShapeOk(m: unknown): m is KeyManifest {
+function isWellFormedManifest(m: unknown): m is KeyManifest {
   if (!isObj(m) || !isObj(m.payload) || !isObj(m.sig)) {
     return false
   }
@@ -153,7 +153,7 @@ export class ManifestStore {
   }
 
   #check(m: unknown): { ok: true } | { ok: false; reason: ManifestReject } {
-    if (!manifestShapeOk(m)) {
+    if (!isWellFormedManifest(m)) {
       return { ok: false, reason: 'schema' }
     }
     const rootJwk = this.#roots[m.sig.kid]
@@ -256,4 +256,3 @@ export async function refreshManifest(
     return { ok: false, reason: 'fetch' }
   }
 }
-

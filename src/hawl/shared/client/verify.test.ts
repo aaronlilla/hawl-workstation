@@ -62,7 +62,11 @@ function until<T>(fn: () => T | undefined | false, ms = 5000): Promise<T> {
 }
 
 const client = (roots = fx.roots, persist?: ManifestPersistence, minRefreshGapMs = 0) =>
-  new HawlClient({ credentials: cred, trust: { roots, minRefreshGapMs, ...(persist ? { persist } : {}) }, fetch })
+  new HawlClient({
+    credentials: cred,
+    trust: { roots, minRefreshGapMs, ...(persist ? { persist } : {}) },
+    fetch
+  })
 
 /** A trusting client socket plus the lists of what it delivered and dropped. */
 function watch(c: HawlClient, o: Partial<ConstructorParameters<typeof AgentSocket>[0]> = {}) {
@@ -149,7 +153,10 @@ describe('verifyEnvelope', () => {
     return {
       manifests,
       residentId: cred.residentId,
-      senderKey: async (kid: string) => (kid === sender.kid ? (await import('node:crypto')).createPublicKey({ key: sender.jwk, format: 'jwk' }) : null)
+      senderKey: async (kid: string) =>
+        kid === sender.kid
+          ? (await import('node:crypto')).createPublicKey({ key: sender.jwk, format: 'jwk' })
+          : null
     }
   }
   const mk = (o: Partial<Parameters<TrustFixture['envelope']>[0]> = {}) =>
@@ -171,15 +178,32 @@ describe('verifyEnvelope', () => {
     expect(await verifyEnvelope('x', c)).toBe('schema')
     expect(await verifyEnvelope({ v: 1 }, c)).toBe('schema')
     // text changed in the view after the relay signed: relay_sig covers the view
-    expect(await verifyEnvelope(tamper((e) => (e.view.parts[0].text = 'evil')), c)).toBe('relay_sig')
+    expect(
+      await verifyEnvelope(
+        tamper((e) => (e.view.parts[0].text = 'evil')),
+        c
+      )
+    ).toBe('relay_sig')
     // relay block changed
-    expect(await verifyEnvelope(tamper((e) => (e.relay.from.handle = '@boss')), c)).toBe('relay_sig')
-    expect(await verifyEnvelope(tamper((e) => (e.relay_sig.sig = `${e.relay_sig.sig.slice(2)}AA`)), c)).toBe('relay_sig')
+    expect(
+      await verifyEnvelope(
+        tamper((e) => (e.relay.from.handle = '@boss')),
+        c
+      )
+    ).toBe('relay_sig')
+    expect(
+      await verifyEnvelope(
+        tamper((e) => (e.relay_sig.sig = `${e.relay_sig.sig.slice(2)}AA`)),
+        c
+      )
+    ).toBe('relay_sig')
     // a relay key the manifest does not list
     expect(await verifyEnvelope(mk({ kid: 'rk_evil' }), c)).toBe('relay_key_unknown')
     // signed by the wrong relay key
     const rogue = new TrustFixture()
-    expect(await verifyEnvelope(rogue.envelope({ seq: 1, recipient: cred.residentId, sender }), c)).toBe('relay_sig')
+    expect(
+      await verifyEnvelope(rogue.envelope({ seq: 1, recipient: cred.residentId, sender }), c)
+    ).toBe('relay_sig')
     // sender key unknown or wrong
     expect(await verifyEnvelope(mk({ sender: makeSender('key_unknown') }), c)).toBe('sender_sig')
     expect(await verifyEnvelope(mk({ sender: makeSender('key_sender1') }), c)).toBe('sender_sig')
@@ -208,7 +232,9 @@ describe('worker socket with verification on', () => {
     await until(() => got.length === 3)
     expect(got).toEqual([1, 2, 3])
     expect(dropped).toEqual([])
-    expect(relay.requests.filter((r) => r.path === '/.well-known/relay-key-manifest.json').length).toBe(1)
+    expect(
+      relay.requests.filter((r) => r.path === '/.well-known/relay-key-manifest.json').length
+    ).toBe(1)
   })
 
   it('drops forged, wrong-recipient and unknown-signer deliveries, never delivers them, and still delivers the next good one', async () => {
@@ -234,9 +260,21 @@ describe('worker socket with verification on', () => {
     const { s, got, dropped } = watch(client())
     s.start()
     await until(() => s.state === 'connected')
-    relay.pushDeliver(fx.envelope({ seq: 1, recipient: cred.residentId, sender, receivedAt: new Date(fx.now).toISOString() }))
     relay.pushDeliver(
-      fx.envelope({ seq: 2, recipient: cred.residentId, sender, receivedAt: new Date(fx.now + 6000).toISOString() })
+      fx.envelope({
+        seq: 1,
+        recipient: cred.residentId,
+        sender,
+        receivedAt: new Date(fx.now).toISOString()
+      })
+    )
+    relay.pushDeliver(
+      fx.envelope({
+        seq: 2,
+        recipient: cred.residentId,
+        sender,
+        receivedAt: new Date(fx.now + 6000).toISOString()
+      })
     )
     await until(() => got.length + dropped.length === 2)
     expect(got).toEqual([1])
@@ -324,7 +362,10 @@ describe('worker socket with verification on', () => {
     fx.extraKeys = [
       {
         kid: 'rk_second',
-        jwk: (second.relay.publicKey.export({ format: 'jwk' }) as Record<string, string>) as Record<string, string>,
+        jwk: second.relay.publicKey.export({ format: 'jwk' }) as Record<string, string> as Record<
+          string,
+          string
+        >,
         status: 'next'
       }
     ]
@@ -336,7 +377,9 @@ describe('worker socket with verification on', () => {
     relay.pushDeliver(e)
     await until(() => got.length === 1)
     expect(got).toEqual([1])
-    expect(relay.requests.filter((r) => r.path === '/.well-known/relay-key-manifest.json').length).toBe(2)
+    expect(
+      relay.requests.filter((r) => r.path === '/.well-known/relay-key-manifest.json').length
+    ).toBe(2)
   })
 })
 

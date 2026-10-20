@@ -27,8 +27,10 @@ describe('relay URL guard: exact loopback only', () => {
   })
 })
 
-const jsonRes = (body: string, status = 200) => async () =>
-  new Response(body, { status, headers: { 'content-type': 'application/json' } })
+const jsonRes =
+  (body: string, status = 200) =>
+  async () =>
+    new Response(body, { status, headers: { 'content-type': 'application/json' } })
 
 describe('sign-in start answers', () => {
   it.each([
@@ -41,15 +43,29 @@ describe('sign-in start answers', () => {
     ['null', 'null']
   ])('%s is bad_response, not a raw error', async (_n, body) => {
     await expect(
-      startDeviceSignIn({ site: 's', relayUrl: 'http://localhost:1', fetch: jsonRes(body) as typeof fetch })
+      startDeviceSignIn({
+        site: 's',
+        relayUrl: 'http://localhost:1',
+        fetch: jsonRes(body) as typeof fetch
+      })
     ).rejects.toMatchObject({ code: 'bad_response' })
   })
 })
 
 describe('device page', () => {
-  const ok = JSON.stringify({ join_id: 'j', user_code: 'AB-CD', key_fingerprint: 'fp', expires_in: 60 })
+  const ok = JSON.stringify({
+    join_id: 'j',
+    user_code: 'AB-CD',
+    key_fingerprint: 'fp',
+    expires_in: 60
+  })
   const start = (relayUrl: string, devicePage?: string) =>
-    startDeviceSignIn({ site: 's', relayUrl, ...(devicePage ? { devicePage } : {}), fetch: jsonRes(ok) as typeof fetch })
+    startDeviceSignIn({
+      site: 's',
+      relayUrl,
+      ...(devicePage ? { devicePage } : {}),
+      fetch: jsonRes(ok) as typeof fetch
+    })
 
   it('is hawl.ai/device only for the production relay', async () => {
     expect((await start(DEFAULT_RELAY_URL)).verificationUri).toBe('https://hawl.ai/device')
@@ -58,14 +74,19 @@ describe('device page', () => {
   it('is null for any other relay unless the page is given', async () => {
     expect((await start('http://localhost:8080')).verificationUri).toBeNull()
     expect((await start('https://relay.staging.example.com')).verificationUri).toBeNull()
-    expect((await start('http://localhost:8080', 'http://localhost:3000/device')).verificationUri).toBe(
-      'http://localhost:3000/device'
-    )
+    expect(
+      (await start('http://localhost:8080', 'http://localhost:3000/device')).verificationUri
+    ).toBe('http://localhost:3000/device')
   })
 })
 
 describe('cancelling a sign-in', () => {
-  const ok = JSON.stringify({ join_id: 'j', user_code: 'AB-CD', key_fingerprint: 'fp', expires_in: 600 })
+  const ok = JSON.stringify({
+    join_id: 'j',
+    user_code: 'AB-CD',
+    key_fingerprint: 'fp',
+    expires_in: 600
+  })
 
   it('aborts a claim that is in flight at once', async () => {
     let n = 0
@@ -75,10 +96,17 @@ describe('cancelling a sign-in', () => {
       }
       n++
       return new Promise<Response>((_res, rej) =>
-        init?.signal?.addEventListener('abort', () => rej(init.signal?.reason ?? new Error('aborted')))
+        init?.signal?.addEventListener('abort', () =>
+          rej(init.signal?.reason ?? new Error('aborted'))
+        )
       )
     }) as typeof fetch
-    const s = await startDeviceSignIn({ site: 's', relayUrl: 'http://localhost:1', fetch: f, pollMs: 60_000 })
+    const s = await startDeviceSignIn({
+      site: 's',
+      relayUrl: 'http://localhost:1',
+      fetch: f,
+      pollMs: 60_000
+    })
     const ac = new AbortController()
     const p = s.wait({ signal: ac.signal })
     await new Promise((r) => setTimeout(r, 30))
@@ -96,7 +124,12 @@ describe('cancelling a sign-in', () => {
           ? new Response(ok, { status: 200 })
           : new Response('{}', { status: 202 })
       )) as typeof fetch
-    const s = await startDeviceSignIn({ site: 's', relayUrl: 'http://localhost:1', fetch: f, pollMs: 60_000 })
+    const s = await startDeviceSignIn({
+      site: 's',
+      relayUrl: 'http://localhost:1',
+      fetch: f,
+      pollMs: 60_000
+    })
     const ac = new AbortController()
     const p = s.wait({ signal: ac.signal })
     setTimeout(() => ac.abort(), 50)

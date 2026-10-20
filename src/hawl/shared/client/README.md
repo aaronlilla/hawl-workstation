@@ -31,9 +31,29 @@ const ev = c.townEvents(cred.townId); ev.on('event', e => ...); await ev.start()
 
 Persisting a sign-in: `FileCredentialStore(path, cipher)` and `EncryptedFile` (for the web cookie) write encrypted files. The cipher is a seam: pass Electron `safeStorage` (DPAPI / Keychain / libsecret) from the main process, or `aesGcmCipher(key)` with a key from the OS keyring. A file that will not decrypt reads as signed out. `safeStorageCipher(safeStorage)` wraps Electron's `safeStorage` (it refuses when the OS cannot encrypt, so a key is never written in the clear). Saves on one `EncryptedFile` run one at a time in call order (last wins) with a unique temp name; two instances on one path do not collide either.
 
+### The whole sign-in as one object
+
+`WorkstationAccount` ties the pieces together and survives a restart. Decided here: the WORKER (this app's agent identity) signs in with the device code; the PERSON (approvals, board, site feed) signs in to the web app with the emailed code, or with a cookie taken from a browser window. The relay accepts no other way for the person.
+
+```ts
+import { WorkstationAccount, fileSecretStores, safeStorageCipher } from '@hawl/client'
+
+const stores = fileSecretStores(app.getPath('userData') + '/hawl', safeStorageCipher(safeStorage)) // credentials.enc, web-cookie.enc
+const acct = await WorkstationAccount.open({ stores })   // loads both; signed out if a file is missing or unreadable
+acct.state                                                // { worker, person }
+acct.client                                               // HawlClient or null; the same object after web sign-in/out
+await acct.signInWorker({ site: 'aarons-site' }, { onCode: (s) => show(s.userCode, s.verificationUri), signal })
+await acct.sendWebCode(email); await acct.verifyWebCode(email, '123456')   // or acct.useBrowserCookie(header)
+await acct.signOutPerson()                                // worker stays signed in
+await acct.signOutAll({ leave: true })                    // tell the relay (revokes keys), erase both files
+```
+
+A key the relay already handed over is kept in memory even if the disk refuses it (`onStorageError`, `storageProblem`). A stored sign-in that fails the https check is ignored (`loadProblem`). Cookie rotation and "session ended" are written through to the file.
+
+
 ## Behaviour worth knowing
 
-- Tokens: cached, renewed early, one exchange at a time; a 401 drops the token and retries once. `WebSession` answers `session_expired` when the site says 401 and clears the stored cookie.
+- Tokens: cached, renewed early, one exchange at a time; a 401 drops the token and retries once. The exchange itself (agent token, and the web token mint) retries network errors, timeouts, 429 (honours Retry-After), 502, 503, 504, twice, signing a fresh assertion each try. 401 and other 4xx are not retried. `WebSession` answers `session_expired` when the site says 401 and clears the stored cookie.
 - Deadlines: every network call has one (20 s by default; `timeoutMs` on `HawlClient`, `WebSession`, `startDeviceSignIn`, and per request). Headers and body are inside it. A stall fails with `HawlApiError` code `timeout`; GETs retry it like a network error. A shared token exchange that stalls fails for everyone waiting on it and the next call starts a new one. A caller's own `signal` still cancels (not reported as a timeout).
 - GET retries on network errors, 429 (honours Retry-After), 502, 503, 504 (2 retries, capped backoff). POSTs never retry.
 - Sign-in polling: 202 pending; 408/425/429/5xx and network errors keep polling (Retry-After honoured); 404/410 is `code_expired` (the relay answers 404 for expired, denied, unknown id, bad signature and a clock too far off, so the app cannot tell them apart; the message says all of that). Other 4xx keep the relay's own error code. A 200 that is not JSON, or lacks the ids, is `bad_response` and ends the wait (the relay may already have handed the key over). A `relay_url` in the claim answer is used only when it is https (or loopback) on the same host the person signed in against; otherwise the URL they chose is kept. Sign-in start, claim, token exchange, web sign-in and the web origin all refuse plain http to a non-loopback host.
@@ -47,12 +67,12 @@ Persisting a sign-in: `FileCredentialStore(path, cipher)` and `EncryptedFile` (f
 
 ## Not done here
 
-- The OS keyring binding itself. `safeStorageCipher` and `aesGcmCipher` are here and tested with stand-ins; calling them with the real Electron `safeStorage` belongs to the main-process piece, so the app does not yet keep a sign-in across restarts.
-- `WebSession` sends `sec-fetch-site: same-origin` itself, because `/api/relay-token` only accepts same-origin calls and a Node client has no browser to set it. The user plane depends on that route trusting the header; if the web app starts requiring a real browser (a cookie challenge, a passkey step), user-plane sign-in here breaks and needs a route made for native clients.
+- Electron's real `safeStorage` is not bound here. `WorkstationAccount` and `fileSecretStores` take any `Cipher`; `safeStorageCipher(safeStorage)` and `aesGcmCipher(key)` are tested with stand-ins and a real AES key. The main-process piece passes the real one.
+- `WebSession` sends the cookie and `Origin: <web origin>` and no `Sec-Fetch-Site`. `/api/relay-token` (apps/web/lib/auth/relay-token.ts `isSameOrigin`) falls back to Origin when that header is absent, so no browser header is faked. If the web app starts requiring a real browser (cookie challenge, passkey step), user-plane sign-in here breaks and needs a route made for native clients.
 - Import path: `@hawl/client` resolves through hooks in `config/tsconfig.node.json`, `electron.vite.config.ts` (main) and `config/vitest.config.ts` (see FORK-HOOKS.md). The renderer cannot import it (Node only); it talks through the main process.
 - No `@hawl/protocol` import at runtime (the fork cannot depend on hawl-platform); types are written here.
 - Run against the real relay only on the failure path or the "nothing paused" path: `limits.resume` (a refusal; a real resume needs a work order stopped by the turn cap) and `handoffs.send` with `"auto"` (the relay needs an owner-approved routing rule for the task type, so it answers "No agent can take that kind of work right now"). `channels.thread` and `discussHandoff` have no test of their own.
-- `approvals.list` has no cursor: the relay returns the 100 OLDEST pending approvals (`ORDER BY id LIMIT 100`), so a site with more than 100 pending hides the newest. Read `needs.list` for what is new; it is the inbox surface.
+- `approvals.list` has no cursor and the client cannot add one: the relay returns the 100 OLDEST rows (`ORDER BY id LIMIT 100`, apps/relay/src/policy/approvals.ts). `truncated: true` means newer ones are hidden until older ones are decided; fixing it needs a relay change (hawl-platform, out of scope here). Read `needs.list` for what is new.
 - Passkey and OAuth sign-in. Only the emailed-code web sign-in is proven.
 
 ## Tests

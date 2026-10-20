@@ -266,7 +266,11 @@ export class AgentSocket extends EventEmitter {
         this.#seen.release(env)
         const seq = seqOf(env)
         if (seq !== null) {
-          this.#retry.schedule(seq, this.#o.retryDeliveryMs ?? 1000, () => !this.#stopped && this.fetchInbox(seq - 1))
+          this.#retry.schedule(
+            seq,
+            this.#o.retryDeliveryMs ?? 1000,
+            () => !this.#stopped && this.fetchInbox(seq - 1)
+          )
         }
       }
       this.emit('dropped', { envelope: env, reason })

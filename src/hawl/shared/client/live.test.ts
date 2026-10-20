@@ -167,7 +167,10 @@ describe('agent socket', () => {
   })
 
   it('client.socket() wires the same credentials', async () => {
-    const s = new HawlClient({ credentials: cred }).socket({ insecureNoVerify: true, reconnectMs: { min: 10, max: 40 } })
+    const s = new HawlClient({ credentials: cred }).socket({
+      insecureNoVerify: true,
+      reconnectMs: { min: 10, max: 40 }
+    })
     stoppers.push(() => s.stop())
     s.start()
     await until(() => s.state === 'connected')
@@ -206,12 +209,11 @@ describe('town events', () => {
     await s.start()
     expect(seqs).toEqual([5, 6])
     expect(s.cursor).toBe(6)
-    expect(relay.requests.filter((r) => r.path.includes('/events?after_seq=')).map((r) => r.path.split('=')[1])).toEqual([
-      '0',
-      '2',
-      '4',
-      '6'
-    ])
+    expect(
+      relay.requests
+        .filter((r) => r.path.includes('/events?after_seq='))
+        .map((r) => r.path.split('=')[1])
+    ).toEqual(['0', '2', '4', '6'])
   })
 
   it('replays history by pages, then goes live without repeating the last page', async () => {

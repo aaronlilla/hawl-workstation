@@ -8,7 +8,15 @@ import { it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
-import { Http, HawlClient, ManifestStore, PINNED_ROOTS, SiteApi, WebSession, startDeviceSignIn } from './index'
+import {
+  Http,
+  HawlClient,
+  ManifestStore,
+  PINNED_ROOTS,
+  SiteApi,
+  WebSession,
+  startDeviceSignIn
+} from './index'
 import type { Credentials } from './index'
 
 type RootSecrets = { rootKid?: string; rootPublicKey?: Record<string, string> }
@@ -260,8 +268,13 @@ export const itUploads = (name: string, fn: () => Promise<void>, timeout?: numbe
       try {
         await fn()
       } catch (e) {
-        if (/Hourly upload limit/i.test(String((e as Error)?.message)) && process.env.HAWL_SMOKE_REQUIRE !== '1') {
-          console.warn(`[hawl-client smoke] "${name}" skipped: the site's hourly upload cap is used up`)
+        if (
+          /Hourly upload limit/i.test(String((e as Error)?.message)) &&
+          process.env.HAWL_SMOKE_REQUIRE !== '1'
+        ) {
+          console.warn(
+            `[hawl-client smoke] "${name}" skipped: the site's hourly upload cap is used up`
+          )
           ctx.skip()
         }
         throw e

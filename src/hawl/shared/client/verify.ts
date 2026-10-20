@@ -81,7 +81,9 @@ export function senderKeyFetcher(
           cache.delete(kid)
           return null
         }
-        throw new SenderKeyUnavailable(`sender key lookup failed: ${e instanceof Error ? e.message : String(e)}`)
+        throw new SenderKeyUnavailable(
+          `sender key lookup failed: ${e instanceof Error ? e.message : String(e)}`
+        )
       }
     }
     if (hit.compromisedAt !== null) {
@@ -111,7 +113,7 @@ export type DropReason =
 const sha256b64 = (b: Uint8Array | string): string =>
   createHash('sha256').update(b).digest('base64url')
 
-function envelopeShapeOk(e: unknown): boolean {
+function isWellFormedEnvelope(e: unknown): boolean {
   if (!isObj(e) || e.v !== 1 || !isStr(e.client_request) || !isObj(e.view)) {
     return false
   }
@@ -135,7 +137,13 @@ function envelopeShapeOk(e: unknown): boolean {
   }
   if (e.sender_sig !== undefined) {
     const s = e.sender_sig
-    if (!isObj(s) || s.alg !== 'EdDSA' || s.covers !== 'client_request' || !isStr(s.kid) || !isStr(s.sig)) {
+    if (
+      !isObj(s) ||
+      s.alg !== 'EdDSA' ||
+      s.covers !== 'client_request' ||
+      !isStr(s.kid) ||
+      !isStr(s.sig)
+    ) {
       return false
     }
   }
@@ -165,13 +173,18 @@ export type VerifyContext = {
  * failing check.
  */
 export async function verifyEnvelope(env: unknown, ctx: VerifyContext): Promise<DropReason | null> {
-  if (!envelopeShapeOk(env)) {
+  if (!isWellFormedEnvelope(env)) {
     return 'schema'
   }
   const e = env as Record<string, unknown> & {
     client_request: string
     view: unknown
-    relay: { received_at: string; request_hash: string; view_sha256: string; delivery: { recipient_resident_id: string } }
+    relay: {
+      received_at: string
+      request_hash: string
+      view_sha256: string
+      delivery: { recipient_resident_id: string }
+    }
     relay_sig: { kid: string; sig: string }
     sender_sig?: { kid: string; sig: string }
   }

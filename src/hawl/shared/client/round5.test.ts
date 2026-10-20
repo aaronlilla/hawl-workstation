@@ -58,7 +58,12 @@ const noSleep = async () => {}
 describe('deadlines', () => {
   it('a server that never answers fails with timeout, and the next call is not stuck behind it', async () => {
     const url = await blackhole()
-    const c = new HawlClient({ credentials: cred(url), timeoutMs: 300, maxRetries: 0, sleep: noSleep })
+    const c = new HawlClient({
+      credentials: cred(url),
+      timeoutMs: 300,
+      maxRetries: 0,
+      sleep: noSleep
+    })
     const t0 = Date.now()
     await expect(c.me()).rejects.toMatchObject({ code: 'timeout' })
     expect(Date.now() - t0).toBeLessThan(3000)
@@ -70,7 +75,12 @@ describe('deadlines', () => {
   it('a body that stalls after the headers also times out (an API call)', async () => {
     // Token exchange answers fast on a second server; the API server sends headers and stalls.
     const api = await blackhole({ headersThenStall: true })
-    const c = new HawlClient({ credentials: cred(api), timeoutMs: 300, maxRetries: 0, sleep: noSleep })
+    const c = new HawlClient({
+      credentials: cred(api),
+      timeoutMs: 300,
+      maxRetries: 0,
+      sleep: noSleep
+    })
     // The token exchange itself hits the same stalled server, so it is the first to time out.
     await expect(c.me()).rejects.toMatchObject({ code: 'timeout' })
   })
@@ -90,7 +100,12 @@ describe('deadlines', () => {
     servers.push(s)
     await new Promise<void>((r) => s.listen(0, '127.0.0.1', r))
     const url = `http://127.0.0.1:${(s.address() as AddressInfo).port}`
-    const c = new HawlClient({ credentials: cred(url), timeoutMs: 400, maxRetries: 0, sleep: noSleep })
+    const c = new HawlClient({
+      credentials: cred(url),
+      timeoutMs: 400,
+      maxRetries: 0,
+      sleep: noSleep
+    })
     const t0 = Date.now()
     await expect(c.me()).rejects.toMatchObject({ code: 'timeout' })
     expect(Date.now() - t0).toBeLessThan(3000)
@@ -99,15 +114,18 @@ describe('deadlines', () => {
 
   it('sign-in start and claim time out instead of hanging', async () => {
     const url = await blackhole()
-    await expect(startDeviceSignIn({ site: 's', relayUrl: url, timeoutMs: 300 })).rejects.toMatchObject({
+    await expect(
+      startDeviceSignIn({ site: 's', relayUrl: url, timeoutMs: 300 })
+    ).rejects.toMatchObject({
       code: 'timeout'
     })
     const key = generateWorkerKey()
-    const d = new DeviceSignIn(
-      { site: 's', relayUrl: url, timeoutMs: 300 },
-      key,
-      { join_id: 'jrq_1', user_code: 'ABCD-1234', key_fingerprint: 'fp', expires_in: 600 }
-    )
+    const d = new DeviceSignIn({ site: 's', relayUrl: url, timeoutMs: 300 }, key, {
+      join_id: 'jrq_1',
+      user_code: 'ABCD-1234',
+      key_fingerprint: 'fp',
+      expires_in: 600
+    })
     await expect(d.claim()).rejects.toMatchObject({ code: 'timeout' })
   })
 
@@ -115,16 +133,30 @@ describe('deadlines', () => {
     const url = await blackhole()
     let t = 1_000_000
     const d = new DeviceSignIn(
-      { site: 's', relayUrl: url, timeoutMs: 150, pollMs: 1, now: () => t, sleep: async () => { t += 60_000 } },
+      {
+        site: 's',
+        relayUrl: url,
+        timeoutMs: 150,
+        pollMs: 1,
+        now: () => t,
+        sleep: async () => {
+          t += 60_000
+        }
+      },
       generateWorkerKey(),
       { join_id: 'jrq_1', user_code: 'ABCD-1234', key_fingerprint: 'fp', expires_in: 100 }
     )
-    await expect(d.wait()).rejects.toMatchObject({ code: 'timeout', message: expect.stringContaining('Timed out waiting') })
+    await expect(d.wait()).rejects.toMatchObject({
+      code: 'timeout',
+      message: expect.stringContaining('Timed out waiting')
+    })
   })
 
   it('web session code mail and token mint time out', async () => {
     const url = await blackhole()
-    await expect(WebSession.sendCode('a@b.c', { webOrigin: url, timeoutMs: 300 })).rejects.toMatchObject({
+    await expect(
+      WebSession.sendCode('a@b.c', { webOrigin: url, timeoutMs: 300 })
+    ).rejects.toMatchObject({
       code: 'timeout'
     })
     const s = WebSession.fromCookie('a=b', { webOrigin: url, timeoutMs: 300 })
@@ -133,7 +165,12 @@ describe('deadlines', () => {
 
   it('a caller abort still wins and is not reported as a timeout', async () => {
     const url = await blackhole()
-    const c = new HawlClient({ credentials: cred(url), timeoutMs: 5000, maxRetries: 0, sleep: noSleep })
+    const c = new HawlClient({
+      credentials: cred(url),
+      timeoutMs: 5000,
+      maxRetries: 0,
+      sleep: noSleep
+    })
     const ac = new AbortController()
     setTimeout(() => ac.abort(), 100)
     const p = c.http.get('/v1/directory/residents', { plane: 'none', signal: ac.signal })
@@ -177,7 +214,11 @@ describe('EncryptedFile', () => {
   })
 
   it('safeStorageCipher refuses when the OS cannot encrypt, and round-trips when it can', () => {
-    const none = { isEncryptionAvailable: () => false, encryptString: () => Buffer.alloc(0), decryptString: () => '' }
+    const none = {
+      isEncryptionAvailable: () => false,
+      encryptString: () => Buffer.alloc(0),
+      decryptString: () => ''
+    }
     expect(() => safeStorageCipher(none)).toThrow(/keyring/)
     const ok = {
       isEncryptionAvailable: () => true,
@@ -202,27 +243,37 @@ describe('sign-in guards and errors', () => {
     expect(called).toBe(0)
     expect(
       () =>
-        new DeviceSignIn({ site: 's', relayUrl: 'http://203.0.113.1:9', fetch: f }, generateWorkerKey(), {
-          join_id: 'j',
-          user_code: 'c',
-          key_fingerprint: 'f',
-          expires_in: 10
-        })
+        new DeviceSignIn(
+          { site: 's', relayUrl: 'http://203.0.113.1:9', fetch: f },
+          generateWorkerKey(),
+          {
+            join_id: 'j',
+            user_code: 'c',
+            key_fingerprint: 'f',
+            expires_in: 10
+          }
+        )
     ).toThrow(/plain http/)
     expect(called).toBe(0)
   })
 
   it('web sessions refuse a non-local plain-http origin', () => {
-    expect(() => WebSession.fromCookie('a=b', { webOrigin: 'http://203.0.113.1' })).toThrow(/plain http/)
+    expect(() => WebSession.fromCookie('a=b', { webOrigin: 'http://203.0.113.1' })).toThrow(
+      /plain http/
+    )
   })
 
   const mk = (fetchImpl: typeof fetch, relayUrl = 'https://relay.test') =>
-    new DeviceSignIn({ site: 's', relayUrl, fetch: fetchImpl, sleep: noSleep, pollMs: 1 }, generateWorkerKey(), {
-      join_id: 'jrq_1',
-      user_code: 'ABCD-1234',
-      key_fingerprint: 'fp',
-      expires_in: 600
-    })
+    new DeviceSignIn(
+      { site: 's', relayUrl, fetch: fetchImpl, sleep: noSleep, pollMs: 1 },
+      generateWorkerKey(),
+      {
+        join_id: 'jrq_1',
+        user_code: 'ABCD-1234',
+        key_fingerprint: 'fp',
+        expires_in: 600
+      }
+    )
 
   it('404 reads as expired/refused/clock with an honest message', async () => {
     const d = mk((async () => new Response('', { status: 404 })) as typeof fetch)
@@ -230,14 +281,21 @@ describe('sign-in guards and errors', () => {
     await expect(d.claim()).rejects.toThrow(/refused/)
   })
 
-  it('other 4xx keep the relay\'s own error code instead of calling it an expiry', async () => {
+  it("other 4xx keep the relay's own error code instead of calling it an expiry", async () => {
     const d = mk(
       (async () =>
-        new Response(JSON.stringify({ error: { code: 'invalid_request', message: 'Bad nonce.' } }), {
-          status: 400
-        })) as typeof fetch
+        new Response(
+          JSON.stringify({ error: { code: 'invalid_request', message: 'Bad nonce.' } }),
+          {
+            status: 400
+          }
+        )) as typeof fetch
     )
-    await expect(d.claim()).rejects.toMatchObject({ code: 'invalid_request', status: 400, message: 'Bad nonce.' })
+    await expect(d.claim()).rejects.toMatchObject({
+      code: 'invalid_request',
+      status: 400,
+      message: 'Bad nonce.'
+    })
   })
 
   it('an unreadable 200 is a hard bad_response and wait() does not keep polling', async () => {
@@ -280,16 +338,27 @@ describe('sign-in guards and errors', () => {
   })
 
   const claimBody = (relay_url?: string) =>
-    JSON.stringify({ resident_id: 'res_1', kid: 'key_1', town_id: 'twn_1', ...(relay_url ? { relay_url } : {}) })
+    JSON.stringify({
+      resident_id: 'res_1',
+      kid: 'key_1',
+      town_id: 'twn_1',
+      ...(relay_url ? { relay_url } : {})
+    })
 
   it('a relay_url on another host is ignored; the same host is kept', async () => {
-    const other = mk((async () => new Response(claimBody('https://evil.example'), { status: 200 })) as typeof fetch)
+    const other = mk(
+      (async () => new Response(claimBody('https://evil.example'), { status: 200 })) as typeof fetch
+    )
     const r1 = await other.claim()
     expect(r1.state === 'claimed' && r1.credentials.relayUrl).toBe('https://relay.test')
-    const plain = mk((async () => new Response(claimBody('http://relay.test'), { status: 200 })) as typeof fetch)
+    const plain = mk(
+      (async () => new Response(claimBody('http://relay.test'), { status: 200 })) as typeof fetch
+    )
     const r2 = await plain.claim()
     expect(r2.state === 'claimed' && r2.credentials.relayUrl).toBe('https://relay.test')
-    const same = mk((async () => new Response(claimBody('https://relay.test/'), { status: 200 })) as typeof fetch)
+    const same = mk(
+      (async () => new Response(claimBody('https://relay.test/'), { status: 200 })) as typeof fetch
+    )
     const r3 = await same.claim()
     expect(r3.state === 'claimed' && r3.credentials.relayUrl).toBe('https://relay.test')
   })
@@ -301,7 +370,9 @@ describe('alias and extra routes', () => {
     const s = createServer((req, res) => {
       seen.push(`${req.method} ${req.url}`)
       res.writeHead(200, { 'content-type': 'application/json' })
-      res.end(req.url === '/v1/auth/token' ? JSON.stringify({ access_token: 't', expires_in: 600 }) : '{}')
+      res.end(
+        req.url === '/v1/auth/token' ? JSON.stringify({ access_token: 't', expires_in: 600 }) : '{}'
+      )
     })
     servers.push(s)
     await new Promise<void>((r) => s.listen(0, '127.0.0.1', r))

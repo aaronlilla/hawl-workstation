@@ -46,7 +46,11 @@ export class Handshake {
         // Never drop quietly: close so the relay pushes the unacked rows again after the reconnect.
         this.#overflow = true
         this.#h.onError(
-          new HawlApiError(0, 'handshake_overflow', 'Too many frames arrived while the relay was being verified; reconnecting.')
+          new HawlApiError(
+            0,
+            'handshake_overflow',
+            'Too many frames arrived while the relay was being verified; reconnecting.'
+          )
         )
         this.#h.ws.close(1013, 'handshake overflow')
       }

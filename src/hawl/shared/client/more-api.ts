@@ -23,11 +23,9 @@ export class MoreApi {
       this.#http.get(`/v1/invites/${encodeURIComponent(token)}/status`, { plane: 'user' }),
     /** Ask to join through the link (user plane). */
     join: (token: string, name?: string): Promise<Rec> =>
-      this.#http.post(
-        `/v1/invites/${encodeURIComponent(token)}/join`,
-        name ? { name } : {},
-        { plane: 'user' }
-      ),
+      this.#http.post(`/v1/invites/${encodeURIComponent(token)}/join`, name ? { name } : {}, {
+        plane: 'user'
+      }),
     /** The site's current link; 404 when there is none (owner or inviter). */
     link: (townId: string): Promise<{ token: string; expires_at: string }> =>
       this.#http.get(`/v1/towns/${townId}/invite-link`, { plane: 'user' }),
@@ -37,10 +35,18 @@ export class MoreApi {
         plane: 'user'
       }),
     /** Let a person who came through the link in, or turn them down. */
-    decideJoiner: (townId: string, joinerId: string, decision: 'let-in' | 'decline'): Promise<Rec> =>
-      this.#http.post(`/v1/towns/${townId}/invite-joiners/${encodeURIComponent(joinerId)}/${decision}`, {}, {
-        plane: 'user'
-      })
+    decideJoiner: (
+      townId: string,
+      joinerId: string,
+      decision: 'let-in' | 'decline'
+    ): Promise<Rec> =>
+      this.#http.post(
+        `/v1/towns/${townId}/invite-joiners/${encodeURIComponent(joinerId)}/${decision}`,
+        {},
+        {
+          plane: 'user'
+        }
+      )
   }
 
   /** Worker track record. Agent plane: the relay checks the caller is a worker of that site. */

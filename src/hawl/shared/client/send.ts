@@ -96,7 +96,11 @@ export class Sender {
     return this.#toChannel('square_post', undefined, text, o)
   }
 
-  room(room: string, text: string, o: { data?: unknown; mentions?: string[]; files?: FilePart[] } = {}): Out {
+  room(
+    room: string,
+    text: string,
+    o: { data?: unknown; mentions?: string[]; files?: FilePart[] } = {}
+  ): Out {
     return this.#toChannel('room_post', room, text, o)
   }
 

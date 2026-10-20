@@ -61,7 +61,9 @@ export type AgentSocketEvents = {
   dropped: [{ envelope: Record<string, unknown>; reason: string }]
   notice: [{ unread: number; needs_action: number }]
   control: [Record<string, unknown>]
-  refused: [{ code: number; reason: 'suspended' | 'client_too_old' | 'auth_failed' | 'relay_not_trusted' }]
+  refused: [
+    { code: number; reason: 'suspended' | 'client_too_old' | 'auth_failed' | 'relay_not_trusted' }
+  ]
   error: [Error]
 }
 

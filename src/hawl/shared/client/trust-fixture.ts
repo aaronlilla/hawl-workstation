@@ -38,7 +38,11 @@ export class TrustFixture {
       not_before: new Date(o.notBefore ?? this.now - 3_600_000).toISOString(),
       not_after: new Date(o.notAfter ?? this.now + 86_400_000).toISOString(),
       keys: [
-        { kid: this.relayKid, jwk: { kty: 'EC', crv: 'P-256', x: String(pub.x), y: String(pub.y) }, status: 'current' },
+        {
+          kid: this.relayKid,
+          jwk: { kty: 'EC', crv: 'P-256', x: String(pub.x), y: String(pub.y) },
+          status: 'current'
+        },
         ...this.extraKeys
       ],
       revoked: this.revoked
@@ -55,7 +59,10 @@ export class TrustFixture {
 
   signReady(p: Parameters<typeof readySignInput>[0]): string {
     return b64url(
-      nodeSign('sha256', readySignInput(p), { key: this.relay.privateKey, dsaEncoding: 'ieee-p1363' })
+      nodeSign('sha256', readySignInput(p), {
+        key: this.relay.privateKey,
+        dsaEncoding: 'ieee-p1363'
+      })
     )
   }
 
@@ -126,7 +133,9 @@ export class TrustFixture {
         alg: 'ES256',
         kid: o.kid ?? this.relayKid,
         covers: 'jcs:v1:{v,sender_sig,view,relay-minus-delivery.attempt}',
-        sig: b64url(nodeSign('sha256', sigInput, { key: this.relay.privateKey, dsaEncoding: 'ieee-p1363' }))
+        sig: b64url(
+          nodeSign('sha256', sigInput, { key: this.relay.privateKey, dsaEncoding: 'ieee-p1363' })
+        )
       }
     }
   }
