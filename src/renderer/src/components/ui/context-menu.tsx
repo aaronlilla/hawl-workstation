@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { splitShortcutKeys } from '../../../../hawl/renderer/HawlShortcutKeys'
 import { ChevronRightIcon, CircleIcon } from 'lucide-react'
 import * as ContextMenuPrimitive from 'radix-ui/context-menu'
 
@@ -175,16 +176,20 @@ function ContextMenuSeparator({
   )
 }
 
-function ContextMenuShortcut({ className, ...props }: React.ComponentProps<'span'>) {
+function ContextMenuShortcut({ className, children, ...props }: React.ComponentProps<'span'>) {
+  const { keys, split } = splitShortcutKeys(children)
   return (
     <span
+      data-hawl-keys={split ? '' : undefined}
       data-slot="context-menu-shortcut"
       className={cn(
         'ml-auto shrink-0 whitespace-nowrap text-[11px] tracking-normal text-muted-foreground/85',
         className
       )}
       {...props}
-    />
+    >
+      {keys}
+    </span>
   )
 }
 

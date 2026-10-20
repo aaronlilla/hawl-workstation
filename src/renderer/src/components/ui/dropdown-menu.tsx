@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { splitShortcutKeys } from '../../../../hawl/renderer/HawlShortcutKeys'
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
 import * as DropdownMenuPrimitive from 'radix-ui/dropdown-menu'
 
@@ -160,16 +161,20 @@ function DropdownMenuSeparator({
   )
 }
 
-function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'span'>) {
+function DropdownMenuShortcut({ className, children, ...props }: React.ComponentProps<'span'>) {
+  const { keys, split } = splitShortcutKeys(children)
   return (
     <span
+      data-hawl-keys={split ? '' : undefined}
       data-slot="dropdown-menu-shortcut"
       className={cn(
         'ml-auto shrink-0 whitespace-nowrap text-[11px] tracking-normal text-muted-foreground/85',
         className
       )}
       {...props}
-    />
+    >
+      {keys}
+    </span>
   )
 }
 

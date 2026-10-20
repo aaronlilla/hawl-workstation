@@ -189,3 +189,7 @@ Base 20fc7af55, from `node src/hawl/tools/list-fork-hooks.mjs`. Folder-level row
 | `src/renderer/src/components/mobile/slides/HomeSlide.tsx`, `TerminalSlide.tsx`, `WorktreeListSlide.tsx` | the phone mock shows the Hawl mark and `hawl` sample repo names (no Orca whale or repo name) |
 | `config/electron-builder.config.cjs` | `copyright` carries the Orca / Lovecast credit (EXE metadata) |
 
+## D3 surfaces (round 5)
+| File | Hook |
+|---|---|
+| `src/renderer/src/components/ui/context-menu.tsx`, `src/renderer/src/components/ui/dropdown-menu.tsx` | the Shortcut component renders its combo through `splitShortcutKeys` (`src/hawl/renderer/HawlShortcutKeys.tsx`) so `Ctrl+Shift+K` shows as separate key caps; strings without `+` are unchanged |
