@@ -193,3 +193,9 @@ Base 20fc7af55, from `node src/hawl/tools/list-fork-hooks.mjs`. Folder-level row
 | File | Hook |
 |---|---|
 | `src/renderer/src/components/ui/context-menu.tsx`, `src/renderer/src/components/ui/dropdown-menu.tsx` | the Shortcut component renders its combo through `splitShortcutKeys` (`src/hawl/renderer/HawlShortcutKeys.tsx`) so `Ctrl+Shift+K` shows as separate key caps; strings without `+` are unchanged |
+
+## D3 surfaces (round 6)
+| File | Hook |
+|---|---|
+| `src/renderer/src/components/mobile/slides/HomeSlide.tsx`, `WorktreeListSlide.tsx`, `src/renderer/src/i18n/locales/en.json` | the phone mock shows `Work PC` / `hawl-box` hosts and `you@hawl.ai` / `team@hawl.ai` accounts instead of MacBook Pro, M1 Mini and example.com addresses |
+| `src/hawl/renderer/d3-workspace.css` (new, imported from `hawl-pieces.css`) | CSS only: sidebar key rows, tab strip keys, terminal ground slab, right panel keys, full-page ground and glass cards |

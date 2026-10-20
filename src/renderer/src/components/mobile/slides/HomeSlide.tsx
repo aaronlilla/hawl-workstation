@@ -56,7 +56,7 @@ export function HomeSlide({ tapping }: { tapping: boolean }): React.JSX.Element 
           </div>
           <div className="mp-host-main">
             <div className="mp-host-name">
-              {translate('auto.components.mobile.slides.HomeSlide.19c212e25e', 'MacBook Pro')}
+              {translate('auto.components.mobile.slides.HomeSlide.19c212e25e', 'Work PC')}
             </div>
             <div className="mp-host-meta">
               <span className="mp-status-dot is-green" />
@@ -78,7 +78,7 @@ export function HomeSlide({ tapping }: { tapping: boolean }): React.JSX.Element 
           </div>
           <div className="mp-host-main">
             <div className="mp-host-name is-dim">
-              {translate('auto.components.mobile.slides.HomeSlide.091355da3d', 'M1 Mini · home')}
+              {translate('auto.components.mobile.slides.HomeSlide.091355da3d', 'hawl-box')}
             </div>
             <div className="mp-host-meta">
               <span className="mp-status-dot is-muted" />
@@ -181,13 +181,13 @@ export function HomeSlide({ tapping }: { tapping: boolean }): React.JSX.Element 
         <div className="mp-accounts-card">
           <AccountRow
             icon={<ClaudeIcon size={18} />}
-            email="claude@example.com"
+            email="you@hawl.ai"
             sessionPct={42}
             weekPct={18}
           />
           <AccountRow
             icon={<OpenAIIcon size={18} />}
-            email="codex@example.com"
+            email="team@hawl.ai"
             sessionPct={67}
             weekPct={31}
           />

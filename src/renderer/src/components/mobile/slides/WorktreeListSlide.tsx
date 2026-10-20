@@ -35,7 +35,7 @@ export function WorktreeListSlide({ tapping }: { tapping: boolean }): React.JSX.
             <span className="mp-wl-host-name">
               {translate(
                 'auto.components.mobile.slides.WorktreeListSlide.b4271864bd',
-                'MacBook Pro'
+                'Work PC'
               )}
             </span>
           </div>
