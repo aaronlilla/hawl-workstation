@@ -2,6 +2,7 @@ import { initializeMainProcessI18nAndMenu } from './main-process-i18n-menu'
 import { mainProcessState as state } from './main-process-state'
 import { initializeReadyFoundation } from './main-process-ready-foundation'
 import { initializeReadyRuntimeServices } from './main-process-ready-runtime'
+import { startHawlMain } from '../../hawl/main'
 import { releaseDesktopActivationAfter } from './serve-desktop-activation'
 import {
   initializeMainProcessRuntimeLaunch,
@@ -22,6 +23,8 @@ export async function initializeMainProcessReady(
   try {
     await initializeReadyFoundation()
     await initializeReadyRuntimeServices()
+    // Hawl hook (FORK-HOOKS.md): start the self-hosted foreman. Never throws.
+    await startHawlMain()
     // Window creation can proceed while translations and the native menu initialize.
     const i18nAndMenuReady = initializeMainProcessI18nAndMenu()
     state.mainProcessI18nReady = i18nAndMenuReady.catch(() => {})
