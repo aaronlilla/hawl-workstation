@@ -19,7 +19,7 @@ describe('prepareShipItStaging', () => {
 
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'orca-shipit-recovery-'))
-    cacheDir = join(root, 'Caches', 'com.stablyai.orca.ShipIt')
+    cacheDir = join(root, 'Caches', 'com.hawl.workstation.ShipIt')
     coordinationDir = join(root, 'coordination')
     await mkdir(join(cacheDir, 'update.6rnCgPu', 'Orca.app'), { recursive: true })
     await writeFile(join(cacheDir, 'ShipItState.plist'), '<plist/>')
@@ -31,7 +31,7 @@ describe('prepareShipItStaging', () => {
   })
 
   const deps = (overrides: Partial<ShipItStagingDeps> = {}): ShipItStagingDeps => ({
-    bundleId: 'com.stablyai.orca',
+    bundleId: 'com.hawl.workstation',
     cacheDir,
     coordinationDir,
     pid: 500,
@@ -84,7 +84,7 @@ describe('prepareShipItStaging', () => {
   })
 
   it('never clears while ShipIt runs, or when that cannot be checked', async () => {
-    const running = deps({ listProcesses: async () => `${SHIPIT} com.stablyai.orca.ShipIt\n` })
+    const running = deps({ listProcesses: async () => `${SHIPIT} com.hawl.workstation.ShipIt\n` })
     await expect(prepareShipItStaging(running)).resolves.toEqual({
       kind: 'skipped',
       reason: 'installer-running'

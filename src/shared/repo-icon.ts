@@ -14,21 +14,9 @@ const LUCIDE_ICON_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9]*$/
 const isRepoIconImageSource = (value: string): value is RepoIconImageSource =>
   value === 'upload' || value === 'file' || value === 'favicon' || value === 'github'
 
-export function faviconUrlFromWebsite(rawUrl: string): string | null {
-  const trimmed = rawUrl.trim()
-  if (!trimmed) {
-    return null
-  }
-
-  try {
-    const url = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`)
-    if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) {
-      return null
-    }
-    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(url.hostname)}&sz=64`
-  } catch {
-    return null
-  }
+// Hawl: favicon lookups went through Google's service, which would leak the domains users type. Disabled.
+export function faviconUrlFromWebsite(_rawUrl: string): string | null {
+  return null
 }
 
 type GitHubAvatarSlug = { owner: string; repo: string; host?: string }

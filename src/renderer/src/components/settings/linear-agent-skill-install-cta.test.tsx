@@ -117,7 +117,7 @@ describe('LinearAgentSkillInstallCta', () => {
       'Full guided setup (connect + skill + visibility) is under Settings → Task Sources.'
     )
     expect(rendered.textContent).toContain(
-      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${ORCA_BUILD_COMMIT} --skill orca-linear --global`
+      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/aaronlilla/hawl-workstation/tree/${ORCA_BUILD_COMMIT} --skill orca-linear --global`
     )
   })
 
@@ -131,7 +131,7 @@ describe('LinearAgentSkillInstallCta', () => {
     })
 
     expect(mocks.clipboardWrite).toHaveBeenCalledWith(
-      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${ORCA_BUILD_COMMIT} --skill orca-linear --global`
+      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/aaronlilla/hawl-workstation/tree/${ORCA_BUILD_COMMIT} --skill orca-linear --global`
     )
     expect(mocks.toastSuccess).toHaveBeenCalled()
   })
@@ -145,7 +145,7 @@ describe('LinearAgentSkillInstallCta', () => {
     expect(rendered.textContent).toContain('Installed')
     expect(rendered.textContent).toContain('Agent skill installed. To update it, run:')
     expect(rendered.textContent).toContain(
-      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${ORCA_BUILD_COMMIT} --skill orca-linear --global`
+      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/aaronlilla/hawl-workstation/tree/${ORCA_BUILD_COMMIT} --skill orca-linear --global`
     )
     expect(rendered.textContent).not.toContain('Not installed')
   })
@@ -163,7 +163,7 @@ describe('LinearAgentSkillInstallCta', () => {
     const rendered = await renderCta()
 
     expect(rendered.textContent).toContain(
-      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${ORCA_BUILD_COMMIT} --skill linear-tickets --global`
+      `npx skills@${SKILLS_CLI_VERSION} add https://github.com/aaronlilla/hawl-workstation/tree/${ORCA_BUILD_COMMIT} --skill linear-tickets --global`
     )
   })
 

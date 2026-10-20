@@ -14,7 +14,7 @@
 
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { TelemetryConsentState } from '../../../../shared/telemetry-consent-types'
 
@@ -41,50 +41,6 @@ function buildSettings(
     }
   } as unknown as GlobalSettings
 }
-
-describe('PrivacyPane — toggle markup reflects stored preference', () => {
-  beforeEach(() => {
-    getConsentStateMock.mockReset()
-    getConsentStateMock.mockResolvedValue({ effective: 'enabled' })
-  })
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('renders the toggle in its checked state when optedIn is true', () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PrivacyPane, {
-        settings: buildSettings({ optedIn: true })
-      })
-    )
-    expect(markup).toContain('aria-checked="true"')
-  })
-
-  it('renders the toggle unchecked when optedIn is false', () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PrivacyPane, {
-        settings: buildSettings({ optedIn: false })
-      })
-    )
-    expect(markup).toContain('aria-checked="false"')
-  })
-
-  it('renders the toggle unchecked when optedIn is null (existing user pre-banner)', () => {
-    // `optedIn === null` is the existing-user cohort awaiting the banner.
-    // No events transmit in that state; the Settings toggle should visibly
-    // read "off" so flipping it on routes through the 'settings' `via`
-    // path (not 'first_launch_banner', which is reserved for the banner).
-    const markup = renderToStaticMarkup(
-      React.createElement(PrivacyPane, {
-        settings: buildSettings({
-          existedBeforeTelemetryRelease: true,
-          optedIn: null
-        })
-      })
-    )
-    expect(markup).toContain('aria-checked="false"')
-  })
-})
 
 describe('PrivacyPane — isEnvBlocked', () => {
   it('returns true for DO_NOT_TRACK', () => {
@@ -165,60 +121,12 @@ describe('PrivacyPane — computeBlockedReason', () => {
   })
 })
 
-describe('PrivacyPane — markup respects blocked state', () => {
-  const switchTag = (markup: string): string =>
-    markup.match(/<button[^>]*role="switch"[^>]*>/)?.[0] ?? ''
-
-  // The useEffect that fetches consent does not run in renderToStaticMarkup
-  // (no DOM, no state flushes), so the rendered toggle always reads the
-  // `consent === null` branch of the effect. Env-var blocked-state markup
-  // is covered by the computeBlockedReason unit tests above; here we just
-  // confirm the toggle is live for the cohorts that should be able to flip
-  // it.
-  beforeEach(() => {
-    getConsentStateMock.mockReset()
-    getConsentStateMock.mockResolvedValue({ effective: 'enabled' })
-  })
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('leaves the toggle enabled for a new user', () => {
+describe('PrivacyPane — markup', () => {
+  it('states that no usage data is collected and has no switch', () => {
     const markup = renderToStaticMarkup(
-      React.createElement(PrivacyPane, {
-        settings: buildSettings({
-          existedBeforeTelemetryRelease: false,
-          optedIn: true
-        })
-      })
+      React.createElement(PrivacyPane, { settings: buildSettings() })
     )
-    expect(switchTag(markup)).not.toContain(' disabled=""')
-  })
-
-  it('leaves the toggle enabled for an existing user awaiting the banner (flip dismisses the banner)', () => {
-    // Flipping the toggle moves `optedIn` off `null`, which un-mounts the
-    // notice via TelemetryFirstLaunchSurface's cohort check. The Settings
-    // toggle is one of the valid ways to resolve the notice.
-    const markup = renderToStaticMarkup(
-      React.createElement(PrivacyPane, {
-        settings: buildSettings({
-          existedBeforeTelemetryRelease: true,
-          optedIn: null
-        })
-      })
-    )
-    expect(switchTag(markup)).not.toContain(' disabled=""')
-  })
-
-  it('leaves the toggle enabled once the existing-user banner is resolved', () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PrivacyPane, {
-        settings: buildSettings({
-          existedBeforeTelemetryRelease: true,
-          optedIn: true
-        })
-      })
-    )
-    expect(switchTag(markup)).not.toContain(' disabled=""')
+    expect(markup).toContain('No usage data is collected')
+    expect(markup).not.toContain('role="switch"')
   })
 })

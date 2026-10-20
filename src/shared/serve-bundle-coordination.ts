@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 
 /** launchd label prefix `orca serve service install` writes; only those supervisors register. */
-export const SERVE_LAUNCHD_LABEL_PREFIX = 'com.stablyai.orca.serve'
+export const SERVE_LAUNCHD_LABEL_PREFIX = 'com.hawl.workstation.serve'
 export const SERVE_COORDINATION_PROTOCOL = 1
 /** A registration this stale belongs to a supervisor that is gone or wedged. */
 export const SERVE_SUPERVISOR_HEARTBEAT_STALE_MS = 15_000

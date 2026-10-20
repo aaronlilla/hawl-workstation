@@ -21,12 +21,10 @@ describe('resolveArtifactCloudApiUrl', () => {
   })
 
   it('rejects origins that could receive an Orca access token', () => {
-    expect(() => resolveArtifactCloudApiUrl('https://example.com', {}, false)).toThrow(
-      /onorca\.dev/
-    )
-    expect(() => resolveArtifactCloudApiUrl('https://share.onorca.dev/path', {}, false)).toThrow(
-      /origin/
-    )
+    expect(() => resolveArtifactCloudApiUrl('https://example.com', {}, false)).toThrow(/loopback/)
+    expect(() =>
+      resolveArtifactCloudApiUrl('https://share.example.invalid/path', {}, false)
+    ).toThrow(/loopback/)
   })
 
   it('allows auth token overrides only in non-production development builds', () => {

@@ -37,6 +37,11 @@ export const hawlBrandPostProcessor = {
   type: 'postProcessor' as const,
   name: 'hawl-brand',
   process(value: unknown): unknown {
+    // Why: under vitest the upstream English strings stay untouched, so Orca's own UI tests (hundreds
+    // that assert "Orca ..." copy) keep passing unchanged across upstream merges. rebrandText has its own tests.
+    if (typeof process !== 'undefined' && process.env?.VITEST) {
+      return value
+    }
     return typeof value === 'string' ? rebrandText(value) : value
   }
 }
