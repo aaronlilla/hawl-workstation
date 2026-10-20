@@ -208,3 +208,12 @@ Base 20fc7af55, from `node src/hawl/tools/list-fork-hooks.mjs`. Folder-level row
 | `src/renderer/src/components/mobile/slides/HomeSlide.tsx`, `TerminalSlide.tsx`, `WorktreeListSlide.tsx` | the phone mock shows the Hawl mark and `hawl` sample repo names (no Orca whale or repo name) |
 | `config/electron-builder.config.cjs` | `copyright` carries the Orca / Lovecast credit (EXE metadata) |
 
+# Fork hooks
+
+Edits to Orca's own files. Keep each small.
+
+| File | Change | Why | Piece |
+| --- | --- | --- | --- |
+| config/tsconfig.node.json | `include` adds `../src/hawl/shared/client/**/*`; `compilerOptions.paths` maps `@hawl/client` to `../src/hawl/shared/client/index.ts` | Orca's node typecheck covers the client and resolves its name | P2-client |
+| electron.vite.config.ts | main `resolve.alias['@hawl/client']` | the main process bundle imports it by name | P2-client |
+| config/vitest.config.ts | alias `@hawl/client` | Orca's test run resolves it | P2-client |

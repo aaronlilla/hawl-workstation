@@ -20,3 +20,5 @@ From a checkout: `pnpm install --frozen-lockfile`, `pnpm run build:electron-vite
 - 2026-10-19 P1-rebrand (M0): rebranded on branch `hawl/P1-rebrand`: identity, Hawl theme and terminal palettes, icons, About credit, updater feed, vendor services and telemetry off. See FORK-HOOKS.md.
 
 - 2026-10-19 P1-rebrand round 2: critic fixes (logo colour, Inter default font, light default, own profile folder, hawl:// parsing, telemetry code deleted, vendor feeds removed, Orca account pane hidden, version 0.1.0). Leftovers in FORK-HOOKS.md.
+## Decision 2026-10-19 (Aaron): foreman is a registered agent
+The yard owner registers one of their own agents as the foreman (a role on an agent, not a separate service). The Workstation alerts when a yard has no foreman, or its foreman is offline, and guides setup: pick an agent, confirm its menu and hold times, test with the team check (S43), and `hawl doctor` (S44) names "no foreman" or "foreman offline". Recommended host: an agent on an always-on machine, which narrows the S15 gap; the relay answering service still covers closed-app time. Piece P5-foreman-register; builds on P3-foreman.

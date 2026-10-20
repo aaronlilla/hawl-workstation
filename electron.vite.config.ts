@@ -275,6 +275,7 @@ export const electronViteConfig: UserConfig = {
     // directly at the published main file so the bundler can inline it.
     resolve: {
       alias: {
+        '@hawl/client': resolve('src/hawl/shared/client/index.ts'),
         '@xterm/headless': resolve('node_modules/@xterm/headless/lib-headless/xterm-headless.js'),
         '@xterm/addon-serialize': resolve(
           'node_modules/@xterm/addon-serialize/lib/addon-serialize.js'

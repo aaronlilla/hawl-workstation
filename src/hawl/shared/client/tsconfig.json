@@ -1,0 +1,12 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["./*.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "types": ["node"],
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": false,
+    "paths": { "@hawl/client": ["./index.ts"] }
+  }
+}

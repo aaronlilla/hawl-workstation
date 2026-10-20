@@ -1,0 +1,319 @@
+// Site events for a signed-in member: REST replay first, then the console socket with a cursor.
+// Needs the user plane (UserJWT): `/v1/towns/:twn/events` and `/v1/console/ws` refuse worker tokens.
+import { EventEmitter } from 'node:events'
+import WebSocket from 'ws'
+import { HawlApiError, type TokenSource, wsUrlFor } from './core'
+import type { Http } from './http'
+import { jwtExpiryMs } from './user-session'
+
+export const CONSOLE_STREAMS = [
+  'feed',
+  'handoffs',
+  'workers',
+  'needs_action',
+  'files',
+  'map'
+] as const
+export type ConsoleStreamName = (typeof CONSOLE_STREAMS)[number]
+
+/** A site event. REST rows have no `stream`; socket frames name the stream they came on (`t`). */
+export type TownEventFrame = {
+  seq: number
+  event: string
+  at: string
+  town_id: string
+  stream?: ConsoleStreamName
+  [k: string]: unknown
+}
+
+export type TownEventStreamOptions = {
+  relayUrl: string
+  townId: string
+  user: TokenSource
+  http: Http
+  streams?: readonly ConsoleStreamName[]
+  /** Last seq the caller already has. Default 0: replay everything the relay still holds. */
+  afterSeq?: number
+  /** Must equal the web origin the relay allows for `/v1/console/ws`. */
+  origin?: string
+  reconnectMs?: { min: number; max: number }
+  random?: () => number
+  /** Skip the REST replay and let the socket replay from `afterSeq`. */
+  socketOnly?: boolean
+  /**
+   * The relay never confirms `auth`: it just keeps the socket open or closes it with 4401. A socket
+   * that stays open this long (or delivers a frame) counts as accepted; only then is the backoff reset.
+   */
+  settleMs?: number
+  /** Send a fresh `auth` this long before the JWT expires, so the socket outlives one token. Default 90 s. */
+  refreshBeforeMs?: number
+}
+
+export type TownEventStreamEvents = {
+  event: [TownEventFrame]
+  state: ['replaying' | 'connecting' | 'live' | 'stopped']
+  error: [Error]
+}
+
+/**
+ * Emits each event once. After a drop it reconnects and resubscribes one seq back, because a
+ * single event can arrive as several frames (one per stream) and the cut may fall between them.
+ */
+export class TownEventStream extends EventEmitter {
+  /** Highest seq emitted. */
+  cursor: number
+  state: 'idle' | 'replaying' | 'connecting' | 'live' | 'stopped' = 'idle'
+  readonly #o: TownEventStreamOptions
+  #ws: WebSocket | null = null
+  #timer: NodeJS.Timeout | null = null
+  #settle: NodeJS.Timeout | null = null
+  #refresh: NodeJS.Timeout | null = null
+  #stopped = false
+  #floor = 0
+  #backoff: number
+  readonly #seen = new Set<string>()
+
+  constructor(o: TownEventStreamOptions) {
+    super()
+    this.#o = o
+    this.cursor = o.afterSeq ?? 0
+    this.#backoff = o.reconnectMs?.min ?? 1000
+  }
+
+  override on<K extends keyof TownEventStreamEvents>(
+    ev: K,
+    fn: (...a: TownEventStreamEvents[K]) => void
+  ): this {
+    return super.on(ev, fn as (...a: unknown[]) => void)
+  }
+
+  async start(): Promise<void> {
+    if (this.state === 'replaying' || this.state === 'connecting' || this.state === 'live') {
+      return // already running
+    }
+    this.#stopped = false
+    if (!this.#o.socketOnly) {
+      this.#set('replaying')
+      try {
+        await this.replay()
+      } catch (e) {
+        this.#fail(e as Error)
+        // The socket replays from the cursor too, so a failed REST page is not fatal.
+      }
+    }
+    // History came from REST; socket frames at or below it would repeat it.
+    this.#floor = this.#o.socketOnly ? 0 : this.cursor
+    this.#connect()
+  }
+
+  stop(): void {
+    this.#stopped = true
+    if (this.#timer) {
+      clearTimeout(this.#timer)
+    }
+    this.#timer = null
+    this.#clearSocketTimers()
+    const ws = this.#ws
+    this.#ws = null
+    ws?.close(1000)
+    this.#set('stopped')
+  }
+
+  /** Page through `GET /v1/towns/:twn/events` until the relay has nothing newer. */
+  async replay(): Promise<number> {
+    try {
+      return await this.#pages()
+    } finally {
+      // Called with the socket already up, the same event would come again as a socket frame
+      // (keyed by stream, REST rows have none). Frames at or below what REST handed over are repeats.
+      if (this.#ws) {
+        this.#floor = Math.max(this.#floor, this.cursor)
+      }
+    }
+  }
+
+  async #pages(): Promise<number> {
+    let n = 0
+    for (;;) {
+      const before = this.cursor
+      const page = await this.#o.http.get<{ events: TownEventFrame[]; next_after_seq: number }>(
+        `/v1/towns/${this.#o.townId}/events`,
+        { plane: 'user', query: { after_seq: this.cursor } }
+      )
+      for (const e of page.events) {
+        if (this.#take(`rest:${e.seq}`, e.seq)) {
+          this.emit('event', e)
+          n++
+        }
+      }
+      // The relay cuts the page first and filters personal and owner-only rows after, so a full page can
+      // come back with no events at all and still move `next_after_seq`. Follow it, or the cursor sticks.
+      const next = Number(page.next_after_seq)
+      // A page that does not move the cursor would loop forever.
+      if (!Number.isFinite(next) || next <= before) {
+        return n
+      }
+      this.cursor = Math.max(this.cursor, next)
+    }
+  }
+
+  /** An 'error' event nobody listens to would throw inside a callback and kill the process. */
+  #fail(e: Error): void {
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', e)
+    }
+  }
+
+  #take(key: string, seq: number): boolean {
+    if (this.#seen.has(key)) {
+      return false
+    }
+    this.#seen.add(key)
+    if (this.#seen.size > 20_000) {
+      this.#seen.delete(this.#seen.values().next().value as string)
+    }
+    if (seq > this.cursor) {
+      this.cursor = seq
+    }
+    return true
+  }
+
+  #clearSocketTimers(): void {
+    if (this.#settle) {
+      clearTimeout(this.#settle)
+    }
+    if (this.#refresh) {
+      clearTimeout(this.#refresh)
+    }
+    this.#settle = null
+    this.#refresh = null
+  }
+
+  /** The relay kept the socket: reset the backoff and call it live. */
+  #accepted(ws: WebSocket): void {
+    if (this.#ws !== ws || ws.readyState !== WebSocket.OPEN) {
+      return
+    }
+    this.#backoff = this.#o.reconnectMs?.min ?? 1000
+    this.#set('live')
+  }
+
+  #scheduleRefresh(ws: WebSocket, jwt: string): void {
+    const exp = jwtExpiryMs(jwt)
+    if (exp === null) {
+      return
+    }
+    const lead = this.#o.refreshBeforeMs ?? 90_000
+    const delay = Math.max(250, exp - Date.now() - lead)
+    this.#refresh = setTimeout(() => {
+      void (async () => {
+        if (this.#ws !== ws || ws.readyState !== WebSocket.OPEN) {
+          return
+        }
+        try {
+          this.#o.user.invalidate()
+          const next = await this.#o.user.token()
+          if (this.#ws === ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ t: 'auth', jwt: next, town_id: this.#o.townId }))
+            this.#scheduleRefresh(ws, next)
+          }
+        } catch (e) {
+          // Without a new token the relay closes this socket at expiry; the reconnect path takes over.
+          this.#fail(e as Error)
+        }
+      })()
+    }, delay)
+    this.#refresh.unref?.()
+  }
+
+  #set(s: TownEventStream['state']): void {
+    if (this.state === s) {
+      return
+    }
+    this.state = s
+    this.emit('state', s)
+  }
+
+  #connect(): void {
+    if (this.#stopped) {
+      return
+    }
+    this.#set('connecting')
+    const headers: Record<string, string> = {}
+    if (this.#o.origin) {
+      headers.origin = this.#o.origin
+    }
+    const ws = new WebSocket(wsUrlFor(this.#o.relayUrl, '/v1/console/ws'), { headers })
+    this.#ws = ws
+    ws.on('open', () => {
+      void (async () => {
+        try {
+          const jwt = await this.#o.user.token()
+          ws.send(JSON.stringify({ t: 'auth', jwt, town_id: this.#o.townId }))
+          ws.send(
+            JSON.stringify({
+              t: 'subscribe',
+              streams: [...(this.#o.streams ?? CONSOLE_STREAMS)],
+              after_seq: Math.max(0, this.cursor - 1)
+            })
+          )
+          this.#settle = setTimeout(() => this.#accepted(ws), this.#o.settleMs ?? 1500)
+          this.#scheduleRefresh(ws, jwt)
+        } catch (e) {
+          this.#fail(e as Error)
+          ws.close(1011, 'no token')
+        }
+      })()
+    })
+    ws.on('message', (raw) => {
+      let f: Record<string, unknown>
+      try {
+        f = JSON.parse(raw.toString()) as Record<string, unknown>
+      } catch {
+        return
+      }
+      if (f.t === 'error') {
+        const e = (f.error ?? {}) as { code?: string; message?: string }
+        this.#fail(new HawlApiError(0, e.code ?? 'relay_error', e.message ?? 'Relay error.'))
+        return
+      }
+      if (typeof f.seq === 'number') {
+        this.#accepted(ws) // a frame means the relay took the auth
+      }
+      if (typeof f.seq !== 'number' || typeof f.t !== 'string' || f.seq <= this.#floor) {
+        return
+      }
+      if (!this.#take(`${f.t}:${f.seq}`, f.seq)) {
+        return
+      }
+      const { t, ...rest } = f
+      this.emit('event', { ...rest, stream: t } as TownEventFrame)
+    })
+    ws.on('close', (code) => {
+      if (this.#ws !== ws) {
+        return
+      }
+      this.#ws = null
+      this.#clearSocketTimers()
+      if (this.#stopped) {
+        return
+      }
+      // 4401: the UserJWT expired or was refused. Fetch a fresh one on the way back.
+      if (code === 4401) {
+        this.#o.user.invalidate()
+      }
+      this.#set('connecting')
+      const max = this.#o.reconnectMs?.max ?? 30_000
+      const r = (this.#o.random ?? Math.random)()
+      const wait = Math.round(this.#backoff / 2 + (this.#backoff / 2) * r)
+      this.#timer = setTimeout(() => {
+        this.#timer = null
+        this.#connect()
+      }, wait)
+      this.#backoff = Math.min(this.#backoff * 2, max)
+    })
+    ws.on('error', () => {
+      // 'close' follows
+    })
+  }
+}
