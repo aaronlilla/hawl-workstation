@@ -1,4 +1,5 @@
 import { app, clipboard, dialog, type BrowserWindow } from 'electron'
+import '../hawl/main/env-aliases-init'
 import { parseSkillShareId } from '../shared/skill-share-link'
 import { createMacAppActivationHandler } from './window/macos-app-activation'
 import { isBackgroundLaunch, isOrcadSidecarLaunch } from './window/foreground-activation-policy'

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import '../hawl/main/env-aliases-init'
 import {
   findCommandSpec,
   isCommandGroup,

@@ -70,10 +70,11 @@ export const FEATURE_TIPS = [
     id: 'orca-cli',
     priority: 'new',
     eyebrow: 'Tip',
-    title: 'Let agents drive Orca with the Orca CLI',
-    description: 'Enable agents to coordinate child worktrees and communicate between worktrees.',
+    title: 'Let agents drive Hawl with the hws CLI',
+    description:
+      'Enable agents to coordinate child worktrees and communicate between worktrees. Adds the hws CLI folder to your user PATH and installs the agent skills.',
     action: 'setup-cli',
-    ctaLabel: 'Install CLI & Skills',
+    ctaLabel: 'Add CLI to PATH & install skills',
     completedByFeatureInteractions: []
   },
   {

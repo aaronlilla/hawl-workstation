@@ -2,6 +2,7 @@ import { useCallback, useState, type MutableRefObject } from 'react'
 import { toast } from 'sonner'
 import type { CliInstallStatus } from '../../../../shared/cli-install-types'
 import { translate } from '@/i18n/i18n'
+import { displayCommandName } from '../../../../hawl/shared/brand'
 import {
   readCliInstallFailure,
   readCliInstallRejection,
@@ -69,7 +70,7 @@ export function useCliRegistrationActions({
         translate(
           'auto.components.settings.CliSection.9cbcd31338',
           'Registered `{{value0}}` in PATH.',
-          { value0: next.commandName }
+          { value0: displayCommandName(next.commandName) }
         )
       )
     } catch (error) {
@@ -100,7 +101,7 @@ export function useCliRegistrationActions({
           translate(
             'auto.components.settings.CliSection.af5540930c',
             'Removed `{{value0}}` from PATH.',
-            { value0: next.commandName }
+            { value0: displayCommandName(next.commandName) }
           )
         )
       }
