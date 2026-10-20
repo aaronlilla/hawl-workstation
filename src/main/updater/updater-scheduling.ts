@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { isMacInstallRequested } from '../updater-mac-install'
+import { HAWL_RELEASE_FEED_LIVE } from '../../hawl/shared/brand'
 import { withUpdaterSpan } from '../observability/instrumentation'
 import {
   AUTO_UPDATE_CHECK_INTERVAL_MS,
@@ -65,7 +66,7 @@ export abstract class UpdaterScheduling extends UpdaterCheckFailure {
     if (this.backgroundCheckLaunchPending || this.currentStatus.state === 'checking') {
       return false
     }
-    if (!app.isPackaged || is.dev) {
+    if (!app.isPackaged || is.dev || !HAWL_RELEASE_FEED_LIVE) {
       this.sendStatus({ state: 'not-available' })
       return false
     }

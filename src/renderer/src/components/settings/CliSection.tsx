@@ -29,6 +29,7 @@ import { WslCliRegistration } from './WslCliRegistration'
 import { useCliRegistrationActions } from './use-cli-registration-actions'
 import { useLocalCliSkillFreshnessName } from './use-local-cli-skill-freshness-name'
 import { translate } from '@/i18n/i18n'
+import { displayCliText, displayCommandName } from '../../../../hawl/shared/brand'
 
 type CliSectionProps = {
   currentPlatform: string
@@ -56,13 +57,13 @@ function getInstallDescription(platform: string): string {
     return 'Register `orca-ide` in ~/.local/bin.'
   }
   if (platform === 'win32') {
-    return 'Register `orca` in your user PATH.'
+    return 'Register `hws` in your user PATH.'
   }
   return 'CLI registration is not yet available on this platform.'
 }
 
 function getFallbackCommandName(platform: string): string {
-  return platform === 'linux' ? 'orca-ide' : 'orca'
+  return platform === 'linux' ? 'orca-ide' : platform === 'win32' ? 'hws' : 'orca'
 }
 
 export function CliSection({
@@ -114,7 +115,10 @@ export function CliSection({
   )
 
   const closeDialog = useCallback((): void => setDialogOpen(false), [])
-  const commandName = status?.commandName ?? getFallbackCommandName(currentPlatform)
+  // Hawl: Windows ships `hws` beside the `orca` compatibility name; show the documented one.
+  const commandName = displayCommandName(
+    status?.commandName ?? getFallbackCommandName(currentPlatform)
+  )
   const { busyAction, installFailure, clearInstallFailure, install, remove } =
     useCliRegistrationActions({
       commandName,
@@ -186,7 +190,7 @@ export function CliSection({
                     'auto.components.settings.CliSection.d363e5929b',
                     'Checking CLI registration…'
                   )
-                : (status?.detail ?? getInstallDescription(currentPlatform))}
+                : displayCliText(status?.detail ?? getInstallDescription(currentPlatform))}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -229,7 +233,9 @@ export function CliSection({
         {status?.commandPath ? (
           <p className="text-xs text-muted-foreground">
             {translate('auto.components.settings.CliSection.15eaad0d31', 'Command path:')}{' '}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{status.commandPath}</code>
+            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
+              {displayCliText(status.commandPath)}
+            </code>
           </p>
         ) : null}
 
@@ -256,7 +262,7 @@ export function CliSection({
         ) : null}
 
         {!loading && !isSupported && !isBrowserManaged && status?.detail ? (
-          <p className="text-xs text-muted-foreground">{status.detail}</p>
+          <p className="text-xs text-muted-foreground">{displayCliText(status.detail)}</p>
         ) : null}
 
         {installFailure ? (

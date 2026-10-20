@@ -7,21 +7,37 @@ import re
 import textwrap
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-FONTS = 'C:/Windows/Fonts/'
+import os, tempfile
+from fontTools.ttLib import TTFont  # pip install fonttools brotli
+
+# The shipped Hawl fonts (F15 type) are variable woff2; convert once to ttf so Pillow can draw with them.
+def hawl_font(name, size, weight):
+    out = os.path.join(tempfile.gettempdir(), 'hawlfonts')
+    os.makedirs(out, exist_ok=True)
+    ttf = os.path.join(out, name + '.ttf')
+    if not os.path.exists(ttf):
+        f = TTFont(f'src/hawl/renderer/fonts/{name}.woff2')
+        f.flavor = None
+        f.save(ttf)
+    font = ImageFont.truetype(ttf, size)
+    font.set_variation_by_axes([weight])
+    return font
 icon = Image.open('resources/icon.png').convert('RGBA')
 
 # ---- app icon variants ----
-def daylight():
+def coal():
+    # Second app icon: the mark on a coal tile with an ember ring (clearly different from the stock icon).
     size = 512
     bg = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(bg)
-    d.rounded_rectangle((20, 20, size - 20, size - 20), radius=110, fill=(255, 251, 242, 255), outline=(255, 107, 26, 255), width=10)
-    art = icon.resize((380, 380), Image.LANCZOS)
-    bg.alpha_composite(art, (66, 66))
+    d.rounded_rectangle((20, 20, size - 20, size - 20), radius=110, fill=(24, 12, 7, 255), outline=(255, 122, 42, 255), width=14)
+    d.rounded_rectangle((44, 44, size - 44, size - 44), radius=90, outline=(255, 232, 214, 70), width=3)
+    art = icon.resize((340, 340), Image.LANCZOS)
+    bg.alpha_composite(art, (86, 86))
     return bg
 
 icon.save('resources/app-icons/orca-blue.png')
-daylight().save('resources/app-icons/orca-watercolor.png')
+coal().save('resources/app-icons/orca-watercolor.png')
 
 # ---- feature wall cards ----
 src = open('src/shared/feature-wall-tiles.ts', encoding='utf8').read()
@@ -34,9 +50,9 @@ for block in src.split("id: 'tile-")[1:]:
         tiles.append((tid, m.group(1), c.group(1)))
 print([t[0] for t in tiles]); assert len(tiles) == 12, len(tiles)
 W, H = 960, 540
-title_f = ImageFont.truetype(FONTS + 'arialbd.ttf', 54)
-cap_f = ImageFont.truetype(FONTS + 'arial.ttf', 28)
-small_f = ImageFont.truetype(FONTS + 'arialbd.ttf', 22)
+title_f = hawl_font('bricolage-grotesque-latin-wght-normal', 56, 760)
+cap_f = hawl_font('inter-latin-wght-normal', 27, 450)
+small_f = hawl_font('inter-latin-wght-normal', 21, 800)
 mark = icon.resize((150, 150), Image.LANCZOS)
 for tid, title, caption in tiles:
     title = title.replace("\\'", "'").replace('Orca', 'Hawl')

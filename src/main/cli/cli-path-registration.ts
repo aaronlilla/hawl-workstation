@@ -45,7 +45,7 @@ export class CliPathRegistration extends CliCommandInstallation {
         pathConfigured,
         state: 'not_installed',
         currentTarget: null,
-        detail: `Register ${status.commandPath} to use Orca from Command Prompt or PowerShell.`
+        detail: `Register ${status.commandPath} to use Hawl from Command Prompt or PowerShell.`
       }
     }
 
